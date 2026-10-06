@@ -10,11 +10,15 @@ desktop), dan layar TV.
 - Dokumen spesifikasi: [`docs/spesifikasi-aplikasi-presensi-smk.md`](docs/spesifikasi-aplikasi-presensi-smk.md).
 - Catatan keputusan: [`CATATAN-KEPUTUSAN.md`](CATATAN-KEPUTUSAN.md).
 
-> Status: **Fase 0 dan Fase 1 selesai.**
+> Status: **Fase 0, 1, dan 2 selesai.**
 > Fase 0 — kerangka UI, token desain, dua layout (bottom menu & sidebar), PWA, landing page, halaman masuk.
 > Fase 1 — halaman master data (tahun pelajaran & semester, jurusan, kelas, siswa, guru & pegawai, mapel),
 > import/export Excel, dan halaman pengaturan (Info Sekolah + tab Landing, hari libur, sistem, pengguna & peran, audit log).
+> Fase 2 — plotting kelas (termasuk wizard naik kelas & kelulusan, mutasi, riwayat), plotting mapel
+> (daftar, matriks kelas × mapel, per guru), jam pelajaran (pola & slot), jadwal (grid hari × jam),
+> dan jadwal mengajar untuk guru.
 > Halaman fitur fase berikutnya ditandai "dijadwalkan pada Fase N" (Bagian 11), tanpa fitur di luar spesifikasi.
+> Untuk melanjutkan ke Fase 3, baca `docs/SERAH-TERIMA-FASE-3.md`.
 
 ---
 
