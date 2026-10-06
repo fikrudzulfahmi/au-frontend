@@ -26,4 +26,16 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Berkas ini sengaja mengekspor komponen bersama hook/konstanta pendampingnya
+    // (mis. AuthProvider + useAuth, StatusBadge + pemetaan status) agar pemakaian
+    // tetap satu impor. Fast refresh hanya relevan saat pengembangan, bukan aturan
+    // kebenaran, sehingga dimatikan khusus untuk berkas tersebut.
+    files: [
+      'src/components/ui/StatusBadge.tsx',
+      'src/components/ui/Toast.tsx',
+      'src/features/auth/AuthContext.tsx',
+    ],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 )
