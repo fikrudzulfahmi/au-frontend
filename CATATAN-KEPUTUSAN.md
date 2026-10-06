@@ -408,3 +408,24 @@ Cara memastikan ekspor benar-benar bekerja, berurutan:
 1. `curl` endpoint ekspor → periksa magic bytes (`%PDF-`, `PK\x03\x04`) dan `Content-Length` yang cocok dengan panjang badan.
 2. Dari peramban, klik tombolnya → perhatikan toast: sukses berbunyi "Berkas ... sedang diunduh", gagal berbunyi pesan galat (tidak pernah senyap).
 3. Uji juga pada peramban pengguna sungguhan — peramban otomasi membatasi hal-hal tertentu.
+
+---
+
+## M. Catatan Fase 7 (kinerja, dashboard, PWA)
+
+Tanggal: 6 Oktober 2026. Cakupan: FR-DSH (5.17), FR-UI (PWA), optimasi kinerja.
+
+| No | Keputusan | Alasan / dampak |
+|---|---|---|
+| K-83 | **Akar code-splitting: impor statis + dinamis bercampur.** `src/features/presensi/api.ts` memakai `await import('@/lib/api')` sementara ~36 berkas lain mengimpornya statis, sehingga Vite tidak pernah memecah chunk. Impor dinamis dihapus (jadi statis), lalu 42 rute berat dipindah ke `React.lazy` di dalam boundary `Suspense` yang sudah ada. | Bundel utama **878,26 kB (gzip 247,52) → 452,50 kB (gzip 139,99)**, turun 48,5%. Yang tinggal di bundel utama: kerangka, `/masuk`, beranda, registri `LAPORAN`, dan `NotFound`. Peringatan Vite "chunks larger than 500 kB" hilang. |
+| K-84 | Peringatan ukuran bundel **tidak** dibungkam dengan `build.chunkSizeWarningLimit`. | Menyetel ambang itu hanya menyembunyikan gejalanya; sebabnya (impor ganda) tetap ada dan bundel tetap besar. Aturan proyek: perbaiki sebabnya, bukan peringatannya. |
+| K-85 | PWA memakai ikon **PNG** (`pwa-192`, `pwa-512`, `pwa-512-maskable`) + `apple-touch-icon`, `display: standalone`, `theme_color: #1E2A8A`, dan shortcuts. Ajakan pasang lewat `KartuPasangPwa` + `lib/pwa.ts` (hanya muncul bila peramban mengizinkan). | Ikon harus PNG — bukan SVG atau emoji — karena pemasang Android/iOS tidak menerima SVG dan emoji tampil berbeda di tiap perangkat. Manifest dihasilkan `vite-plugin-pwa`, jadi tidak ada berkas di `public/`. |
+| K-86 | Dashboard 5.17 memakai **endpoint laporan yang sudah ada** (`GET /laporan/presensi/rekap-pegawai?periode=bulan_ini`), bukan menghitung ulang di klien. | Dengan begitu angka dashboard dengan sendirinya sama dengan angka halaman laporan — satu sumber kebenaran, prinsip yang sama dipakai layar TV (BR-37). Menghitung ulang di klien akan membuat dua angka berbeda untuk pertanyaan yang sama. |
+
+### Nuansa PWA yang perlu diketahui
+
+Setelah code-splitting, `precache` naik dari 32 entri (1.164 KiB) menjadi **113 entri (1.202 KiB)** karena seluruh potongan malas kini ikut dicadangkan service worker. Ini **bukan kemunduran**: pemuatan pertama tetap jauh lebih ringan (452 kB versus 878 kB harus diurai dan dijalankan), sementara service worker mencadangkan semuanya agar aplikasi tetap bekerja tanpa jaringan. Yang berkurang adalah waktu sampai tampilan pertama, bukan total berkas yang diunduh pada pemasangan.
+
+### Proses latar yang ditinggalkan subagen (diperbaiki)
+
+Subagen Fase 7 meninggalkan **server preview Vite di port 4173** hidup melampaui dirinya. Sudah dimatikan (`taskkill /PID 10980 /F`). Pola ini sudah berulang di proyek ini: subagen dapat meninggalkan proses latar, jadi **periksa `netstat -ano | grep LISTENING`** setelah setiap delegasi dan pastikan port 5173 (dev) serta 8000 (API) tetap hidup.
