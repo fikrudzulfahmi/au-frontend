@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   Bell,
   BookOpen,
@@ -6,6 +7,7 @@ import {
   Clock,
   Fingerprint,
   Inbox,
+  PenLine,
   UserRound,
   UserX,
   Users,
@@ -18,6 +20,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { PresensiKinerjaCard } from '@/components/ui/PresensiKinerjaCard'
 import type { PresensiKinerjaData } from '@/components/ui/PresensiKinerjaCard'
 import { StatCard } from '@/components/ui/StatCard'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import { cn } from '@/lib/cn'
 import { DESKTOP_BREAKPOINT } from '@/lib/env'
 import { jamAtauNol } from '@/lib/format'
@@ -27,6 +30,7 @@ import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useServerClock } from '@/lib/waktu'
 import { useSekolah } from '@/features/sekolah/useSekolah'
 import { useAuth } from '@/features/auth/AuthContext'
+import { ambilSesiHariIni } from '@/features/mengajar/jurnal/api'
 import { usePresensiHariIni, useRingkasanHariIni } from './useDashboard'
 
 /** FR-DSH-01/02 — beranda sesuai peran. */
@@ -231,31 +235,113 @@ function PanelPengumuman() {
   )
 }
 
+/** FR-JRN-01 — jadwal hari ini beserta status jurnal tiap sesi (alur guru, 5.13). */
 function KartuJadwal() {
   const { user } = useAuth()
-  if (!punyaPeran(user, ROLE.guru)) return null
+  const guru = punyaPeran(user, ROLE.guru)
+
+  const sesi = useQuery({
+    queryKey: ['jurnal', 'sesi-hari-ini', 'beranda'],
+    queryFn: () => ambilSesiHariIni(),
+    enabled: guru,
+  })
+
+  if (!guru) return null
+
+  const data = sesi.data?.data
+  const daftar = data?.sesi ?? []
+
+  const gaya: Record<string, { varian: 'hadir' | 'menunggu' | 'izin'; label: string }> = {
+    sudah: { varian: 'hadir', label: 'Sudah' },
+    belum: { varian: 'menunggu', label: 'Belum' },
+    berhalangan: { varian: 'izin', label: 'Berhalangan' },
+  }
 
   return (
     <section className="card p-5" aria-label="Jadwal hari ini">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-strong">Jadwal Hari Ini</h2>
-        <Link to="/mengajar/jadwal" className="inline-flex items-center gap-1 text-xs font-semibold text-link">
-          <CalendarDays size={14} /> Jadwal lengkap
+        <Link
+          to="/mengajar/jurnal/riwayat"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-link"
+        >
+          <BookOpen size={14} /> Jurnal saya
         </Link>
       </div>
 
-      <div className="mt-3 flex items-start gap-3 rounded-control bg-app-soft p-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pastel-blue text-primary">
-          <BookOpen size={17} />
-        </span>
-        <div>
-          <p className="text-sm font-semibold text-strong">Jadwal mengajar belum tersedia</p>
-          <p className="text-xs text-muted">
-            Daftar sesi mengajar dan status jurnal akan tampil setelah master jadwal diisi admin
-            (Fase 2).
-          </p>
+      {sesi.isLoading && <p className="mt-3 text-sm text-muted">Memuat jadwal…</p>}
+
+      {/* Kegagalan permintaan disajikan apa adanya, bukan sebagai "tidak ada jadwal". */}
+      {sesi.isError && (
+        <p className="mt-3 text-sm text-danger">Jadwal hari ini tidak dapat dimuat.</p>
+      )}
+
+      {data && daftar.length === 0 && (
+        <div className="mt-3 flex items-start gap-3 rounded-control bg-app-soft p-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pastel-blue text-primary">
+            <CalendarDays size={17} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-strong">Tidak ada sesi mengajar hari ini</p>
+            <p className="text-xs text-muted">Sesi dari jadwal akan muncul di sini pada harinya.</p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {data && daftar.length > 0 && (
+        <>
+          <p className="mt-2 text-xs font-semibold text-muted">
+            {data.ringkasan.sudah} sudah · {data.ringkasan.belum} belum
+            {data.ringkasan.berhalangan > 0 ? ` · ${data.ringkasan.berhalangan} berhalangan` : ''}
+          </p>
+
+          <ul className="mt-3 divide-y divide-line">
+            {daftar.map((s) => {
+              const tanda = gaya[s.status] ?? gaya.belum
+
+              return (
+                <li key={`${s.plotting_mapel_id}-${s.jam_ke_mulai}`} className="py-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-strong">
+                        {s.mapel ?? '-'} · {s.kelas ?? '-'}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {s.label_jam} · {s.jam_mulai}–{s.jam_selesai}
+                      </p>
+                    </div>
+
+                    <StatusBadge varian={tanda.varian}>{tanda.label}</StatusBadge>
+                  </div>
+
+                  {/* Gerbang isi diambil dari server (BR-19 / KP-4.6). */}
+                  {s.boleh_isi && (
+                    <Link
+                      to={`/mengajar/jurnal/isi/${s.plotting_mapel_id}-${s.jam_ke_mulai}?tanggal=${data.tanggal}`}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-link"
+                    >
+                      <PenLine size={13} /> Isi Jurnal
+                    </Link>
+                  )}
+
+                  {!s.boleh_isi && s.status === 'sudah' && s.jurnal_id !== null && (
+                    <Link
+                      to={`/mengajar/jurnal/isi/${s.plotting_mapel_id}-${s.jam_ke_mulai}?tanggal=${data.tanggal}&jurnal=${s.jurnal_id}`}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-muted"
+                    >
+                      <PenLine size={13} /> Ubah jurnal
+                    </Link>
+                  )}
+
+                  {!s.boleh_isi && s.alasan !== null && (
+                    <p className="mt-1 text-xs text-muted">{s.alasan}</p>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
     </section>
   )
 }

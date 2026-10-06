@@ -40,6 +40,19 @@ export function formatTanggal(date: Date): string {
  * konversi zona, agar hari tidak bergeser pada peramban dengan zona waktu
  * negatif. Nilai bertimestamp penuh dikonversi ke tanggal lokal peramban.
  */
+/**
+ * Tanggal lokal (YYYY-MM-DD) dari sebuah Date.
+ *
+ * JANGAN memakai `toISOString().slice(0, 10)` — itu mengonversi ke UTC sehingga di
+ * zona waktu positif (Asia/Jakarta) tanggalnya bergeser sehari pada jam-jam awal.
+ * Komponen lokal diambil langsung agar hasilnya sama dengan tanggal di server.
+ */
+export function tanggalLokal(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
 export function formatTanggalDari(value?: string | null): string {
   if (!value) return '-'
 

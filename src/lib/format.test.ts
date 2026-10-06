@@ -9,6 +9,7 @@ import {
   jamAtauNol,
   menitDariJam,
   namaHari,
+  tanggalLokal,
 } from './format'
 
 /**
@@ -60,5 +61,22 @@ describe('bantuan jam presensi', () => {
     expect(menitDariJam('07:00')).toBe(420)
     expect(menitDariJam('15:00')).toBe(900)
     expect(menitDariJam(null)).toBe(0)
+  })
+})
+
+describe('tanggalLokal', () => {
+  it('memakai komponen tanggal lokal, bukan UTC', () => {
+    // 1 Januari 2026 pukul 01.00 di Jakarta = 31 Desember 2025 pukul 18.00 UTC.
+    // Dengan toISOString, tanggalnya akan bergeser menjadi 2025-12-31.
+    const d = new Date(2026, 0, 1, 1, 0, 0)
+    expect(tanggalLokal(d)).toBe('2026-01-01')
+  })
+
+  it('menambahkan nol di depan bulan dan tanggal satu digit', () => {
+    expect(tanggalLokal(new Date(2026, 8, 5, 23, 30, 0))).toBe('2026-09-05')
+  })
+
+  it('tidak bergeser pada malam hari di akhir bulan', () => {
+    expect(tanggalLokal(new Date(2026, 9, 31, 23, 59, 0))).toBe('2026-10-31')
   })
 })

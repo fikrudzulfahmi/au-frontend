@@ -22,6 +22,9 @@ import { PresensiPage } from '@/features/presensi/PresensiPage'
 import { RiwayatPresensiPage } from '@/features/presensi/RiwayatPresensiPage'
 import { JamPelajaranPage } from '@/features/akademik/JamPelajaranPage'
 import { JadwalGuruPage } from '@/features/mengajar/JadwalGuruPage'
+import { IsiJurnalPage } from '@/features/mengajar/jurnal/IsiJurnalPage'
+import { RiwayatJurnalPage } from '@/features/mengajar/jurnal/RiwayatJurnalPage'
+import { RekapWaliKelasPage } from '@/features/wali-kelas/RekapWaliKelasPage'
 import { NaikKelasPage } from '@/features/plotting/NaikKelasPage'
 import { PlottingKelasPage } from '@/features/plotting/PlottingKelasPage'
 import { PlottingMapelPage } from '@/features/plotting/PlottingMapelPage'
@@ -93,18 +96,11 @@ export function AppRouter() {
 
             {/* Mengajar */}
             <Route path="/mengajar/jadwal" element={<JadwalGuruPage />} />
-            <Route
-              path="/mengajar/jurnal/isi/:sesi"
-              element={<FiturSegera judul="Isi Jurnal & Presensi Siswa" fase="Fase 4" />}
-            />
-            <Route
-              path="/mengajar/jurnal/riwayat"
-              element={<FiturSegera judul="Riwayat Jurnal" fase="Fase 4" />}
-            />
-            <Route
-              path="/wali-kelas/rekap"
-              element={<FiturSegera judul="Rekap Presensi Siswa Kelas Wali" fase="Fase 4" />}
-            />
+            {/* FR-JRN-02/03 — isi jurnal dan presensi siswa dalam satu halaman. */}
+            <Route path="/mengajar/jurnal/isi/:sesi" element={<IsiJurnalPage />} />
+            <Route path="/mengajar/jurnal/riwayat" element={<RiwayatJurnalPage />} />
+            {/* FR-JRN-10 — rekap presensi siswa kelas wali. */}
+            <Route path="/wali-kelas/rekap" element={<RekapWaliKelasPage />} />
 
             {/* Pengumuman */}
             <Route path="/pengumuman" element={<PengumumanPage />} />
