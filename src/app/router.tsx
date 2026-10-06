@@ -8,7 +8,6 @@ import { TvLayout } from '@/layouts/TvLayout'
 import { LambangSipandu } from '@/components/ui/Logo'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { FiturSegera } from '@/features/umum/FiturSegera'
 import { JadwalPage } from '@/features/akademik/JadwalPage'
 import { MonitoringPresensiPage } from '@/features/monitoring/MonitoringPresensiPage'
 import { PersetujuanLuarRadiusPage } from '@/features/monitoring/PersetujuanPage'
@@ -47,6 +46,7 @@ import { GantiPasswordPage } from '@/features/umum/GantiPasswordPage'
 import { LayananPage } from '@/features/umum/LayananPage'
 import { NotFoundPage } from '@/features/umum/NotFoundPage'
 import { PengaturanTvPage } from '@/features/pengaturan/PengaturanTvPage'
+import { KelolaPengumumanPage } from '@/features/umum/KelolaPengumumanPage'
 import { PengumumanPage } from '@/features/umum/PengumumanPage'
 import { ProfilPage } from '@/features/umum/ProfilPage'
 import { TvPage } from '@/features/tv/TvPage'
@@ -109,10 +109,7 @@ export function AppRouter() {
 
             {/* Pengumuman */}
             <Route path="/pengumuman" element={<PengumumanPage />} />
-            <Route
-              path="/pengumuman/kelola"
-              element={<FiturSegera judul="Kelola Pengumuman" fase="Fase 6" />}
-            />
+            <Route path="/pengumuman/kelola" element={<KelolaPengumumanPage />} />
 
             {/* Master data */}
             <Route path="/master/tahun-pelajaran" element={<TahunPelajaranPage />} />
