@@ -10,7 +10,7 @@ desktop), dan layar TV.
 - Dokumen spesifikasi: [`docs/spesifikasi-aplikasi-presensi-smk.md`](docs/spesifikasi-aplikasi-presensi-smk.md).
 - Catatan keputusan: [`CATATAN-KEPUTUSAN.md`](CATATAN-KEPUTUSAN.md).
 
-> Status: **Fase 0, 1, 2, dan 3 selesai.**
+> Status: **Fase 0, 1, 2, 3, dan 4 selesai.**
 > Fase 0 — kerangka UI, token desain, dua layout (bottom menu & sidebar), PWA, landing page, halaman masuk.
 > Fase 1 — halaman master data (tahun pelajaran & semester, jurusan, kelas, siswa, guru & pegawai, mapel),
 > import/export Excel, dan halaman pengaturan (Info Sekolah + tab Landing, hari libur, sistem, pengguna & peran, audit log).
@@ -22,7 +22,12 @@ desktop), dan layar TV.
 > izin/sakit/dinas/cuti dan luar radius, monitoring presensi harian, halaman persetujuan,
 > serta pengaturan lokasi (dengan pemilih titik pada peta) dan jam kerja.
 > Halaman fitur fase berikutnya ditandai "dijadwalkan pada Fase N" (Bagian 11), tanpa fitur di luar spesifikasi.
-> Untuk melanjutkan ke Fase 4, baca `docs/SERAH-TERIMA-FASE-4.md`.
+> Fase 4 — halaman jurnal: kartu "Jadwal Hari Ini" di beranda dengan status jurnal tiap
+> sesi, halaman isi jurnal + presensi siswa (H/S/I/A) dengan foto maksimal 3, riwayat
+> jurnal berfilter, dan rekap presensi kelas wali.
+>
+> Untuk melanjutkan ke Fase 5 (laporan & dokumen resmi), baca
+> `docs/SERAH-TERIMA-FASE-5.md`.
 
 ---
 
