@@ -11,7 +11,7 @@ import {
   Users,
 } from 'lucide-react'
 
-import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.svg'
+import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.webp'
 import { LayananGrid } from '@/components/ui/LayananGrid'
 import { Logo } from '@/components/ui/Logo'
 import { PageHeader } from '@/components/ui/PageHeader'

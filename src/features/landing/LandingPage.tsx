@@ -17,7 +17,7 @@ import {
   Youtube,
 } from 'lucide-react'
 
-import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.svg'
+import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.webp'
 import { Logo } from '@/components/ui/Logo'
 import { APP_NAME } from '@/lib/env'
 import { cn } from '@/lib/cn'

@@ -282,3 +282,38 @@ Di halaman masuk dan landing, ukuran lama tetap dipakai dan rasio 1,5 terjaga ut
 halaman masuk (-> tampil 480x320), keduanya rasio 1,500 — tidak ada yang terpotong.
 Ilustrasi beranda **belum terverifikasi visual** karena hanya dirender pada breakpoint
 < 1024 px (`BerandaMobile`), sedangkan alat uji tidak dapat menyetel lebar viewport.
+
+### K-54 — Diganti lagi: PNG tanpa latar kiriman pemilik (6 Oktober 2026)
+
+Pemilik mengirim PNG tanpa latar dan meminta **gambar itu saja dipakai untuk semuanya**,
+menggantikan SVG pada K-53. SVG tersebut kini dihapus dari repositori.
+
+**Berkas sumber** `new-pratinjau-ilustrasi-guru.png`: 1306x906, RGBA, 871,3 KB. Diperiksa
+lebih dulu dan terbukti benar-benar tanpa latar: keempat sudut alpha = 0, sebaran alpha
+35,1% transparan penuh / 57,1% opak / 7,8% tepi anti-aliasing. Kotak isi (0, 18, 1306, 889)
+— hanya ~18 px ruang kosong atas-bawah, tidak ada sisa tepi yang perlu dipangkas.
+
+**K-55 — Isi gambar tidak disentuh sama sekali; hanya wadah berkasnya.** Tidak ada
+pemotongan dan tidak ada pengecilan. Dimensi dipertahankan penuh 1306x906 dan diverifikasi
+sama antara sumber dan hasil, bersama mode RGBA dan sebaran alpha (35,11% / 57,07% / 7,82%).
+
+| Bentuk berkas | Berat |
+|---|---|
+| PNG sumber | 871,3 KB |
+| PNG optimize | 784,9 KB |
+| WebP lossless | 414,4 KB |
+| **WebP kualitas 95 (dipakai)** | **62,9 KB** |
+
+Alasan memakai WebP dan bukan PNG mentah: berkas ikut di-precache PWA, sehingga PNG 871 KB
+akan menambah unduhan setiap pemasangan/pembaruan hampir 1 MB — pada aplikasi sekolah yang
+dibuka dari ponsel, itu biaya nyata. Dampak terukur: precache 1035,90 KiB -> 1091,78 KiB
+(naik 56 KiB), dibandingkan ~871 KiB bila PNG mentah dipakai. Kualitas 95 dan resolusi penuh
+dipilih agar tidak ada alasan komplain soal ketajaman.
+
+**Rasio berubah** 1,500 (SVG) -> 1,442 (PNG), jadi lebar tampil sedikit mengecil pada tinggi
+yang sama: beranda 192->185 px, landing 384->369 px, halaman masuk 480->461 px. Kelas Tailwind
+tidak perlu diubah.
+
+**Verifikasi:** `guru-ilustrasi.webp` termuat di landing (1306x906 -> tampil 369x256) dan
+halaman masuk (-> tampil 461x320), keduanya rasio 1,441 — tidak ada yang terpotong. Beranda
+(185x128) belum terverifikasi visual karena hanya dirender pada breakpoint < 1024 px.
