@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   BookOpen,
   CalendarCheck,
@@ -19,9 +20,12 @@ import {
 
 import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.webp'
 import { Logo } from '@/components/ui/Logo'
+import { get, getToken } from '@/lib/api'
+import { formatTanggalDari } from '@/lib/format'
 import { APP_NAME } from '@/lib/env'
 import { cn } from '@/lib/cn'
 import { useSekolah } from '@/features/sekolah/useSekolah'
+import { tampilkanPetaLanding, tampilkanPengumumanLanding } from './logika'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -74,10 +78,26 @@ const LANGKAH = [
   { judul: 'Pantau laporan', teks: 'Lihat rekap presensi dan jurnal dalam PDF atau Excel.' },
 ]
 
+interface PengumumanLanding {
+  id: number
+  judul: string
+  isi: string | null
+  tanggal_mulai: string
+  tanggal_selesai: string | null
+}
+
 /** FR-LND — Landing page publik (5.21). Tanpa data pegawai/siswa/kehadiran (BR-34). */
 export function LandingPage() {
   const { data: sekolah } = useSekolah()
   const [promptPasang, setPromptPasang] = useState<BeforeInstallPromptEvent | null>(null)
+  const [sudahMasuk] = useState(() => Boolean(getToken()))
+
+  // FR-LND-05/09 — hanya pengumuman bertanda `tampil_landing` (BR-34: tanpa data pribadi).
+  const { data: dataPengumuman } = useQuery({
+    queryKey: ['publik', 'pengumuman'],
+    queryFn: () => get<{ data: PengumumanLanding[] }>('/publik/pengumuman'),
+    staleTime: 5 * 60 * 1000,
+  })
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -93,8 +113,9 @@ export function LandingPage() {
     sekolah?.landing.judul_hero?.trim() ||
     `${APP_NAME} — Presensi & Jurnal Digital ${namaSekolah}`
 
-  // FR-LND-05 — daftar pengumuman bertanda `tampil_landing`; diisi pada Fase 6.
-  const pengumuman: Array<{ id: number; judul: string; isi: string }> = []
+  const pengumuman = dataPengumuman?.data ?? []
+  const tampilkanPengumuman = tampilkanPengumumanLanding(sekolah?.landing, pengumuman.length)
+  const tampilkanPeta = tampilkanPetaLanding(sekolah?.landing, sekolah?.koordinat != null)
 
   return (
     <>
@@ -131,12 +152,21 @@ export function LandingPage() {
             >
               Layar TV
             </Link>
-            <Link
-              to="/masuk"
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-            >
-              <LogIn size={16} /> Masuk
-            </Link>
+            {sudahMasuk ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+              >
+                <LogIn size={16} /> Buka Aplikasi
+              </Link>
+            ) : (
+              <Link
+                to="/masuk"
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+              >
+                <LogIn size={16} /> Masuk
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -158,10 +188,10 @@ export function LandingPage() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
-                to="/masuk"
+                to={sudahMasuk ? '/dashboard' : '/masuk'}
                 className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90"
               >
-                <LogIn size={18} /> Masuk Aplikasi
+                <LogIn size={18} /> {sudahMasuk ? 'Buka Aplikasi' : 'Masuk Aplikasi'}
               </Link>
               {promptPasang && (
                 <button
@@ -230,8 +260,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* FR-LND-05 Pengumuman terbaru (disembunyikan bila kosong) */}
-      {pengumuman.length > 0 && (
+      {/* FR-LND-05 Pengumuman terbaru (disembunyikan bila kosong/dinonaktifkan) */}
+      {tampilkanPengumuman && (
         <section className="bg-surface py-14">
           <div className="mx-auto max-w-4xl px-5">
             <h2 className="text-2xl font-extrabold text-strong">Pengumuman Terbaru</h2>
@@ -239,7 +269,11 @@ export function LandingPage() {
               {pengumuman.map((p) => (
                 <article key={p.id} className="card p-5">
                   <h3 className="text-sm font-bold text-strong">{p.judul}</h3>
-                  <p className="mt-1 text-sm text-muted">{p.isi}</p>
+                  <p className="mt-1 text-sm text-muted">{p.isi ?? '—'}</p>
+                  <p className="mt-2 text-xs text-muted">
+                    {formatTanggalDari(p.tanggal_mulai)}
+                    {p.tanggal_selesai ? ` s.d. ${formatTanggalDari(p.tanggal_selesai)}` : ''}
+                  </p>
                 </article>
               ))}
             </div>
@@ -277,9 +311,7 @@ export function LandingPage() {
             <p className="mt-1 text-lg font-extrabold text-strong">
               {sekolah?.nama_kepala_sekolah?.trim() || 'Belum diisi'}
             </p>
-            {sekolah?.nip_kepala_sekolah && (
-              <p className="text-xs text-muted">NIP {sekolah.nip_kepala_sekolah}</p>
-            )}
+            {/* BR-34 — NIP tidak ditampilkan pada halaman publik. */}
           </div>
         </div>
       </section>
@@ -309,7 +341,7 @@ export function LandingPage() {
           </div>
 
           <div className="card overflow-hidden">
-            {sekolah?.koordinat && sekolah.landing.tampilkan_peta ? (
+            {tampilkanPeta && sekolah?.koordinat ? (
               <PetaSekolah
                 latitude={sekolah.koordinat.latitude}
                 longitude={sekolah.koordinat.longitude}
