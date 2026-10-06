@@ -207,3 +207,35 @@ Tanggal: 6 Oktober 2026 · Status: selesai (219 uji backend, 31 uji frontend)
 | `drawRectangle` gagal | Tanda tangan Intervention v3 adalah `($x, $y, $init)`; lebar/tinggi diatur di dalam closure, bukan argumen terpisah | Disusun ulang sesuai API v3 |
 | Relasi `Pegawai::lokasi()` meledak saat dipanggil | `BelongsToMany` dipakai tanpa diimpor (laten: tipe parameter baru diperiksa saat dipakai) | Impor ditambahkan |
 | Halaman presensi menampilkan "Bukan hari kerja" saat permintaan gagal | Penanda hari diperiksa dengan `!data?.is_hari_kerja`, sehingga data yang tidak ada tampil seolah hari libur | Dijaga `data !== undefined` dan keadaan gagal dijelaskan apa adanya |
+
+---
+
+## J. Ilustrasi guru (penggantian aset, 6 Oktober 2026)
+
+Permintaan pemilik: mengganti ilustrasi guru buatan sendiri dengan satu gambar kiriman,
+diterapkan ke **semua** tampilan yang memuat ilustrasi guru.
+
+**Gambar sumber** `Friendly Teacher Dashboard Illustration.png` (1536×1024, 1,19 MB)
+berisi mockup dashboard di kiri dan dua guru di kanan (pria berpeci berkemeja koko putih,
+wanita berhijab).
+
+| No | Keputusan | Alasan / dampak |
+|---|---|---|
+| K-47 | Gambar **dipotong**, tidak dipakai utuh: mockup dashboard di bagian kiri dibuang. | Bagian itu akan menduplikasi tampilan dashboard asli tepat di belakangnya — persis elemen berulang yang ditolak pemilik. Batas potong ditentukan dari data piksel, bukan perkiraan: batang kartu berakhir di x≈792 dan badan pria mulai x≈805. Potongan diverifikasi memuat 0,9% (grup) dan 0% (tunggal) piksel kartu. |
+| K-48 | Dua aset dari satu gambar: `guru-grup` (kedua guru) dan `guru-tunggal` (wanita saja). | Mengikuti struktur lama (grup untuk beranda & landing, tunggal untuk halaman masuk). Guru pria dieja terlalu ramping sebagai figur tunggal (rasio 0,23) sehingga wanita (0,44) yang dipakai. |
+| K-49 | Latar dibuat **transparan**, bukan dibiarkan buram. | Latar gambar (244,249,253) hampir putih, sedangkan latar aplikasi `--color-app` = #cfe3f1 (biru muda). Gambar buram akan memunculkan persegi terang yang jelas terlihat. |
+| K-50 | Transparansi memakai pemisah **m = b−r**, bukan sekadar jarak ke warna latar. | Kemeja koko putih (246,244,248) nyaris sama dengan latar (244,249,253) pada jarak warna biasa; yang membedakan adalah coraknya: latar kebiruan (m = +8…+15) sedangkan koko netral (m = 0…4). Gerbang kecerahan juga ditambahkan karena peci gelap pun ber-m = +6 — tanpa gerbang itu peci ikut berlubang. Hasil ukur: latar 100% transparan, kemeja koko 99,4% utuh (sisanya tepi anti-aliasing). |
+| K-51 | Format **WebP**, bukan PNG. | Sumber 1,19 MB → 12,8 KB + 9,0 KB. Aplikasi ini PWA yang sudah menuntut peramban modern (kamera/getUserMedia pada Fase 3), sehingga dukungan WebP pasti ada. |
+| K-52 | Ukuran hasil dibatasi 2× ukuran tampil terbesar (520 px dan 640 px tinggi). | Cukup tajam di layar retina tanpa membengkakkan bundel. Precahce bertambah 14,8 KiB (5,4 KB SVG → 22,3 KB WebP) — kenaikan yang disadari, karena raster menggantikan vektor. |
+
+**Konsekuensi tata letak yang perlu diketahui:** aset baru lebih ramping daripada SVG lama
+(grup 0,900 → 0,710; tunggal 0,769 → 0,442). Karena ketiga pemakaian mengatur tinggi dengan
+`w-auto`, lebarnya mengecil — halaman masuk dari ~246 px menjadi 142 px. Untuk hiasan sudut
+ini dinilai lebih rapi, tetapi bila kelak terasa terlalu kecil, ubah kelas tinggi di
+`LoginPage.tsx`, bukan memotong ulang gambarnya.
+
+**Verifikasi:** kedua berkas tersaji `HTTP 200 image/webp`; `guru-grup` termuat di landing
+(369×520 → tampil 182×256) dan `guru-tunggal` di halaman masuk (283×640 → tampil 142×320),
+keduanya dengan rasio terjaga. Ilustrasi beranda **belum terverifikasi secara visual** karena
+hanya dirender pada breakpoint < 1024 px (`BerandaMobile`) dan alat uji yang dipakai tidak
+dapat menyetel lebar viewport; asetnya sama dengan yang terbukti termuat di landing.

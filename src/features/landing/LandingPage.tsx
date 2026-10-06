@@ -17,7 +17,7 @@ import {
   Youtube,
 } from 'lucide-react'
 
-import ilustrasiGrup from '@/assets/ilustrasi/guru-khaki-grup.svg'
+import ilustrasiGrup from '@/assets/ilustrasi/guru-grup.webp'
 import { Logo } from '@/components/ui/Logo'
 import { APP_NAME } from '@/lib/env'
 import { cn } from '@/lib/cn'
@@ -182,7 +182,7 @@ export function LandingPage() {
             <PhoneMockup />
             <img
               src={ilustrasiGrup}
-              alt="Ilustrasi guru berseragam khaki"
+              alt="Ilustrasi guru pria berpeci dan guru wanita berhijab"
               className="absolute -bottom-2 right-0 h-44 w-auto sm:h-56 md:h-64"
               loading="eager"
             />

@@ -11,7 +11,7 @@ import {
   Users,
 } from 'lucide-react'
 
-import ilustrasiGrup from '@/assets/ilustrasi/guru-khaki-grup.svg'
+import ilustrasiGrup from '@/assets/ilustrasi/guru-grup.webp'
 import { LayananGrid } from '@/components/ui/LayananGrid'
 import { Logo } from '@/components/ui/Logo'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -74,7 +74,7 @@ function BerandaMobile() {
           )}
         </div>
 
-        {/* FR-UI-16 — ilustrasi guru khaki (placeholder) mengintip dari tepi kartu */}
+        {/* FR-UI-16 — ilustrasi guru mengintip dari tepi kartu */}
         <img
           src={ilustrasiGrup}
           alt=""
