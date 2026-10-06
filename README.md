@@ -10,8 +10,10 @@ desktop), dan layar TV.
 - Dokumen spesifikasi: [`docs/spesifikasi-aplikasi-presensi-smk.md`](docs/spesifikasi-aplikasi-presensi-smk.md).
 - Catatan keputusan: [`CATATAN-KEPUTUSAN.md`](CATATAN-KEPUTUSAN.md).
 
-> Status: **Fase 0 selesai** — kerangka UI, token desain, dua layout (bottom menu & sidebar),
-> PWA, landing page, halaman masuk, dan beranda dengan data contoh (KP-0.5).
+> Status: **Fase 0 dan Fase 1 selesai.**
+> Fase 0 — kerangka UI, token desain, dua layout (bottom menu & sidebar), PWA, landing page, halaman masuk.
+> Fase 1 — halaman master data (tahun pelajaran & semester, jurusan, kelas, siswa, guru & pegawai, mapel),
+> import/export Excel, dan halaman pengaturan (Info Sekolah + tab Landing, hari libur, sistem, pengguna & peran, audit log).
 > Halaman fitur fase berikutnya ditandai "dijadwalkan pada Fase N" (Bagian 11), tanpa fitur di luar spesifikasi.
 
 ---

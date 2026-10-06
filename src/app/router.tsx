@@ -9,6 +9,17 @@ import { LambangSipandu } from '@/components/ui/Logo'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { FiturSegera } from '@/features/umum/FiturSegera'
+import { HariLiburPage } from '@/features/master/HariLiburPage'
+import { JurusanPage } from '@/features/master/JurusanPage'
+import { KelasPage } from '@/features/master/KelasPage'
+import { MapelPage } from '@/features/master/MapelPage'
+import { PegawaiPage } from '@/features/master/PegawaiPage'
+import { SiswaPage } from '@/features/master/SiswaPage'
+import { TahunPelajaranPage } from '@/features/master/TahunPelajaranPage'
+import { AuditLogPage } from '@/features/pengaturan/AuditLogPage'
+import { InfoSekolahPage } from '@/features/pengaturan/InfoSekolahPage'
+import { PengaturanSistemPage } from '@/features/pengaturan/PengaturanSistemPage'
+import { PenggunaPage } from '@/features/pengaturan/PenggunaPage'
 import { GantiPasswordPage } from '@/features/umum/GantiPasswordPage'
 import { LayananPage } from '@/features/umum/LayananPage'
 import { NotFoundPage } from '@/features/umum/NotFoundPage'
@@ -99,21 +110,12 @@ export function AppRouter() {
             />
 
             {/* Master data */}
-            <Route
-              path="/master/tahun-pelajaran"
-              element={<FiturSegera judul="Tahun Pelajaran & Semester" fase="Fase 1" />}
-            />
-            <Route
-              path="/master/jurusan"
-              element={<FiturSegera judul="Jurusan" fase="Fase 1" />}
-            />
-            <Route path="/master/kelas" element={<FiturSegera judul="Kelas" fase="Fase 1" />} />
-            <Route path="/master/siswa" element={<FiturSegera judul="Siswa" fase="Fase 1" />} />
-            <Route
-              path="/master/pegawai"
-              element={<FiturSegera judul="Guru & Pegawai" fase="Fase 1" />}
-            />
-            <Route path="/master/mapel" element={<FiturSegera judul="Mata Pelajaran" fase="Fase 1" />} />
+            <Route path="/master/tahun-pelajaran" element={<TahunPelajaranPage />} />
+            <Route path="/master/jurusan" element={<JurusanPage />} />
+            <Route path="/master/kelas" element={<KelasPage />} />
+            <Route path="/master/siswa" element={<SiswaPage />} />
+            <Route path="/master/pegawai" element={<PegawaiPage />} />
+            <Route path="/master/mapel" element={<MapelPage />} />
 
             {/* Penugasan & akademik */}
             <Route
@@ -194,10 +196,7 @@ export function AppRouter() {
             />
 
             {/* Pengaturan */}
-            <Route
-              path="/pengaturan/info-sekolah"
-              element={<FiturSegera judul="Info Sekolah" fase="Fase 1" />}
-            />
+            <Route path="/pengaturan/info-sekolah" element={<InfoSekolahPage />} />
             <Route
               path="/pengaturan/lokasi"
               element={<FiturSegera judul="Lokasi Presensi" fase="Fase 3" />}
@@ -206,14 +205,8 @@ export function AppRouter() {
               path="/pengaturan/jam-kerja"
               element={<FiturSegera judul="Jam Kerja" fase="Fase 3" />}
             />
-            <Route
-              path="/pengaturan/hari-libur"
-              element={<FiturSegera judul="Hari Libur" fase="Fase 1" />}
-            />
-            <Route
-              path="/pengaturan/sistem"
-              element={<FiturSegera judul="Pengaturan Sistem" fase="Fase 3" />}
-            />
+            <Route path="/pengaturan/hari-libur" element={<HariLiburPage />} />
+            <Route path="/pengaturan/sistem" element={<PengaturanSistemPage />} />
             <Route
               path="/pengaturan/kop-surat"
               element={<FiturSegera judul="Kop Surat" fase="Fase 5" />}
@@ -226,14 +219,8 @@ export function AppRouter() {
               path="/pengaturan/tv"
               element={<FiturSegera judul="Pengaturan Layar TV" fase="Fase 6" />}
             />
-            <Route
-              path="/pengaturan/pengguna"
-              element={<FiturSegera judul="Pengguna & Peran" fase="Fase 1" />}
-            />
-            <Route
-              path="/pengaturan/audit-log"
-              element={<FiturSegera judul="Audit Log" fase="Fase 1" />}
-            />
+            <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
+            <Route path="/pengaturan/audit-log" element={<AuditLogPage />} />
           </Route>
 
           <Route path="/404" element={<NotFoundPage />} />
