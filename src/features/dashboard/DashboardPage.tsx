@@ -11,7 +11,7 @@ import {
   Users,
 } from 'lucide-react'
 
-import ilustrasiGrup from '@/assets/ilustrasi/guru-grup.webp'
+import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.svg'
 import { LayananGrid } from '@/components/ui/LayananGrid'
 import { Logo } from '@/components/ui/Logo'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -58,7 +58,7 @@ function BerandaMobile() {
           </Link>
         </div>
 
-        <div className="relative mt-4 pr-24">
+        <div className="relative mt-4 pr-44">
           <h1 className="text-[26px] font-extrabold uppercase leading-[1.1] text-strong">
             {user?.nama ?? 'Pengguna'}
           </h1>
@@ -79,7 +79,7 @@ function BerandaMobile() {
           src={ilustrasiGrup}
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute -right-6 bottom-0 h-40 w-auto"
+          className="pointer-events-none absolute -right-6 bottom-0 h-32 w-auto"
         />
       </div>
 

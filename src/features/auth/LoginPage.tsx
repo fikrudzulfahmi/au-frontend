@@ -6,7 +6,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { z } from 'zod'
 
-import ilustrasiTunggal from '@/assets/ilustrasi/guru-tunggal.webp'
+import ilustrasiTunggal from '@/assets/ilustrasi/guru-ilustrasi.svg'
 import { Button } from '@/components/ui/Button'
 import { FormField, kelasInput } from '@/components/ui/FormField'
 import { Logo } from '@/components/ui/Logo'

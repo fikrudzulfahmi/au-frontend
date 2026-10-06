@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5fbff"/>
+      <stop offset="1" stop-color="#eef5fa"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#edf3ff"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Latar -->
+  <rect width="1200" height="800" fill="url(#bg)"/>
+
+  <!-- Kartu dashboard -->
+  <rect x="72" y="120" width="735" height="570" rx="58" fill="url(#panel)" stroke="#153d59" stroke-width="16"/>
+
+  <!-- Isi kartu -->
+  <rect x="130" y="180" width="225" height="28" rx="14" fill="#a9b7e2"/>
+  <rect x="130" y="232" width="340" height="30" rx="15" fill="#8f9fd4"/>
+  <rect x="130" y="286" width="235" height="28" rx="14" fill="#b5c2e6"/>
+
+  <rect x="116" y="350" width="640" height="285" rx="38" fill="#ffffff"/>
+  <rect x="160" y="395" width="260" height="24" rx="12" fill="#dce7ef"/>
+  <rect x="160" y="455" width="190" height="38" rx="19" fill="#7bd39a"/>
+  <rect x="160" y="515" width="190" height="38" rx="19" fill="#f48b91"/>
+
+  <circle cx="180" cy="600" r="38" fill="#c9ead2"/>
+  <circle cx="300" cy="600" r="38" fill="#8bc6f0"/>
+  <circle cx="420" cy="600" r="38" fill="#ffad70"/>
+
+  <!-- Busur hias di belakang guru pria -->
+  <path d="M625 405 A95 95 0 0 1 625 595" fill="none" stroke="#a8b8e8" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- ================= GURU PRIA ================= -->
+  <!-- badan kemeja koko -->
+  <path d="M670 438 Q720 400 770 438 L835 690 L650 690 Z" fill="#f8f8f7"/>
+  <path d="M670 438 Q720 465 770 438" fill="none" stroke="#d6d9dc" stroke-width="4"/>
+
+  <!-- celana -->
+  <path d="M690 670 L752 670 L752 760 L675 760 Z" fill="#292b35"/>
+  <path d="M752 670 L814 670 L838 760 L760 760 Z" fill="#292b35"/>
+
+  <!-- leher -->
+  <path d="M700 382 L748 382 L748 445 Q724 462 700 445 Z" fill="#f2b878"/>
+
+  <!-- kepala -->
+  <circle cx="724" cy="326" r="82" fill="#f4bd80"/>
+  <circle cx="645" cy="337" r="17" fill="#f0b574"/>
+  <circle cx="803" cy="337" r="17" fill="#f0b574"/>
+
+  <!-- songkok -->
+  <path d="M653 275 Q724 218 795 275 L790 315 L658 315 Z" fill="#25252a"/>
+  <path d="M662 270 Q724 230 786 270" fill="none" stroke="#303038" stroke-width="8"/>
+
+  <!-- rambut -->
+  <path d="M666 302 Q675 267 700 260 L748 260 Q776 268 784 302" fill="#29272a"/>
+
+  <!-- wajah -->
+  <circle cx="696" cy="330" r="5" fill="#303033"/>
+  <circle cx="752" cy="330" r="5" fill="#303033"/>
+  <path d="M710 357 Q724 368 738 357" fill="none" stroke="#9f5944" stroke-width="5" stroke-linecap="round"/>
+  <path d="M724 333 L720 350 L727 350" fill="none" stroke="#d98b62" stroke-width="4"/>
+
+  <!-- kancing koko -->
+  <path d="M724 444 L724 600" stroke="#d7dadd" stroke-width="4"/>
+  <circle cx="724" cy="486" r="6" fill="#cfd3d8"/>
+  <circle cx="724" cy="535" r="6" fill="#cfd3d8"/>
+
+  <!-- LENGAN BAJU (koko putih) — sebelumnya berlengan warna kulit tanpa tangan -->
+  <path d="M676 452 Q646 490 682 534 L730 568" fill="none" stroke="#e0e4e7" stroke-width="38" stroke-linecap="round"/>
+  <path d="M676 452 Q646 490 682 534 L730 568" fill="none" stroke="#f8f8f7" stroke-width="32" stroke-linecap="round"/>
+  <path d="M774 452 Q810 486 788 534 L746 568" fill="none" stroke="#e0e4e7" stroke-width="38" stroke-linecap="round"/>
+  <path d="M774 452 Q810 486 788 534 L746 568" fill="none" stroke="#f8f8f7" stroke-width="32" stroke-linecap="round"/>
+
+  <!-- buku (di atas lengan, di bawah tangan) -->
+  <rect x="704" y="500" width="105" height="150" rx="8" transform="rotate(-9 704 500)" fill="#183d61"/>
+  <rect x="713" y="507" width="88" height="136" rx="5" transform="rotate(-9 713 507)" fill="#244d73"/>
+  <path d="M720 520 L786 510" stroke="#ffffff" stroke-width="4" opacity=".7"/>
+
+  <!-- TANGAN memegang buku (sebelumnya tidak ada) -->
+  <ellipse cx="724" cy="566" rx="25" ry="21" fill="#f4bd80"/>
+  <path d="M706 560 Q724 552 742 560" fill="none" stroke="#e0a066" stroke-width="3" stroke-linecap="round"/>
+  <path d="M706 572 Q724 564 742 572" fill="none" stroke="#e0a066" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="756" cy="576" rx="22" ry="18" fill="#f4bd80"/>
+  <path d="M740 570 Q756 563 772 570" fill="none" stroke="#e0a066" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- ================= GURU WANITA ================= -->
+  <!-- gaun -->
+  <path d="M905 455 Q975 415 1040 455 L1115 760 L840 760 Z" fill="#d9c1a5"/>
+  <path d="M900 500 Q975 540 1045 500" fill="none" stroke="#c2a98e" stroke-width="5"/>
+
+  <!-- leher -->
+  <path d="M946 390 L1002 390 L1002 452 Q974 470 946 452 Z" fill="#f1bb83"/>
+
+  <!-- kerudung luar -->
+  <path d="M865 355 Q875 235 974 215 Q1075 235 1088 355
+           L1110 515 Q1070 565 1022 548 L974 505 L925 548 Q875 565 838 515 Z"
+        fill="#d8c0a5"/>
+  <!-- kerudung dalam -->
+  <path d="M906 348 Q910 267 974 252 Q1040 267 1045 348
+           L1034 430 Q974 470 916 430 Z" fill="#efd8bd"/>
+  <!-- wajah -->
+  <ellipse cx="974" cy="347" rx="62" ry="78" fill="#f4bd80"/>
+  <!-- bingkai kerudung -->
+  <path d="M912 337 Q918 265 974 250 Q1030 265 1038 337
+           Q1020 305 974 300 Q930 305 912 337Z" fill="#d0b59a"/>
+  <!-- mata -->
+  <circle cx="950" cy="350" r="5" fill="#303033"/>
+  <circle cx="998" cy="350" r="5" fill="#303033"/>
+  <path d="M956 379 Q974 392 992 379" fill="none" stroke="#a35b45" stroke-width="5" stroke-linecap="round"/>
+  <path d="M974 354 L970 370 L977 370" fill="none" stroke="#d98b62" stroke-width="4"/>
+  <!-- lipatan kerudung -->
+  <path d="M886 407 Q930 455 974 478 Q1018 455 1062 407" fill="none" stroke="#c5aa91" stroke-width="9" opacity=".8"/>
+  <path d="M872 460 Q925 510 974 535 Q1025 510 1078 460" fill="none" stroke="#c5aa91" stroke-width="8" opacity=".65"/>
+
+  <!-- lengan gaun -->
+  <path d="M898 475 Q875 510 908 560 L970 590" fill="none" stroke="#cdb498" stroke-width="38" stroke-linecap="round"/>
+  <path d="M898 475 Q875 510 908 560 L970 590" fill="none" stroke="#d9c1a5" stroke-width="32" stroke-linecap="round"/>
+  <path d="M1048 475 Q1078 510 1050 560 L1000 590" fill="none" stroke="#cdb498" stroke-width="38" stroke-linecap="round"/>
+  <path d="M1048 475 Q1078 510 1050 560 L1000 590" fill="none" stroke="#d9c1a5" stroke-width="32" stroke-linecap="round"/>
+
+  <!-- buku -->
+  <rect x="972" y="500" width="108" height="150" rx="8" transform="rotate(-5 972 500)" fill="#183d61"/>
+  <rect x="981" y="507" width="91" height="136" rx="5" transform="rotate(-5 981 507)" fill="#244d73"/>
+
+  <!-- tangan -->
+  <ellipse cx="970" cy="590" rx="23" ry="19" fill="#f4bd80"/>
+  <path d="M954 585 Q970 578 986 585" fill="none" stroke="#e0a066" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="1002" cy="590" rx="21" ry="17" fill="#f4bd80"/>
+</svg>

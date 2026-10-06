@@ -239,3 +239,46 @@ ini dinilai lebih rapi, tetapi bila kelak terasa terlalu kecil, ubah kelas tingg
 keduanya dengan rasio terjaga. Ilustrasi beranda **belum terverifikasi secara visual** karena
 hanya dirender pada breakpoint < 1024 px (`BerandaMobile`) dan alat uji yang dipakai tidak
 dapat menyetel lebar viewport; asetnya sama dengan yang terbukti termuat di landing.
+
+### Revisi K-47..K-52 (6 Oktober 2026, setelah penilaian pemilik)
+
+Pemilik menilai hasil potongan **terlihat terpotong**, dan memberikan versi SVG dari
+ilustrasi yang sama. Pendekatan potong-lalu-WebP pada K-47..K-52 karena itu **dibatalkan**
+dan diganti satu SVG utuh. Alasan teknis mengapa ini lebih baik, bukan sekadar mengikuti
+permintaan:
+
+| Aspek | Potongan WebP (dibatalkan) | SVG utuh (dipakai) |
+|---|---|---|
+| Bagian gambar | 2 potongan, mockup dashboard dibuang | Utuh 1200x800, tidak ada yang hilang |
+| Berat | 22,3 KB (dua berkas) | 6,84 KB, gzip 1,97 KB |
+| Ketajaman | raster 2x, pecah bila diperbesar | vektor, tajam di segala ukuran |
+| Precahce PWA | 1050,60 KiB | 1035,90 KiB (lebih baik dari sebelum perubahan) |
+| Latar | perlu dijadikan transparan | sudah transparan |
+
+**K-53 — SVG yang diberikan pemilik diperbaiki sebelum dipakai.** Hasil SVG-nya memang tidak
+teratur, dan penyebabnya ditemukan dari pembacaan berkas, bukan dugaan:
+
+1. **Lengan guru pria berlengan warna kulit tanpa tangan** — dua goresan `stroke="#f4bd80"`
+   (30 px) dari bahu sampai ke buku, digambar *di atas* kemeja putih dan buku, tanpa bentuk
+   tangan sama sekali. Akibatnya tampak berlengan telanjang menembus kemeja.
+   Diukur pada kanvas: piksel kulit di area lengan/buku **16,6%** sebelum, **6,0%** sesudah —
+   dan buku tidak lagi terbelah. Lengan kini koko putih bergaris tepi, dengan tangan
+   digambar **setelah** buku agar memegang, bukan menembus.
+2. **Garis tanah (`#d7e3ea`) nyaris tak terlihat** dan hanya membentang di bawah figur
+   (x 615..1130) sehingga tampak menggantung. Gambar acuan **tidak punya** garis tanah —
+   jadi dihapus, bukan dipertegas. Diverifikasi: baris y=760 kini kosong.
+3. **Proporsi kepala BUKAN masalah.** Sempat saya duga kepala pria terlalu besar; pengukuran
+   gambar acuan menunjukkan rasio kepala/badan 1,03 sementara SVG 1,04 — praktis sama.
+   Dugaan tanpa ukur itu hampir menghasilkan "perbaikan" yang justru merusak.
+4. Tangan guru wanita diberi garis jari dan lengan gaunnya diberi garis tepi agar terpisah
+   dari badan gaun (sebelumnya menyatu).
+
+**Penempatan.** Ilustrasi kini lanskap (rasio 1,5), bukan potret seperti dua SVG lama, jadi
+ruang yang disediakan perlu disesuaikan di beranda mobile: judul diberi ruang kanan
+`pr-24` -> `pr-44` dan tinggi ilustrasi `h-40` -> `h-32` agar tidak bertabrakan dengan teks.
+Di halaman masuk dan landing, ukuran lama tetap dipakai dan rasio 1,5 terjaga utuh.
+
+**Verifikasi.** `guru-ilustrasi.svg` termuat di landing (1200x800 -> tampil 384x256) dan
+halaman masuk (-> tampil 480x320), keduanya rasio 1,500 — tidak ada yang terpotong.
+Ilustrasi beranda **belum terverifikasi visual** karena hanya dirender pada breakpoint
+< 1024 px (`BerandaMobile`), sedangkan alat uji tidak dapat menyetel lebar viewport.
