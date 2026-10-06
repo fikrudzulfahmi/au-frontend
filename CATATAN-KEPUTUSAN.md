@@ -77,3 +77,55 @@ Tanggal: 6 Oktober 2026 · Status: selesai (94 uji backend, 24 uji frontend)
 | Tahun 4 digit (mis. `2024`) pada import tersimpan sebagai **1905-07-18** | Nilai `2024` berada di dalam rentang serial tanggal Excel (1..2958465), sehingga dibaca sebagai serial | `ExcelService::normalisasiTanggal()` tidak lagi menafsirkan bilangan bulat 1900–2100 sebagai serial; tahun dibaca lebih dahulu, dan angka 8 digit (mis. `20240517`) diperlakukan sebagai `Ymd` |
 | Password awal hasil import pegawai selalu kosong | `PegawaiService::buat()` sudah membuat akun, lalu `buatAkun()` dipanggil lagi dan mengembalikan `password_awal = null` | Akun dibuat setelah pegawai tersimpan, sehingga password awalnya dapat dilaporkan |
 | Nama tahun pelajaran pada factory dapat bertabrakan | `nama` dibuat acak dari rentang tahun yang sama | Factory memakai penghitung berurutan agar `nama` selalu unik |
+
+---
+
+## G. Catatan keamanan dependensi (6 Oktober 2026)
+
+### Celah yang ditutup di sisi aplikasi — open redirect setelah masuk
+
+Halaman masuk mengalihkan pengguna ke halaman yang tadi diminta, memakai nilai
+`location.state.dari` yang diisi `RequireAuth` dari `location.pathname`. Karena pathname
+dapat dipengaruhi URL yang dikirim penyerang, tautan yang dibuat khusus dapat membuat
+pengguna terlempar ke situs lain tepat setelah berhasil masuk.
+
+Ini jalur yang sama dengan advisory react-router pada rentang 6.0.0 - 7.17.0 (open redirect
+lewat backslash pada `<Link>`/`useNavigate`, CVE-2025-68470 bypass). Selain open redirect,
+advisory itu juga mencakup `deserializeErrors()` pada SSR hydration — bagian ini tidak
+berlaku di sini karena SPA tanpa SSR.
+
+Celah ditutup di sisi aplikasi lebih dulu (`src/lib/jalur.ts` → `jalurAman()`), tanpa
+mengubah dependensi, karena tidak ada patch dalam rentang v6. Lihat commit "fix(auth):
+cegah open redirect pada tujuan pengalihan setelah masuk" dan 7 uji di `src/lib/jalur.test.ts`.
+
+### Advisory yang belum ditangani
+
+| Paket | Versi | Keparahan | Lingkup | Perbaikan yang disarankan |
+|---|---|---|---|---|
+| `react-router` / `react-router-dom` | 6.30.6 | sedang | **produksi** | 7.18.4 (mayor, breaking) |
+| `vitest` | 3.2.7 | kritis | dev (perkakas uji) | 5.0.3 (mayor, breaking) |
+| `tinypool` | 1.1.1 | kritis | dev (perkakas uji) | lewat vitest 5.0.3 |
+| `@vitest/mocker` | 3.2.7 | sedang | dev (perkakas uji) | lewat vitest 5.0.3 |
+
+Hanya `react-router-dom` yang ikut terkirim ke produksi. Jejak pemakaiannya 16 berkas,
+tetapi terbatas pada API dasar (`BrowserRouter`, `Routes`, `Route`, `Link`, `NavLink`,
+`Navigate`, `Outlet`, `useLocation`, `useNavigate`) yang namanya sama di v7, sehingga
+migrasinya berisiko rendah. Empat advisory lain hanya menyentuh perkakas uji di mesin
+pengembang dan tidak ikut ke bundel produksi.
+
+### Penghalang lingkungan — npm `allow-remote = "none"`
+
+npm 12 di mesin ini menyetel `allow-remote = "none"` (proteksi rantai pasok bawaan),
+sehingga **setiap perubahan dependensi ditolak**, termasuk `npm audit fix` dan bahkan
+`npm install … --dry-run`:
+
+```
+npm error code EALLOWREMOTE
+npm error Fetching packages of type "remote" have been disabled
+npm error Refusing to fetch "…/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.3.3.tgz"
+```
+
+Jalan keluar: `npm install --allow-remote all` (atau `root`) untuk sekali jalan, atau
+menyetelnya di `.npmrc`. Ini **menurunkan proteksi rantai pasok**, sehingga keputusannya
+diserahkan ke pemilik proyek. Selama belum dibuka, versi dependensi tidak dapat dinaikkan
+sama sekali — jadi pembaruan keamanan apa pun di fase berikutnya juga ikut tertahan.
