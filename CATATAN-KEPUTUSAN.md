@@ -98,20 +98,26 @@ Celah ditutup di sisi aplikasi lebih dulu (`src/lib/jalur.ts` → `jalurAman()`)
 mengubah dependensi, karena tidak ada patch dalam rentang v6. Lihat commit "fix(auth):
 cegah open redirect pada tujuan pengalihan setelah masuk" dan 7 uji di `src/lib/jalur.test.ts`.
 
-### Advisory yang belum ditangani
+### Advisory dependensi
 
-| Paket | Versi | Keparahan | Lingkup | Perbaikan yang disarankan |
+| Paket | Versi | Keparahan | Lingkup | Status |
 |---|---|---|---|---|
-| `react-router` / `react-router-dom` | 6.30.6 | sedang | **produksi** | 7.18.4 (mayor, breaking) |
-| `vitest` | 3.2.7 | kritis | dev (perkakas uji) | 5.0.3 (mayor, breaking) |
-| `tinypool` | 1.1.1 | kritis | dev (perkakas uji) | lewat vitest 5.0.3 |
-| `@vitest/mocker` | 3.2.7 | sedang | dev (perkakas uji) | lewat vitest 5.0.3 |
+| `react-router` / `react-router-dom` | 6.30.6 → **7.18.4** | sedang | **produksi** | **SELESAI** — dinaikkan ke v7.18.4 |
+| `vitest` | 3.2.7 | kritis | dev (perkakas uji) | belum — menuntut vitest 5.x |
+| `tinypool` | 1.1.1 | kritis | dev (perkakas uji) | belum — lewat vitest 5.x |
+| `@vitest/mocker` | 3.2.7 | sedang | dev (perkakas uji) | belum — lewat vitest 5.x |
 
-Hanya `react-router-dom` yang ikut terkirim ke produksi. Jejak pemakaiannya 16 berkas,
-tetapi terbatas pada API dasar (`BrowserRouter`, `Routes`, `Route`, `Link`, `NavLink`,
-`Navigate`, `Outlet`, `useLocation`, `useNavigate`) yang namanya sama di v7, sehingga
-migrasinya berisiko rendah. Empat advisory lain hanya menyentuh perkakas uji di mesin
-pengembang dan tidak ikut ke bundel produksi.
+`react-router-dom` 6.30.6 → **7.18.4** (commit "chore(deps): naikkan react-router-dom ke
+v7.18.4"). Jejak pemakaiannya 16 berkas tetapi terbatas pada API dasar
+(`BrowserRouter`, `Routes`, `Route`, `Link`, `NavLink`, `Navigate`, `Outlet`,
+`useLocation`, `useNavigate`) yang namanya sama di v7, sehingga migrasinya hanya
+menuntut penyesuaian versi. Diverifikasi: typecheck & lint bersih, 31 uji lulus, build
+sukses, ditambah uji asap peramban — masuk, enam navigasi klien-sisi tanpa reload penuh
+(penanda `window` bertahan), catch-all 404, dan pengalihan sah (`/master/pegawai` →
+masuk → kembali ke `/master/pegawai`) tetap bekerja.
+
+Tiga advisory sisanya hanya menyentuh perkakas uji di mesin pengembang — tidak ikut ke
+bundel produksi. Perbaikannya menuntut vitest 5.x (breaking) dan belum dikerjakan.
 
 ### Penghalang lingkungan — npm `allow-remote = "none"`
 
@@ -125,7 +131,13 @@ npm error Fetching packages of type "remote" have been disabled
 npm error Refusing to fetch "…/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.3.3.tgz"
 ```
 
-Jalan keluar: `npm install --allow-remote all` (atau `root`) untuk sekali jalan, atau
-menyetelnya di `.npmrc`. Ini **menurunkan proteksi rantai pasok**, sehingga keputusannya
-diserahkan ke pemilik proyek. Selama belum dibuka, versi dependensi tidak dapat dinaikkan
-sama sekali — jadi pembaruan keamanan apa pun di fase berikutnya juga ikut tertahan.
+Jalan keluar: `allow-remote=root` **tidak cukup** — pesannya berubah menjadi
+"Fetching non-root packages of type \"remote\" have been disabled", karena
+`@tailwindcss/oxide-wasm32-wasi` adalah dependensi turunan (bukan akar).
+
+Keputusan pemilik proyek: menyetel `allow-remote=all` di `.npmrc` **proyek** (ikut
+ter-commit) agar pembaruan keamanan berikutnya tidak tertahan. Berkas itu memuat
+komentar yang menjelaskan alasan dan rambunya: izin ini hanya untuk memasang paket yang
+sudah ada di `package-lock.json`; menambah dependensi baru tetap harus meninjau
+asal-usulnya. Rambu lain yang masih aktif dan sengaja tidak dibuka:
+`allow-scripts` (skrip pemasangan tetap diblokir) dan `allow-git=none`.
