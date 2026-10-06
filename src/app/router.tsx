@@ -29,6 +29,10 @@ import { NaikKelasPage } from '@/features/plotting/NaikKelasPage'
 import { PlottingKelasPage } from '@/features/plotting/PlottingKelasPage'
 import { PlottingMapelPage } from '@/features/plotting/PlottingMapelPage'
 import { HariLiburPage } from '@/features/master/HariLiburPage'
+import { LAPORAN } from '@/features/laporan/config'
+import { HubLaporanPage } from '@/features/laporan/HubLaporanPage'
+import { LaporanPage } from '@/features/laporan/LaporanPage'
+import { PengaturanDokumenPage } from '@/features/pengaturan/PengaturanDokumenPage'
 import { JurusanPage } from '@/features/master/JurusanPage'
 import { KelasPage } from '@/features/master/KelasPage'
 import { MapelPage } from '@/features/master/MapelPage'
@@ -153,42 +157,12 @@ export function AppRouter() {
             <Route path="/persetujuan/pengajuan" element={<PersetujuanPengajuanPage />} />
 
             {/* Laporan */}
-            <Route
-              path="/laporan/presensi/rekap"
-              element={<FiturSegera judul="Rekap Presensi Pegawai" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/presensi/detail"
-              element={<FiturSegera judul="Detail Presensi Pegawai" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/presensi/harian"
-              element={<FiturSegera judul="Presensi Harian Semua Pegawai" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/izin"
-              element={<FiturSegera judul="Rekap Izin / Sakit / Dinas / Cuti" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/luar-radius"
-              element={<FiturSegera judul="Rekap Presensi Luar Radius" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/presensi-siswa"
-              element={<FiturSegera judul="Rekap Presensi Siswa" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/jurnal"
-              element={<FiturSegera judul="Daftar Jurnal" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/jurnal/kepatuhan"
-              element={<FiturSegera judul="Kepatuhan Jurnal per Guru" fase="Fase 5" />}
-            />
-            <Route
-              path="/laporan/jam-mengajar"
-              element={<FiturSegera judul="Rekap Jam Mengajar Terlaksana" fase="Fase 5" />}
-            />
+            {/* FR-LAP-01..09 — satu halaman generik per laporan; jalur rutenya
+                diambil dari registri `LAPORAN` agar tidak ada jalur yang menyimpang. */}
+            <Route path="/laporan" element={<HubLaporanPage />} />
+            {LAPORAN.map((l) => (
+              <Route key={l.jalur} path={l.jalur} element={<LaporanPage konfigurasi={l} />} />
+            ))}
 
             {/* Pengaturan */}
             <Route path="/pengaturan/info-sekolah" element={<InfoSekolahPage />} />
@@ -196,13 +170,14 @@ export function AppRouter() {
             <Route path="/pengaturan/jam-kerja" element={<PengaturanJamKerjaPage />} />
             <Route path="/pengaturan/hari-libur" element={<HariLiburPage />} />
             <Route path="/pengaturan/sistem" element={<PengaturanSistemPage />} />
+            {/* FR-KOP-02..05 — kop, penandatangan, tata letak, dan pratinjau. */}
             <Route
               path="/pengaturan/kop-surat"
-              element={<FiturSegera judul="Kop Surat" fase="Fase 5" />}
+              element={<PengaturanDokumenPage tabAwal="kop" />}
             />
             <Route
               path="/pengaturan/penandatangan"
-              element={<FiturSegera judul="Penandatangan" fase="Fase 5" />}
+              element={<PengaturanDokumenPage tabAwal="penandatangan" />}
             />
             <Route
               path="/pengaturan/tv"

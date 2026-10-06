@@ -58,3 +58,31 @@ export function lencanaPeran(user: Pengguna | null): string {
   if (punyaPeran(user, ROLE.wakasekKurikulum)) return 'WAKASEK'
   return ''
 }
+
+/** FR-LAP-12 — peran pemantau melihat seluruh pegawai. */
+export function penggunaMemantau(user: Pengguna | null): boolean {
+  return punyaPeran(user, ROLE.admin, ROLE.kepalaSekolah, ROLE.wakasekKurikulum)
+}
+
+/**
+ * Matriks Bagian 2 — laporan presensi pegawai (FR-LAP-01..05) dibuka semua
+ * peran: guru & pegawai struktural hanya untuk dirinya sendiri (L(S)).
+ */
+export function bolehLaporanPresensi(user: Pengguna | null): boolean {
+  return punyaPeran(
+    user,
+    ROLE.admin,
+    ROLE.kepalaSekolah,
+    ROLE.wakasekKurikulum,
+    ROLE.guru,
+    ROLE.pegawaiStruktural,
+  )
+}
+
+/**
+ * Matriks Bagian 2 — laporan jurnal & presensi siswa (FR-LAP-06..09) hanya
+ * admin, kepala sekolah, wakasek, dan guru; `pegawai_struktural` tidak berhak.
+ */
+export function bolehLaporanJurnal(user: Pengguna | null): boolean {
+  return punyaPeran(user, ROLE.admin, ROLE.kepalaSekolah, ROLE.wakasekKurikulum, ROLE.guru)
+}

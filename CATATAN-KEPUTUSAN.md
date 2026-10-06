@@ -382,3 +382,29 @@ Tanggal: 6 Oktober 2026. Cakupan: FR-JRN-01..10, BR-19..BR-23, BR-26, A-01, A-09
 
 - Halaman isi jurnal menandai sesi lewat URL `:sesi` = `plottingMapelId-jamKeMulai` + query `?tanggal=`; penanda ini **dicocokkan ke jadwal server**, jadi halaman tidak pernah mengarang sesi (FR-JRN-06).
 - `labelJamKe()` pada model dan `labelJamKe()` pada layanan sengaja ada di dua tempat: yang pertama untuk jurnal tersimpan, yang kedua untuk sesi yang belum tersimpan.
+
+---
+
+## L. Catatan Fase 5 (laporan, kop surat & ekspor)
+
+Tanggal: 6 Oktober 2026. Cakupan: FR-LAP-01..12, FR-KOP-02..06, KP-5.1..5.5.
+
+| No | Keputusan | Alasan / dampak |
+|---|---|---|
+| K-75 | Satu komponen `LaporanPage` digerakkan **konfigurasi** (`features/laporan/config.ts`), bukan sembilan halaman terpisah. | Kesembilan laporan berbagi kerangka yang sama: filter periode, tabel, tombol ekspor, metadata kop. Menyalin sembilan kali berarti sembilan tempat untuk salah saat satu aturan berubah. `config.ts` memuat jalur, endpoint, judul, filter, dan pembatasan peran tiap laporan. |
+| K-76 | Tombol ekspor memakai **XHR/blob lewat `api.get(responseType:'blob')`**, bukan `<a href>`. | Endpoint ekspor menuntut header `Authorization`; tautan biasa dibalas 401. Alur: ambil blob → `URL.createObjectURL` → `<a download>` sementara → klik → `revokeObjectURL`. |
+| K-77 | Nama berkas diambil dari header `Content-Disposition`, dengan dukungan **tiga bentuk** (`filename="..."`, `filename=...` tanpa kutip, dan RFC 5987 `filename*=UTF-8''...`). | Server dapat mengganti bentuk penulisannya; mengandalkan satu bentuk saja membuat nama berkas jatuh ke cadangan tanpa gejala yang terlihat. |
+| K-78 | Interceptor respons di `lib/api.ts` dibuat **async** dan membaca ulang galat yang tiba sebagai `Blob`. | Saat `responseType:'blob'`, badan galat (JSON 422 berisi pesan aturan bisnis) tiba sebagai Blob sehingga pesannya hilang dan pengguna hanya melihat "[object Blob]". Hanya interceptor **respons** yang diubah; jalur multipart tidak disentuh. |
+| K-79 | Nilai `periode` memakai kosakata **server** (`hari_ini`, `minggu_ini`, `bulan_ini`, `rentang`), dan `dari`/`sampai` dikirim **hanya** pada mode rentang. | Mengirim `dari`/`sampai` pada mode bulan membuat server menerima rentang yang bertentangan dengan periode. `paramsPeriode()` memusatkan aturan ini dan diuji. |
+| K-80 | Halaman pengaturan dipisah: **Kop Surat** dan **Penandatangan** sebagai menu tersendiri (`PengaturanDokumenPage`), bukan menumpang di Info Sekolah. | FR-KOP-01 menegaskan kop hanya menambah pengaturan *tampilan* di atas data Info Sekolah; mencampurnya di satu halaman membuat sumber data dan tata letak tercampur. |
+| K-81 | Tiga bug ditemukan saat memeriksa hasil kerja subagen — bukan oleh ujinya sendiri: (1) `function () =>` alih-alih `queryFn: () =>` di `useDataLaporan.ts` membuat berkas tidak dapat di-parse (5 galat TypeScript); (2) `del` diimpor dari `@/lib/crud` padahal diekspor `@/lib/api`; (3) `FormPenandatangan` tidak memuat `ada_ttd`/`ada_stempel` yang dipakai formulir, padahal server sudah mengirimnya. | Subagen kehabisan batas iterasi sebelum menjalankan typecheck, sehingga galat tipe tidak pernah muncul. Semuanya jenis kesalahan "nama yang dikira benar" — persis alasan typecheck wajib dijalankan sebelum commit. |
+| K-82 | `useToast()` **tidak** punya metode `info`; hanya `tampilkan`, `sukses`, dan `gagal`. | Saya sendiri salah memberi tahu subagen bahwa `info` ada. Gunakan `toast.tampilkan(pesan, 'info')`. |
+
+### Catatan penting untuk pengembang berikutnya
+
+**Pelajaran operasional (mahal).** Saat memverifikasi ekspor PDF lewat peramban, hasilnya **tidak konsisten**: kadang berhasil, kadang gagal tanpa jejak. Ternyata penyebabnya bukan kode, melainkan **anak agen lain sedang menyunting backend pada saat yang sama** — ia sempat meninggalkan `routes/api.php` dengan `}` alih-alih `});` sehingga berkas rute tidak dapat di-parse, dan `php artisan serve` yang hanya satu proses membuat permintaan gagal secara acak. Sebelum menyalahkan kode frontend saat perilakunya aneh, **pastikan tidak ada proses lain yang sedang menyentuh backend**, lalu periksa `storage/logs/laravel.log` untuk `ParseError`.
+
+Cara memastikan ekspor benar-benar bekerja, berurutan:
+1. `curl` endpoint ekspor → periksa magic bytes (`%PDF-`, `PK\x03\x04`) dan `Content-Length` yang cocok dengan panjang badan.
+2. Dari peramban, klik tombolnya → perhatikan toast: sukses berbunyi "Berkas ... sedang diunduh", gagal berbunyi pesan galat (tidak pernah senyap).
+3. Uji juga pada peramban pengguna sungguhan — peramban otomasi membatasi hal-hal tertentu.

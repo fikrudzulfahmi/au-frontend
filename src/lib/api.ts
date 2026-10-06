@@ -78,7 +78,7 @@ export function setUnauthorizedHandler(handler: () => void): void {
 
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<ApiErrorBody>) => {
+  async (error: AxiosError<ApiErrorBody>) => {
     const status = error.response?.status ?? 0
 
     if (status === 401) {
@@ -87,7 +87,21 @@ api.interceptors.response.use(
     }
 
     if (error.response) {
-      return Promise.reject(new ApiError(status, error.response.data ?? {}))
+      let body: unknown = error.response.data
+
+      // Unduhan berkas memakai `responseType: 'blob'`, sehingga galat dari
+      // server (mis. 422 "Pilih kelas terlebih dahulu") tiba sebagai Blob
+      // walau isinya JSON. Baca kembali agar pesan bisnisnya tetap sampai ke
+      // pengguna alih-alih menjadi pesan umum.
+      if (typeof Blob !== 'undefined' && body instanceof Blob && body.type !== 'application/octet-stream') {
+        try {
+          body = JSON.parse(await body.text()) as ApiErrorBody
+        } catch {
+          body = undefined
+        }
+      }
+
+      return Promise.reject(new ApiError(status, (body as ApiErrorBody | undefined) ?? {}))
     }
 
     return Promise.reject(
