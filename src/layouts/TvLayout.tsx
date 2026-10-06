@@ -1,9 +1,12 @@
 import { Outlet } from 'react-router-dom'
 
-/** Layout layar TV 16:9 tanpa chrome aplikasi (5.19). */
+/**
+ * Layout layar TV (5.19) — tema gelap, satu-satunya bagian aplikasi bertema
+ * gelap, dan TIDAK boleh menggulir (KP-6.9).
+ */
 export function TvLayout() {
   return (
-    <div className="min-h-dvh bg-[#0B1220] text-white">
+    <div className="fixed inset-0 h-dvh w-screen overflow-hidden bg-[#0B1220] text-white">
       <Outlet />
     </div>
   )
