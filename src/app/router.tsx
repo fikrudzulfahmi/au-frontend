@@ -6,54 +6,156 @@ import { AppShell } from '@/layouts/AppShell'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { TvLayout } from '@/layouts/TvLayout'
 import { LambangSipandu } from '@/components/ui/Logo'
+import { LAPORAN } from '@/features/laporan/config'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { JadwalPage } from '@/features/akademik/JadwalPage'
-import { MonitoringPresensiPage } from '@/features/monitoring/MonitoringPresensiPage'
-import { PersetujuanLuarRadiusPage } from '@/features/monitoring/PersetujuanPage'
-import { PersetujuanPengajuanPage } from '@/features/monitoring/PersetujuanPengajuanPage'
-import { PengaturanJamKerjaPage } from '@/features/pengaturan/PengaturanJamKerjaPage'
-import { PengaturanLokasiPage } from '@/features/pengaturan/PengaturanLokasiPage'
-import { PengajuanIzinBaruPage } from '@/features/presensi/PengajuanIzinBaruPage'
-import { PengajuanLuarRadiusBaruPage } from '@/features/presensi/PengajuanLuarRadiusBaruPage'
-import { PengajuanPage } from '@/features/presensi/PengajuanPage'
-import { PresensiPage } from '@/features/presensi/PresensiPage'
-import { RiwayatPresensiPage } from '@/features/presensi/RiwayatPresensiPage'
-import { JamPelajaranPage } from '@/features/akademik/JamPelajaranPage'
-import { JadwalGuruPage } from '@/features/mengajar/JadwalGuruPage'
-import { IsiJurnalPage } from '@/features/mengajar/jurnal/IsiJurnalPage'
-import { RiwayatJurnalPage } from '@/features/mengajar/jurnal/RiwayatJurnalPage'
-import { RekapWaliKelasPage } from '@/features/wali-kelas/RekapWaliKelasPage'
-import { NaikKelasPage } from '@/features/plotting/NaikKelasPage'
-import { PlottingKelasPage } from '@/features/plotting/PlottingKelasPage'
-import { PlottingMapelPage } from '@/features/plotting/PlottingMapelPage'
-import { HariLiburPage } from '@/features/master/HariLiburPage'
-import { LAPORAN } from '@/features/laporan/config'
-import { HubLaporanPage } from '@/features/laporan/HubLaporanPage'
-import { LaporanPage } from '@/features/laporan/LaporanPage'
-import { PengaturanDokumenPage } from '@/features/pengaturan/PengaturanDokumenPage'
-import { JurusanPage } from '@/features/master/JurusanPage'
-import { KelasPage } from '@/features/master/KelasPage'
-import { MapelPage } from '@/features/master/MapelPage'
-import { PegawaiPage } from '@/features/master/PegawaiPage'
-import { SiswaPage } from '@/features/master/SiswaPage'
-import { TahunPelajaranPage } from '@/features/master/TahunPelajaranPage'
-import { AuditLogPage } from '@/features/pengaturan/AuditLogPage'
-import { InfoSekolahPage } from '@/features/pengaturan/InfoSekolahPage'
-import { PengaturanSistemPage } from '@/features/pengaturan/PengaturanSistemPage'
-import { PenggunaPage } from '@/features/pengaturan/PenggunaPage'
-import { GantiPasswordPage } from '@/features/umum/GantiPasswordPage'
-import { LayananPage } from '@/features/umum/LayananPage'
 import { NotFoundPage } from '@/features/umum/NotFoundPage'
-import { PengaturanTvPage } from '@/features/pengaturan/PengaturanTvPage'
-import { KelolaPengumumanPage } from '@/features/umum/KelolaPengumumanPage'
-import { PengumumanPage } from '@/features/umum/PengumumanPage'
-import { ProfilPage } from '@/features/umum/ProfilPage'
-import { TvPage } from '@/features/tv/TvPage'
 
-// FR-LND-11 — landing dipisah (route-based code splitting) agar JS awal ringan.
+/**
+ * Fase 7 (FR-LND-11 / optimasi kinerja jam sibuk) — pemecahan bundel lewat rute.
+ * Bundel utama hanya memuat kerangka aplikasi, halaman masuk, beranda, dan
+ * registri laporan; setiap halaman lain dimuat saat rutenya benar-benar dibuka.
+ */
 const LandingPage = lazy(() =>
   import('@/features/landing/LandingPage').then((m) => ({ default: m.LandingPage })),
+)
+const TvPage = lazy(() => import('@/features/tv/TvPage').then((m) => ({ default: m.TvPage })))
+
+const LayananPage = lazy(() =>
+  import('@/features/umum/LayananPage').then((m) => ({ default: m.LayananPage })),
+)
+const ProfilPage = lazy(() =>
+  import('@/features/umum/ProfilPage').then((m) => ({ default: m.ProfilPage })),
+)
+const GantiPasswordPage = lazy(() =>
+  import('@/features/umum/GantiPasswordPage').then((m) => ({ default: m.GantiPasswordPage })),
+)
+const PengumumanPage = lazy(() =>
+  import('@/features/umum/PengumumanPage').then((m) => ({ default: m.PengumumanPage })),
+)
+const KelolaPengumumanPage = lazy(() =>
+  import('@/features/umum/KelolaPengumumanPage').then((m) => ({ default: m.KelolaPengumumanPage })),
+)
+
+const PresensiPage = lazy(() =>
+  import('@/features/presensi/PresensiPage').then((m) => ({ default: m.PresensiPage })),
+)
+const RiwayatPresensiPage = lazy(() =>
+  import('@/features/presensi/RiwayatPresensiPage').then((m) => ({ default: m.RiwayatPresensiPage })),
+)
+const PengajuanPage = lazy(() =>
+  import('@/features/presensi/PengajuanPage').then((m) => ({ default: m.PengajuanPage })),
+)
+const PengajuanIzinBaruPage = lazy(() =>
+  import('@/features/presensi/PengajuanIzinBaruPage').then((m) => ({
+    default: m.PengajuanIzinBaruPage,
+  })),
+)
+const PengajuanLuarRadiusBaruPage = lazy(() =>
+  import('@/features/presensi/PengajuanLuarRadiusBaruPage').then((m) => ({
+    default: m.PengajuanLuarRadiusBaruPage,
+  })),
+)
+
+const JadwalGuruPage = lazy(() =>
+  import('@/features/mengajar/JadwalGuruPage').then((m) => ({ default: m.JadwalGuruPage })),
+)
+const IsiJurnalPage = lazy(() =>
+  import('@/features/mengajar/jurnal/IsiJurnalPage').then((m) => ({ default: m.IsiJurnalPage })),
+)
+const RiwayatJurnalPage = lazy(() =>
+  import('@/features/mengajar/jurnal/RiwayatJurnalPage').then((m) => ({ default: m.RiwayatJurnalPage })),
+)
+const RekapWaliKelasPage = lazy(() =>
+  import('@/features/wali-kelas/RekapWaliKelasPage').then((m) => ({ default: m.RekapWaliKelasPage })),
+)
+
+const TahunPelajaranPage = lazy(() =>
+  import('@/features/master/TahunPelajaranPage').then((m) => ({ default: m.TahunPelajaranPage })),
+)
+const JurusanPage = lazy(() =>
+  import('@/features/master/JurusanPage').then((m) => ({ default: m.JurusanPage })),
+)
+const KelasPage = lazy(() =>
+  import('@/features/master/KelasPage').then((m) => ({ default: m.KelasPage })),
+)
+const SiswaPage = lazy(() =>
+  import('@/features/master/SiswaPage').then((m) => ({ default: m.SiswaPage })),
+)
+const PegawaiPage = lazy(() =>
+  import('@/features/master/PegawaiPage').then((m) => ({ default: m.PegawaiPage })),
+)
+const MapelPage = lazy(() =>
+  import('@/features/master/MapelPage').then((m) => ({ default: m.MapelPage })),
+)
+const HariLiburPage = lazy(() =>
+  import('@/features/master/HariLiburPage').then((m) => ({ default: m.HariLiburPage })),
+)
+
+const PlottingKelasPage = lazy(() =>
+  import('@/features/plotting/PlottingKelasPage').then((m) => ({ default: m.PlottingKelasPage })),
+)
+const NaikKelasPage = lazy(() =>
+  import('@/features/plotting/NaikKelasPage').then((m) => ({ default: m.NaikKelasPage })),
+)
+const PlottingMapelPage = lazy(() =>
+  import('@/features/plotting/PlottingMapelPage').then((m) => ({ default: m.PlottingMapelPage })),
+)
+const JamPelajaranPage = lazy(() =>
+  import('@/features/akademik/JamPelajaranPage').then((m) => ({ default: m.JamPelajaranPage })),
+)
+const JadwalPage = lazy(() =>
+  import('@/features/akademik/JadwalPage').then((m) => ({ default: m.JadwalPage })),
+)
+
+const MonitoringPresensiPage = lazy(() =>
+  import('@/features/monitoring/MonitoringPresensiPage').then((m) => ({
+    default: m.MonitoringPresensiPage,
+  })),
+)
+const PersetujuanLuarRadiusPage = lazy(() =>
+  import('@/features/monitoring/PersetujuanPage').then((m) => ({ default: m.PersetujuanLuarRadiusPage })),
+)
+const PersetujuanPengajuanPage = lazy(() =>
+  import('@/features/monitoring/PersetujuanPengajuanPage').then((m) => ({
+    default: m.PersetujuanPengajuanPage,
+  })),
+)
+
+const HubLaporanPage = lazy(() =>
+  import('@/features/laporan/HubLaporanPage').then((m) => ({ default: m.HubLaporanPage })),
+)
+const LaporanPage = lazy(() =>
+  import('@/features/laporan/LaporanPage').then((m) => ({ default: m.LaporanPage })),
+)
+
+const InfoSekolahPage = lazy(() =>
+  import('@/features/pengaturan/InfoSekolahPage').then((m) => ({ default: m.InfoSekolahPage })),
+)
+const PengaturanLokasiPage = lazy(() =>
+  import('@/features/pengaturan/PengaturanLokasiPage').then((m) => ({ default: m.PengaturanLokasiPage })),
+)
+const PengaturanJamKerjaPage = lazy(() =>
+  import('@/features/pengaturan/PengaturanJamKerjaPage').then((m) => ({
+    default: m.PengaturanJamKerjaPage,
+  })),
+)
+const PengaturanSistemPage = lazy(() =>
+  import('@/features/pengaturan/PengaturanSistemPage').then((m) => ({ default: m.PengaturanSistemPage })),
+)
+const PengaturanDokumenPage = lazy(() =>
+  import('@/features/pengaturan/PengaturanDokumenPage').then((m) => ({
+    default: m.PengaturanDokumenPage,
+  })),
+)
+const PengaturanTvPage = lazy(() =>
+  import('@/features/pengaturan/PengaturanTvPage').then((m) => ({ default: m.PengaturanTvPage })),
+)
+const PenggunaPage = lazy(() =>
+  import('@/features/pengaturan/PenggunaPage').then((m) => ({ default: m.PenggunaPage })),
+)
+const AuditLogPage = lazy(() =>
+  import('@/features/pengaturan/AuditLogPage').then((m) => ({ default: m.AuditLogPage })),
 )
 
 function Memuat() {
@@ -120,14 +222,8 @@ export function AppRouter() {
             <Route path="/master/mapel" element={<MapelPage />} />
 
             {/* Penugasan & akademik */}
-            <Route
-              path="/plotting/kelas"
-              element={<PlottingKelasPage />}
-            />
-            <Route
-              path="/plotting/kelas/naik-kelas"
-              element={<NaikKelasPage />}
-            />
+            <Route path="/plotting/kelas" element={<PlottingKelasPage />} />
+            <Route path="/plotting/kelas/naik-kelas" element={<NaikKelasPage />} />
             <Route
               path="/plotting/kelas/mutasi"
               element={
@@ -136,18 +232,9 @@ export function AppRouter() {
                 <PlottingKelasPage />
               }
             />
-            <Route
-              path="/plotting/mapel"
-              element={<PlottingMapelPage />}
-            />
-            <Route
-              path="/akademik/jam-pelajaran"
-              element={<JamPelajaranPage />}
-            />
-            <Route
-              path="/akademik/jadwal"
-              element={<JadwalPage />}
-            />
+            <Route path="/plotting/mapel" element={<PlottingMapelPage />} />
+            <Route path="/akademik/jam-pelajaran" element={<JamPelajaranPage />} />
+            <Route path="/akademik/jadwal" element={<JadwalPage />} />
 
             {/* Monitoring & persetujuan */}
             <Route path="/monitoring/presensi-harian" element={<MonitoringPresensiPage />} />
@@ -169,10 +256,7 @@ export function AppRouter() {
             <Route path="/pengaturan/hari-libur" element={<HariLiburPage />} />
             <Route path="/pengaturan/sistem" element={<PengaturanSistemPage />} />
             {/* FR-KOP-02..05 — kop, penandatangan, tata letak, dan pratinjau. */}
-            <Route
-              path="/pengaturan/kop-surat"
-              element={<PengaturanDokumenPage tabAwal="kop" />}
-            />
+            <Route path="/pengaturan/kop-surat" element={<PengaturanDokumenPage tabAwal="kop" />} />
             <Route
               path="/pengaturan/penandatangan"
               element={<PengaturanDokumenPage tabAwal="penandatangan" />}

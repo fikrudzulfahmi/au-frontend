@@ -1,4 +1,4 @@
-import { get, post } from '@/lib/api'
+import { get, post, urlFotoBerpelindung } from '@/lib/api'
 import { master } from '@/lib/crud'
 import type { PengajuanIzin, PengajuanLuarRadius, Presensi, StatusHariIni } from './types'
 
@@ -30,9 +30,9 @@ export function riwayatPresensi(params: Record<string, unknown> = {}) {
 }
 
 /** Foto disajikan lewat endpoint berpelindung; diambil sebagai blob lalu dijadikan URL. */
-export async function ambilFotoPresensi(presensiId: number, sisi: 'masuk' | 'pulang'): Promise<string> {
-  const { urlFotoBerpelindung } = await import('@/lib/api')
-
+export function ambilFotoPresensi(presensiId: number, sisi: 'masuk' | 'pulang'): Promise<string> {
+  // Fase 7 — impor statis: `@/lib/api` juga diimpor statis oleh puluhan berkas,
+  // sehingga `import()` di sini tidak pernah memecah chunk (Vite memperingatkan).
   return urlFotoBerpelindung(`/presensi/${presensiId}/foto/${sisi}`)
 }
 
