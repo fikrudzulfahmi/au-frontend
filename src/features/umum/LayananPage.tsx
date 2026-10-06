@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Grid2x2 } from 'lucide-react'
 
+import { KartuPasangPwa } from '@/components/ui/KartuPasangPwa'
 import { LayananGrid } from '@/components/ui/LayananGrid'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useMediaQuery } from '@/lib/useMediaQuery'
@@ -34,6 +35,9 @@ export function LayananPage() {
           </div>
         </div>
       )}
+
+      {/* Fase 7 — ajakan memasang aplikasi ke layar utama (muncul bila peramban menawarkannya). */}
+      <KartuPasangPwa />
 
       <LayananGrid items={layananPeran(user)} tanpaTautan />
     </div>
