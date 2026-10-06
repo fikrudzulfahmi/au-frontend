@@ -46,6 +46,7 @@ import { PenggunaPage } from '@/features/pengaturan/PenggunaPage'
 import { GantiPasswordPage } from '@/features/umum/GantiPasswordPage'
 import { LayananPage } from '@/features/umum/LayananPage'
 import { NotFoundPage } from '@/features/umum/NotFoundPage'
+import { PengaturanTvPage } from '@/features/pengaturan/PengaturanTvPage'
 import { PengumumanPage } from '@/features/umum/PengumumanPage'
 import { ProfilPage } from '@/features/umum/ProfilPage'
 import { TvPage } from '@/features/tv/TvPage'
@@ -179,10 +180,7 @@ export function AppRouter() {
               path="/pengaturan/penandatangan"
               element={<PengaturanDokumenPage tabAwal="penandatangan" />}
             />
-            <Route
-              path="/pengaturan/tv"
-              element={<FiturSegera judul="Pengaturan Layar TV" fase="Fase 6" />}
-            />
+            <Route path="/pengaturan/tv" element={<PengaturanTvPage />} />
             <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
             <Route path="/pengaturan/audit-log" element={<AuditLogPage />} />
           </Route>
