@@ -9,6 +9,12 @@ import { LambangSipandu } from '@/components/ui/Logo'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { FiturSegera } from '@/features/umum/FiturSegera'
+import { JadwalPage } from '@/features/akademik/JadwalPage'
+import { JamPelajaranPage } from '@/features/akademik/JamPelajaranPage'
+import { JadwalGuruPage } from '@/features/mengajar/JadwalGuruPage'
+import { NaikKelasPage } from '@/features/plotting/NaikKelasPage'
+import { PlottingKelasPage } from '@/features/plotting/PlottingKelasPage'
+import { PlottingMapelPage } from '@/features/plotting/PlottingMapelPage'
 import { HariLiburPage } from '@/features/master/HariLiburPage'
 import { JurusanPage } from '@/features/master/JurusanPage'
 import { KelasPage } from '@/features/master/KelasPage'
@@ -85,10 +91,7 @@ export function AppRouter() {
             />
 
             {/* Mengajar */}
-            <Route
-              path="/mengajar/jadwal"
-              element={<FiturSegera judul="Jadwal Mengajar" fase="Fase 2" />}
-            />
+            <Route path="/mengajar/jadwal" element={<JadwalGuruPage />} />
             <Route
               path="/mengajar/jurnal/isi/:sesi"
               element={<FiturSegera judul="Isi Jurnal & Presensi Siswa" fase="Fase 4" />}
@@ -120,27 +123,31 @@ export function AppRouter() {
             {/* Penugasan & akademik */}
             <Route
               path="/plotting/kelas"
-              element={<FiturSegera judul="Plotting Kelas" fase="Fase 2" />}
+              element={<PlottingKelasPage />}
             />
             <Route
               path="/plotting/kelas/naik-kelas"
-              element={<FiturSegera judul="Wizard Naik Kelas & Kelulusan" fase="Fase 2" />}
+              element={<NaikKelasPage />}
             />
             <Route
               path="/plotting/kelas/mutasi"
-              element={<FiturSegera judul="Mutasi Kelas" fase="Fase 2" />}
+              element={
+                // Mutasi dijalankan dari daftar siswa per kelas (tombol per baris),
+                // sehingga rute ini menampilkan halaman plotting yang sama.
+                <PlottingKelasPage />
+              }
             />
             <Route
               path="/plotting/mapel"
-              element={<FiturSegera judul="Plotting Mapel" fase="Fase 2" />}
+              element={<PlottingMapelPage />}
             />
             <Route
               path="/akademik/jam-pelajaran"
-              element={<FiturSegera judul="Jam Pelajaran" fase="Fase 2" />}
+              element={<JamPelajaranPage />}
             />
             <Route
               path="/akademik/jadwal"
-              element={<FiturSegera judul="Jadwal Pelajaran" fase="Fase 2" />}
+              element={<JadwalPage />}
             />
 
             {/* Monitoring & persetujuan */}

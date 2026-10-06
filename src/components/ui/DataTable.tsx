@@ -12,12 +12,22 @@ export interface KolomTabel<T> {
   className?: string
 }
 
+/** Dukungan centang massal (FR-PLK-01: pilih siswa lalu tempatkan ke kelas). */
+interface PilihProps<T> {
+  terpilih: Array<string | number>
+  onUbah: (kunci: string | number, dicentang: boolean) => void
+  /** Centang pada judul kolom untuk memilih seluruh baris satu halaman. */
+  onSemua?: (dicentang: boolean) => void
+  idBaris: (baris: T) => string | number
+}
+
 interface DataTableProps<T> {
   kolom: KolomTabel<T>[]
   data: T[]
   kunciBaris: (baris: T) => string | number
   kosong?: string
   className?: string
+  pilih?: PilihProps<T>
 }
 
 /**
@@ -30,6 +40,7 @@ export function DataTable<T>({
   kunciBaris,
   kosong = 'Belum ada data untuk ditampilkan.',
   className,
+  pilih,
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
@@ -39,6 +50,8 @@ export function DataTable<T>({
     )
   }
 
+  const semuaTerpilih = pilih !== undefined && data.every((b) => pilih.terpilih.includes(pilih.idBaris(b)))
+
   return (
     <div className={cn('card overflow-hidden', className)}>
       {/* Desktop: tabel */}
@@ -46,6 +59,16 @@ export function DataTable<T>({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-app-soft text-left">
+              {pilih && (
+                <th className="w-12 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    aria-label="Pilih semua baris"
+                    checked={semuaTerpilih}
+                    onChange={(e) => pilih.onSemua?.(e.target.checked)}
+                  />
+                </th>
+              )}
               {kolom.map((k) => (
                 <th
                   key={k.kunci}
@@ -59,6 +82,16 @@ export function DataTable<T>({
           <tbody>
             {data.map((baris) => (
               <tr key={kunciBaris(baris)} className="border-t border-line hover:bg-app-soft/60">
+                {pilih && (
+                  <td className="px-4 py-3 align-middle">
+                    <input
+                      type="checkbox"
+                      aria-label={`Pilih baris ${kunciBaris(baris)}`}
+                      checked={pilih.terpilih.includes(pilih.idBaris(baris))}
+                      onChange={(e) => pilih.onUbah(pilih.idBaris(baris), e.target.checked)}
+                    />
+                  </td>
+                )}
                 {kolom.map((k) => (
                   <td key={k.kunci} className={cn('px-4 py-3 align-middle text-strong', k.className)}>
                     {k.render(baris)}
@@ -74,6 +107,16 @@ export function DataTable<T>({
       <ul className="divide-y divide-line lg:hidden">
         {data.map((baris) => (
           <li key={kunciBaris(baris)} className="space-y-1.5 px-4 py-3">
+            {pilih && (
+              <label className="flex items-center gap-2 text-sm font-semibold text-strong">
+                <input
+                  type="checkbox"
+                  checked={pilih.terpilih.includes(pilih.idBaris(baris))}
+                  onChange={(e) => pilih.onUbah(pilih.idBaris(baris), e.target.checked)}
+                />
+                Pilih
+              </label>
+            )}
             {kolom
               .filter((k) => !k.sembunyiMobile)
               .map((k) => (

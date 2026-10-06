@@ -11,7 +11,7 @@ export function bersihkanParams(params: Record<string, unknown>): Record<string,
 
 /**
  * Pesan galat validasi per bidang dari server (3.4 — 422 dengan `errors`).
- * Dipakai agar pesan aturan bisnis dari backend (mis. BR-02) tampil di formulir.
+ * Dipakai agar pesan aturan bisnis dari backend (mis. BR-02/BR-03) tampil di formulir.
  */
 export function pesanPerBidang(error: unknown): Record<string, string> {
   if (!(error instanceof ApiError) || !error.errors) return {}
@@ -22,7 +22,7 @@ export function pesanPerBidang(error: unknown): Record<string, string> {
 }
 
 /** Ringkasan baris gagal pada import (KP-1.3). */
-export interface LaporanImport {
+export interface LaporanDetail {
   total_baris: number
   berhasil: number
   gagal: number
@@ -30,13 +30,17 @@ export interface LaporanImport {
   akun?: Array<{ nip: string; password_awal: string }>
 }
 
+/** Nama lama dipertahankan agar pemakaian Fase 1 tidak perlu diubah. */
+export type LaporanImport = LaporanDetail
+
 export const master = {
   daftar: <T>(jalur: string, params: Record<string, unknown> = {}) =>
     get<DaftarResponse<T>>(jalur, bersihkanParams(params)),
 
   satu: <T>(jalur: string, id: number) => get<{ data: T }>(`${jalur}/${id}`),
 
-  buat: <T>(jalur: string, body: unknown) => post<{ data: T; message?: string; password_awal?: string | null }>(jalur, body),
+  buat: <T>(jalur: string, body: unknown) =>
+    post<{ data: T; message?: string; password_awal?: string | null }>(jalur, body),
 
   ubah: <T>(jalur: string, id: number, body: unknown) => put<{ data: T; message?: string }>(`${jalur}/${id}`, body),
 
