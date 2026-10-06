@@ -21,7 +21,6 @@ import { PresensiKinerjaCard } from '@/components/ui/PresensiKinerjaCard'
 import type { PresensiKinerjaData } from '@/components/ui/PresensiKinerjaCard'
 import { StatCard } from '@/components/ui/StatCard'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { cn } from '@/lib/cn'
 import { DESKTOP_BREAKPOINT } from '@/lib/env'
 import { jamAtauNol } from '@/lib/format'
 import { layananPeran } from '@/lib/menu'
@@ -31,6 +30,13 @@ import { useServerClock } from '@/lib/waktu'
 import { useSekolah } from '@/features/sekolah/useSekolah'
 import { useAuth } from '@/features/auth/AuthContext'
 import { ambilSesiHariIni } from '@/features/mengajar/jurnal/api'
+import {
+  AntreanPersetujuan,
+  JurnalBelumTerisi,
+  PanelPengumuman,
+  PengajuanTerakhir,
+  RingkasanBulanIni,
+} from './BagianDashboard'
 import { usePresensiHariIni, useRingkasanHariIni } from './useDashboard'
 
 /** FR-DSH-01/02 — beranda sesuai peran. */
@@ -96,6 +102,10 @@ function BerandaMobile() {
 
         <KartuJadwal />
 
+        <RingkasanBulanIni />
+
+        <PengajuanTerakhir />
+
         <p className="px-1 pb-2 text-center text-[11px] text-muted">
           {sekolah?.nama_sekolah ?? ''}
         </p>
@@ -147,10 +157,16 @@ function BerandaDesktop() {
             aksi={<TautanPresensi />}
           />
           <KartuJadwal />
+          {/* FR-DSH-01 — ringkasan bulan ini dan status pengajuan terakhir. */}
+          <RingkasanBulanIni />
+          <PengajuanTerakhir />
         </div>
 
         <div className="space-y-6">
           <LayananGrid items={layananPeran(user)} />
+          {/* FR-DSH-02 — antrean persetujuan & jurnal belum terisi (pimpinan). */}
+          {pimpinanView && <AntreanPersetujuan />}
+          {pimpinanView && <JurnalBelumTerisi />}
           <PanelPengumuman />
         </div>
       </div>
@@ -208,31 +224,6 @@ function dataKartu(
     lencana: lencanaFinal,
     lencanaVarian: varian,
   }
-}
-
-function PanelPengumuman() {
-  // FR-PMN — daftar pengumuman aktif; diisi pada Fase 6.
-  const daftar: Array<{ id: number; judul: string; isi: string; penting: boolean }> = []
-
-  return (
-    <section className="card p-5" aria-label="Pengumuman">
-      <h2 className="text-base font-bold text-strong">Pengumuman</h2>
-      {daftar.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">
-          Belum ada pengumuman aktif. Pengumuman dari admin akan tampil di sini.
-        </p>
-      ) : (
-        <ul className="mt-3 space-y-3">
-          {daftar.map((p) => (
-            <li key={p.id} className={cn('rounded-control p-3', p.penting ? 'bg-warn-bg' : 'bg-app-soft')}>
-              <p className="text-sm font-bold text-strong">{p.judul}</p>
-              <p className="text-xs text-muted">{p.isi}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
 }
 
 /** FR-JRN-01 — jadwal hari ini beserta status jurnal tiap sesi (alur guru, 5.13). */
