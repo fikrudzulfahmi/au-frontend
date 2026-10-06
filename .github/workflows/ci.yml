@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  uji:
+    name: Lint, tipe, uji, dan build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Pasang dependensi
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript (strict)
+        run: npm run typecheck
+
+      - name: Uji (Vitest)
+        run: npm run test
+
+      - name: Build produksi
+        run: npm run build
+
+      - name: Pastikan tidak ada berkas rahasia yang ikut ter-commit
+        run: |
+          if git ls-files --error-unmatch .env > /dev/null 2>&1; then
+            echo "::error::Berkas .env tidak boleh di-commit."
+            exit 1
+          fi
+          echo "Tidak ada .env yang ter-commit."
