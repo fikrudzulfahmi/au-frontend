@@ -317,3 +317,37 @@ tidak perlu diubah.
 **Verifikasi:** `guru-ilustrasi.webp` termuat di landing (1306x906 -> tampil 369x256) dan
 halaman masuk (-> tampil 461x320), keduanya rasio 1,441 — tidak ada yang terpotong. Beranda
 (185x128) belum terverifikasi visual karena hanya dirender pada breakpoint < 1024 px.
+
+### K-56 — Diganti dengan PNG terbaru: hanya kedua guru (6 Oktober 2026)
+
+Pemilik mengirim PNG tanpa latar yang baru. Perbedaannya penting dan menyelesaikan akar
+keluhan "terpotong":
+
+| | Gambar sebelumnya | Gambar sekarang |
+|---|---|---|
+| Ukuran | 1306x906 | **708x798** |
+| Rasio | 1,442 lanskap | **0,887 potret** |
+| Isi | kartu dashboard + dua guru | **dua guru saja** |
+| Berat berkas sumber | 871,3 KB | 480,4 KB |
+
+Karena gambar baru **tidak lagi memuat mockup dashboard**, tidak ada bagian yang tersisa
+untuk terpotong — masalahnya hilang dari akarnya, bukan hanya dihindari. Diperiksa dan
+terbukti benar-benar tanpa latar: keempat sudut alpha = 0, sebaran alpha 35,6% transparan
+penuh / 59,7% opak / 4,7% tepi anti-aliasing, kotak isi (0, 30, 708, 798).
+
+**K-57 — Tata letak beranda dipulihkan.** Rasio baru (0,887) hampir sama dengan ilustrasi
+asli (0,900), sehingga penyesuaian yang dulu dibuat untuk gambar lanskap tidak diperlukan
+lagi dan **dikembalikan**: judul `pr-44` -> `pr-24`, tinggi ilustrasi `h-32` -> `h-40`.
+Pada h-40 lebarnya 142 px — praktis sama dengan desain asli (144 px). Jadi beranda kembali
+ke tampilan semula, bukan sekadar diberi gambar baru.
+
+**K-58 — Isi tetap tidak disentuh.** Tanpa potong, tanpa perkecil: dimensi 708x798 dan
+sebaran alpha diverifikasi identik antara sumber dan hasil. Hanya wadah berkas berubah,
+PNG 480,4 KB -> WebP 45,5 KB (kualitas 95). Dampak: precache 1091,78 KiB -> 1074,31 KiB.
+
+Lebar tampil: beranda 142 px, landing 227 px, halaman masuk 284 px. Sumber setinggi 798 px
+lebih dari cukup untuk pemakaian retina terbesar (butuh 568 px).
+
+**Verifikasi:** termuat di landing (708x798 -> tampil 227x256) dan halaman masuk
+(-> tampil 284x320), keduanya rasio 0,887 — tidak ada yang terpotong. Beranda (142x160)
+belum terverifikasi visual karena hanya dirender pada breakpoint < 1024 px.
