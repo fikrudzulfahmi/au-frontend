@@ -12,6 +12,7 @@ import { FormField, kelasInput } from '@/components/ui/FormField'
 import { Logo } from '@/components/ui/Logo'
 import { pesanError } from '@/lib/api'
 import { cn } from '@/lib/cn'
+import { jalurAman } from '@/lib/jalur'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useSekolah } from '@/features/sekolah/useSekolah'
 
@@ -35,7 +36,8 @@ export function LoginPage() {
   const [galat, setGalat] = useState<string | null>(null)
   const [lihatPassword, setLihatPassword] = useState(false)
 
-  const dari = (location.state as LokasiState | null)?.dari ?? '/dashboard'
+  // A-21/keamanan: tujuan pengalihan disaring agar selalu jalur internal (lihat lib/jalur.ts).
+  const dari = jalurAman((location.state as LokasiState | null)?.dari)
 
   const {
     register,
