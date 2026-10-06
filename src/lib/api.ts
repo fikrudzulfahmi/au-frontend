@@ -58,6 +58,14 @@ api.interceptors.request.use((config) => {
   const token = getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
   config.headers['X-Device-Token'] = deviceToken()
+
+  // Unggahan berkas (import Excel, foto presensi, lampiran) HARUS memakai
+  // multipart dengan boundary buatan peramban. Header bawaan `application/json`
+  // di atas akan merusak penguraian multipart, jadi dilepas khusus untuk FormData.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
+
   return config
 })
 
@@ -95,6 +103,19 @@ export function pesanError(error: unknown): string {
   if (error instanceof ApiError) return error.message
   if (error instanceof Error) return error.message
   return 'Terjadi kesalahan yang tidak diketahui.'
+}
+
+/**
+ * Mengambil berkas berpelindung token (foto presensi, lampiran) dan mengembalikannya
+ * sebagai object URL yang dapat dipakai pada atribut `src` gambar.
+ *
+ * Berkas disimpan di disk privat, sehingga tidak dapat ditautkan langsung; pemanggil
+ * bertanggung jawab memanggil URL.revokeObjectURL setelah selesai.
+ */
+export async function urlFotoBerpelindung(jalur: string): Promise<string> {
+  const { data } = await api.get<Blob>(jalur, { responseType: 'blob' })
+
+  return URL.createObjectURL(data)
 }
 
 /**

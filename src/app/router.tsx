@@ -10,6 +10,16 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { FiturSegera } from '@/features/umum/FiturSegera'
 import { JadwalPage } from '@/features/akademik/JadwalPage'
+import { MonitoringPresensiPage } from '@/features/monitoring/MonitoringPresensiPage'
+import { PersetujuanLuarRadiusPage } from '@/features/monitoring/PersetujuanPage'
+import { PersetujuanPengajuanPage } from '@/features/monitoring/PersetujuanPengajuanPage'
+import { PengaturanJamKerjaPage } from '@/features/pengaturan/PengaturanJamKerjaPage'
+import { PengaturanLokasiPage } from '@/features/pengaturan/PengaturanLokasiPage'
+import { PengajuanIzinBaruPage } from '@/features/presensi/PengajuanIzinBaruPage'
+import { PengajuanLuarRadiusBaruPage } from '@/features/presensi/PengajuanLuarRadiusBaruPage'
+import { PengajuanPage } from '@/features/presensi/PengajuanPage'
+import { PresensiPage } from '@/features/presensi/PresensiPage'
+import { RiwayatPresensiPage } from '@/features/presensi/RiwayatPresensiPage'
 import { JamPelajaranPage } from '@/features/akademik/JamPelajaranPage'
 import { JadwalGuruPage } from '@/features/mengajar/JadwalGuruPage'
 import { NaikKelasPage } from '@/features/plotting/NaikKelasPage'
@@ -75,20 +85,11 @@ export function AppRouter() {
             <Route path="/ganti-password" element={<GantiPasswordPage />} />
 
             {/* Presensi saya */}
-            <Route path="/presensi" element={<FiturSegera judul="Presensi" fase="Fase 3" />} />
-            <Route
-              path="/presensi/riwayat"
-              element={<FiturSegera judul="Riwayat Presensi" fase="Fase 3" />}
-            />
-            <Route path="/pengajuan" element={<FiturSegera judul="Pengajuan Saya" fase="Fase 3" />} />
-            <Route
-              path="/pengajuan/izin/baru"
-              element={<FiturSegera judul="Pengajuan Izin / Sakit / Dinas / Cuti" fase="Fase 3" />}
-            />
-            <Route
-              path="/pengajuan/luar-radius/baru"
-              element={<FiturSegera judul="Pengajuan Presensi Luar Radius" fase="Fase 3" />}
-            />
+            <Route path="/presensi" element={<PresensiPage />} />
+            <Route path="/presensi/riwayat" element={<RiwayatPresensiPage />} />
+            <Route path="/pengajuan" element={<PengajuanPage />} />
+            <Route path="/pengajuan/izin/baru" element={<PengajuanIzinBaruPage />} />
+            <Route path="/pengajuan/luar-radius/baru" element={<PengajuanLuarRadiusBaruPage />} />
 
             {/* Mengajar */}
             <Route path="/mengajar/jadwal" element={<JadwalGuruPage />} />
@@ -151,18 +152,9 @@ export function AppRouter() {
             />
 
             {/* Monitoring & persetujuan */}
-            <Route
-              path="/monitoring/presensi-harian"
-              element={<FiturSegera judul="Monitoring Presensi Harian" fase="Fase 3" />}
-            />
-            <Route
-              path="/persetujuan/presensi-luar-radius"
-              element={<FiturSegera judul="Persetujuan Presensi Luar Radius" fase="Fase 3" />}
-            />
-            <Route
-              path="/persetujuan/pengajuan"
-              element={<FiturSegera judul="Persetujuan Pengajuan" fase="Fase 3" />}
-            />
+            <Route path="/monitoring/presensi-harian" element={<MonitoringPresensiPage />} />
+            <Route path="/persetujuan/presensi-luar-radius" element={<PersetujuanLuarRadiusPage />} />
+            <Route path="/persetujuan/pengajuan" element={<PersetujuanPengajuanPage />} />
 
             {/* Laporan */}
             <Route
@@ -204,14 +196,8 @@ export function AppRouter() {
 
             {/* Pengaturan */}
             <Route path="/pengaturan/info-sekolah" element={<InfoSekolahPage />} />
-            <Route
-              path="/pengaturan/lokasi"
-              element={<FiturSegera judul="Lokasi Presensi" fase="Fase 3" />}
-            />
-            <Route
-              path="/pengaturan/jam-kerja"
-              element={<FiturSegera judul="Jam Kerja" fase="Fase 3" />}
-            />
+            <Route path="/pengaturan/lokasi" element={<PengaturanLokasiPage />} />
+            <Route path="/pengaturan/jam-kerja" element={<PengaturanJamKerjaPage />} />
             <Route path="/pengaturan/hari-libur" element={<HariLiburPage />} />
             <Route path="/pengaturan/sistem" element={<PengaturanSistemPage />} />
             <Route

@@ -63,7 +63,7 @@ interface TeksProps {
   id: string
   nilai: string | number
   onUbah: (nilai: string) => void
-  tipe?: 'text' | 'date' | 'email' | 'number' | 'password' | 'tel'
+  tipe?: 'text' | 'date' | 'time' | 'email' | 'number' | 'password' | 'tel'
   wajib?: boolean
   pesanError?: string
   petunjuk?: string
@@ -102,7 +102,7 @@ export function BidangTeks({
         readOnly={readOnly}
         onChange={(e) => onUbah(e.target.value)}
         placeholder={placeholder}
-        className={cn(kelasInput, tipe === 'date' && 'tnum')}
+        className={cn(kelasInput, (tipe === 'date' || tipe === 'time') && 'tnum')}
       />
     </FormField>
   )
