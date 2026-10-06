@@ -33,9 +33,22 @@ export function formatTanggal(date: Date): string {
   return `${dd}-${mm}-${date.getFullYear()}`
 }
 
-/** dd-mm-yyyy dari string ISO/date (aman untuk null). */
+/**
+ * dd-mm-yyyy dari string ISO/tanggal (aman untuk null).
+ *
+ * Tanggal tanpa jam ("2026-07-06", hasil kolom `date`) dibaca apa adanya tanpa
+ * konversi zona, agar hari tidak bergeser pada peramban dengan zona waktu
+ * negatif. Nilai bertimestamp penuh dikonversi ke tanggal lokal peramban.
+ */
 export function formatTanggalDari(value?: string | null): string {
   if (!value) return '-'
+
+  const tanggalSaja = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (tanggalSaja) {
+    const [, tahun, bulan, hari] = tanggalSaja
+    return `${hari}-${bulan}-${tahun}`
+  }
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
   return formatTanggal(date)

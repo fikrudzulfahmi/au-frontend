@@ -35,7 +35,17 @@ describe('format tanggal dan jam', () => {
   it('memberi tanda hubung untuk tanggal kosong atau tidak valid', () => {
     expect(formatTanggalDari(null)).toBe('-')
     expect(formatTanggalDari('bukan-tanggal')).toBe('-')
-    expect(formatTanggalDari('2026-07-06T00:00:00+07:00')).toBe('06-07-2026')
+  })
+
+  it('membaca tanggal tanpa jam apa adanya agar hari tidak bergeser', () => {
+    // Nilai kolom `date` (mis. tanggal lahir) tidak boleh digeser oleh zona waktu peramban.
+    expect(formatTanggalDari('2026-07-06')).toBe('06-07-2026')
+    expect(formatTanggalDari('2026-01-01')).toBe('01-01-2026')
+  })
+
+  it('mengubah nilai bertimestamp menjadi tanggal lokal', () => {
+    const iso = '2026-07-06T10:26:08+07:00'
+    expect(formatTanggalDari(iso)).toBe(formatTanggal(new Date(iso)))
   })
 })
 
