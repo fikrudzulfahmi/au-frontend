@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { z } from 'zod'
 
 import ilustrasiTunggal from '@/assets/ilustrasi/guru-ilustrasi.webp'
@@ -12,7 +12,7 @@ import { FormField, kelasInput } from '@/components/ui/FormField'
 import { Logo } from '@/components/ui/Logo'
 import { pesanError } from '@/lib/api'
 import { cn } from '@/lib/cn'
-import { jalurAman } from '@/lib/jalur'
+import { JALUR_BAWAAN, jalurAman } from '@/lib/jalur'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useSekolah } from '@/features/sekolah/useSekolah'
 
@@ -29,7 +29,7 @@ interface LokasiState {
 
 /** Halaman masuk (8.1 — /masuk). */
 export function LoginPage() {
-  const { masuk, user, memuat } = useAuth()
+  const { masuk, user, memuat, keluarBaru } = useAuth()
   const { data: sekolah } = useSekolah()
   const navigate = useNavigate()
   const location = useLocation()
@@ -37,7 +37,22 @@ export function LoginPage() {
   const [lihatPassword, setLihatPassword] = useState(false)
 
   // A-21/keamanan: tujuan pengalihan disaring agar selalu jalur internal (lihat lib/jalur.ts).
-  const dari = jalurAman((location.state as LokasiState | null)?.dari)
+  //
+  // Bila pengguna TIDAK keluar secara sengaja (mis. mengeklik tautan dalam saat belum
+  // masuk), tujuan itu diteruskan. Setelah keluar sengaja, tujuan lama dibuang dan
+  // pengguna baru diantar ke beranda sesuai perannya — bukan ke halaman peran sebelumnya,
+  // yang bagi peran yang tidak berhak hanya menampilkan tabel kosong.
+  //
+  // Tujuan DIKUNCI saat komponen ini pertama dirender.
+  //
+  // Kalau dihitung ulang setiap render, `masuk()` yang mereset penanda `keluarBaru`
+  // membuat render berikutnya menghitung `dari` lagi dari state router — dan
+  // `useEffect` di bawah langsung mengalihkan ke tujuan lama, membatalkan perbaikan.
+  const dariRef = useRef<string | null>(null)
+  if (dariRef.current === null) {
+    dariRef.current = keluarBaru ? JALUR_BAWAAN : jalurAman((location.state as LokasiState | null)?.dari)
+  }
+  const dari = dariRef.current
 
   const {
     register,
