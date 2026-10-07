@@ -32,7 +32,11 @@ export function PersetujuanLuarRadiusPage() {
 
   const putuskan = useMutation({
     mutationFn: (v: { id: number; keputusan: 'disetujui' | 'ditolak' }) =>
-      aksi(`/monitoring/presensi-harian/${v.id}/putuskan`, { keputusan: v.keputusan, catatan_penyetuju: catatan || null }),
+      aksi(
+        `/monitoring/presensi-harian/${v.id}/putuskan`,
+        { keputusan: v.keputusan, catatan_penyetuju: catatan || null },
+        'patch',
+      ),
     onSuccess: () => { toast.sukses('Keputusan tersimpan.'); setPilih(null); setCatatan(''); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
   })

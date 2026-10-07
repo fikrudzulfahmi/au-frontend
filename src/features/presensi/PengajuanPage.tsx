@@ -44,7 +44,7 @@ export function PengajuanPage() {
   })
 
   const batalkanIzin = useMutation({
-    mutationFn: (id: number) => aksi(`/pengajuan-izin/${id}/batalkan`, {}),
+    mutationFn: (id: number) => aksi(`/pengajuan-izin/${id}/batalkan`, {}, 'patch'),
     onSuccess: () => { toast.sukses('Pengajuan dibatalkan.'); setBatal(null); void qc.invalidateQueries({ queryKey: ['pengajuan-izin'] }) },
     onError: (e) => toast.gagal(pesanError(e)),
   })

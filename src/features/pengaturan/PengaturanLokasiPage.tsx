@@ -75,7 +75,7 @@ export function PengaturanLokasiPage() {
   })
 
   const jadikanDefault = useMutation({
-    mutationFn: (id: number) => aksi(`/pengaturan/lokasi/${id}/default`, {}),
+    mutationFn: (id: number) => aksi(`/pengaturan/lokasi/${id}/default`, {}, 'patch'),
     onSuccess: () => { toast.sukses('Lokasi default diperbarui (BR-12).'); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
   })

@@ -50,9 +50,20 @@ export const master = {
   hapus: (jalur: string, id: number) => del<{ message?: string }>(`${jalur}/${id}`),
 }
 
-/** Aksi khusus (aktifkan, selesai, reset, dsb). */
-export function aksi<T = unknown>(jalur: string, body?: unknown) {
-  return post<T>(jalur, body)
+/**
+ * Aksi khusus (aktifkan, selesai, reset, dsb).
+ *
+ * `metode` WAJIB disebut bila rutenya bukan POST.
+ *
+ * Helper ini dulu selalu mengirim POST, padahal backend memakai PATCH untuk semua
+ * aksi yang MENGUBAH STATUS (`putuskan`, `batalkan`, `koreksi`, `default`).
+ * Akibatnya tujuh tombol gagal dengan galat "The POST method is not supported for
+ * this route", termasuk tombol persetujuan perizinan dan pembatalan pengajuan oleh
+ * guru. Rute yang memang POST (reset perangkat, aktifkan/selesai tahun pelajaran,
+ * jam kerja) tetap memakai nilai bawaan.
+ */
+export function aksi<T = unknown>(jalur: string, body?: unknown, metode: 'post' | 'patch' = 'post') {
+  return metode === 'patch' ? patch<T>(jalur, body) : post<T>(jalur, body)
 }
 
 /**

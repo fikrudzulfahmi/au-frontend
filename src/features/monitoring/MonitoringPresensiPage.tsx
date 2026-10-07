@@ -45,21 +45,25 @@ export function MonitoringPresensiPage() {
 
   const putuskan = useMutation({
     mutationFn: (v: { id: number; keputusan: 'disetujui' | 'ditolak'; sisi: 'masuk' | 'pulang' }) =>
-      aksi(`/monitoring/presensi-harian/${v.id}/putuskan`, {
-        keputusan: v.keputusan,
-        sisi: v.sisi,
-        catatan_penyetuju: catatan || null,
-      }),
+      aksi(
+        `/monitoring/presensi-harian/${v.id}/putuskan`,
+        { keputusan: v.keputusan, sisi: v.sisi, catatan_penyetuju: catatan || null },
+        'patch',
+      ),
     onSuccess: () => { toast.sukses('Keputusan tersimpan.'); setPilih(null); setCatatan(''); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
   })
 
   const simpanKoreksi = useMutation({
-    mutationFn: () => aksi(`/monitoring/presensi-harian/${koreksiUntuk?.presensi_id}/koreksi`, {
-      pulang_waktu: koreksi.pulang_waktu || null,
-      pulang_status: koreksi.pulang_status || null,
-      alasan: koreksi.alasan,
-    }),
+    mutationFn: () => aksi(
+      `/monitoring/presensi-harian/${koreksiUntuk?.presensi_id}/koreksi`,
+      {
+        pulang_waktu: koreksi.pulang_waktu || null,
+        pulang_status: koreksi.pulang_status || null,
+        alasan: koreksi.alasan,
+      },
+      'patch',
+    ),
     onSuccess: () => {
       toast.sukses('Koreksi tersimpan dan tercatat di audit log.')
       setKoreksiUntuk(null)

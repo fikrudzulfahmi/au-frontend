@@ -429,3 +429,78 @@ Setelah code-splitting, `precache` naik dari 32 entri (1.164 KiB) menjadi **113 
 ### Proses latar yang ditinggalkan subagen (diperbaiki)
 
 Subagen Fase 7 meninggalkan **server preview Vite di port 4173** hidup melampaui dirinya. Sudah dimatikan (`taskkill /PID 10980 /F`). Pola ini sudah berulang di proyek ini: subagen dapat meninggalkan proses latar, jadi **periksa `netstat -ano | grep LISTENING`** setelah setiap delegasi dan pastikan port 5173 (dev) serta 8000 (API) tetap hidup.
+
+---
+
+## N. Perbaikan bug aksi HTTP: POST vs PATCH (ditemukan pengguna)
+
+Tanggal: 7 Oktober 2026. Ditemukan saat pengujian manual pengguna di produksi-lokal:
+*"The POST method is not supported for route api/v1/pengajuan-izin/1/putuskan. Supported
+methods: PATCH."*
+
+### Akar masalah
+
+`src/lib/crud.ts`:
+
+```ts
+export function aksi<T>(jalur: string, body?: unknown) {
+  return post<T>(jalur, body)   // SELALU POST
+}
+```
+
+Helper ini **selalu** mengirim POST, padahal backend memakai **PATCH** untuk seluruh aksi
+yang mengubah status (`putuskan`, `batalkan`, `koreksi`, `default`). Akibatnya **7 dari 12**
+pemanggilan `aksi()` gagal — bukan satu tombol, melainkan:
+
+| Aksi | Peran | Metode rute |
+|---|---|---|
+| Setuju/tolak pengajuan izin | admin | PATCH |
+| Setuju/tolak pengajuan luar radius | admin | PATCH |
+| Setuju/tolak presensi harian (2 halaman) | admin | PATCH |
+| Koreksi presensi | admin | PATCH |
+| Jadikan lokasi default | admin | PATCH |
+| **Batalkan pengajuan sendiri** | **guru** | PATCH |
+
+Lima pemanggilan lain (reset perangkat pegawai, reset perangkat pengguna, aktifkan & selesai
+tahun pelajaran, simpan jam kerja) memang POST, sehingga tetap bekerja — itulah sebabnya bug
+ini tersembunyi lama: separuh tombol uji coba berhasil, separuh gagal.
+
+### Perbaikan
+
+`aksi()` menerima argumen ketiga `metode: 'post' | 'patch'` dengan bawaan `'post'`
+(agar pemanggil yang sudah benar tidak perlu diubah), dan ketujuh pemanggil yang salah kini
+menyatakan `'patch'` secara eksplisit. Verb-nya jadi terbaca di titik pemanggilan.
+
+### Mengapa uji otomatis tidak menangkapnya
+
+Uji backend menguji rute PATCH-nya langsung (dan lulus), sedangkan uji frontend tidak pernah
+menekan tombol ini. Kesalahan metode HTTP **hanya muncul pada permintaan peramban sungguhan** —
+tidak pada uji unit maupun `curl` ke endpoint yang benar. Pelajaran: aksi yang mengubah status
+wajib diuji dengan **menekan tombolnya**, bukan hanya lewat API.
+
+### Cara mendeteksi seluruh kejadian serupa (dapat diulang)
+
+Bandingkan setiap pemanggilan `aksi(...)` di `src/` dengan metode rute sebenarnya:
+
+```bash
+# 1. Semua rute beserta metodenya (dari repo backend)
+cd au-backend && php artisan route:list --path=api/v1 --json
+
+# 2. Semua pemanggilan aksi() di frontend
+cd ../au-frontend && grep -rn "aksi(" src/
+```
+
+Cocokkan keduanya; setiap pemanggilan yang metodenya bukan POST **wajib** menyebut
+`'patch'` sebagai argumen ketiga. Setelah perbaikan ini: **0 ketidakcocokan**.
+
+### Verifikasi
+
+Uji ujung-ke-ujung dengan menekan tombolnya di peramban, dengan perekam `fetch`/XHR:
+
+```
+PATCH  /api/v1/pengajuan-izin/1/putuskan  ->  200
+```
+
+Data ikut berubah: `pengajuan_izin.status` `menunggu` -> `disetujui`, `diputuskan_oleh` terisi,
+`diputuskan_pada` terisi, dan audit log bertambah. Sebelum perbaikan, permintaan yang sama
+gagal dengan 405 *Method Not Allowed*.

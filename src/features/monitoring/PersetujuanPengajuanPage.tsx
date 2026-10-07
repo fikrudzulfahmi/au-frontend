@@ -41,14 +41,14 @@ export function PersetujuanPengajuanPage() {
 
   const putuskanIzin = useMutation({
     mutationFn: (v: { id: number; status: 'disetujui' | 'ditolak' }) =>
-      aksi(`/pengajuan-izin/${v.id}/putuskan`, { status: v.status, catatan_penyetuju: catatan || null }),
+      aksi(`/pengajuan-izin/${v.id}/putuskan`, { status: v.status, catatan_penyetuju: catatan || null }, 'patch'),
     onSuccess: () => { toast.sukses('Keputusan tersimpan.'); setPilih(null); setCatatan(''); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
   })
 
   const putuskanLuar = useMutation({
     mutationFn: (v: { id: number; status: 'disetujui' | 'ditolak' }) =>
-      aksi(`/pengajuan-luar-radius/${v.id}/putuskan`, { status: v.status, catatan_penyetuju: catatan || null }),
+      aksi(`/pengajuan-luar-radius/${v.id}/putuskan`, { status: v.status, catatan_penyetuju: catatan || null }, 'patch'),
     onSuccess: () => { toast.sukses('Keputusan tersimpan.'); setPilih(null); setCatatan(''); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
   })
