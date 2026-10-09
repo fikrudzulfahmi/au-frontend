@@ -253,18 +253,18 @@ export function PresensiPage() {
 
             <div className="mt-3 overflow-hidden rounded-card bg-strong/90">
               {foto !== null ? (
-                <img src={foto.url} alt="Pratinjau foto presensi" className="aspect-[4/3] w-full object-cover" />
+                <img src={foto.url} alt="Pratinjau foto presensi" className="aspect-video w-full object-cover" />
               ) : (
                 <video
                   ref={videoRef}
                   playsInline
                   muted
-                  className={cn('aspect-[4/3] w-full object-cover', !siapKamera && 'hidden')}
+                  className={cn('aspect-video w-full object-cover', !siapKamera && 'hidden')}
                 />
               )}
 
               {foto === null && !siapKamera && (
-                <div className="flex aspect-[4/3] w-full items-center justify-center px-4 text-center">
+                <div className="flex aspect-video w-full items-center justify-center px-4 text-center">
                   <p className="text-sm text-white/80">
                     {galatKamera ?? 'Kamera belum aktif. Tekan tombol di bawah untuk menyalakan.'}
                   </p>
