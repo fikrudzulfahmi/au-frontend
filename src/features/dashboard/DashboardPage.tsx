@@ -22,7 +22,7 @@ import type { PresensiKinerjaData } from '@/components/ui/PresensiKinerjaCard'
 import { StatCard } from '@/components/ui/StatCard'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { DESKTOP_BREAKPOINT } from '@/lib/env'
-import { jamAtauNol } from '@/lib/format'
+import { formatJamSingkat, menitDariJam } from '@/lib/format'
 import { layananPeran } from '@/lib/menu'
 import { adminTanpaPegawai, lencanaPeran, punyaPeran, ROLE } from '@/lib/roles'
 import { useMediaQuery } from '@/lib/useMediaQuery'
@@ -38,6 +38,7 @@ import {
   RingkasanBulanIni,
 } from './BagianDashboard'
 import { usePresensiHariIni, useRingkasanHariIni } from './useDashboard'
+import type { StatusHariIni } from '@/features/presensi/types'
 
 /** FR-DSH-01/02 — beranda sesuai peran. */
 export function DashboardPage() {
@@ -89,12 +90,12 @@ function BerandaMobile() {
           src={ilustrasiGrup}
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute -right-6 bottom-0 h-40 w-auto"
+          className="pointer-events-none absolute -right-2 bottom-0 h-40 w-auto"
         />
       </div>
 
       <div className="-mt-10 space-y-4 px-4">
-        <PresensiKinerjaCard tanggal={sekarang} data={dataKartu(presensi, lencanaPeran(user))} />
+        <PresensiKinerjaCard tanggal={sekarang} data={dataKartu(presensi, lencanaPeran(user), sekarang)} />
 
         <LayananGrid items={layananPeran(user)} />
 
@@ -123,6 +124,30 @@ function BerandaDesktop() {
   const { data: ringkasan } = useRingkasanHariIni()
   const pimpinanView = punyaPeran(user, ROLE.admin, ROLE.kepalaSekolah, ROLE.wakasekKurikulum)
 
+  // FR-DSH-02 — beranda pimpinan: rekap presensi + tugas persetujuan (tanpa kartu pegawai).
+  if (pimpinanView) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          judul={`Selamat datang, ${user?.nama ?? 'Pengguna'}`}
+          keterangan="Rekap presensi dan tugas persetujuan hari ini."
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Hadir hari ini" nilai={ringkasan?.hadir ?? 0} icon={Users} warna="success" />
+          <StatCard label="Terlambat" nilai={ringkasan?.terlambat ?? 0} icon={Clock} warna="warn" />
+          <StatCard label="Belum presensi" nilai={ringkasan?.belum ?? 0} icon={UserX} warna="danger" />
+          <StatCard label="Izin / dinas" nilai={(ringkasan?.izin ?? 0) + (ringkasan?.dinas ?? 0)} icon={Inbox} warna="info" />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <AntreanPersetujuan />
+          <JurnalBelumTerisi />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -130,30 +155,11 @@ function BerandaDesktop() {
         keterangan="Ringkasan presensi dan kegiatan hari ini."
       />
 
-      {pimpinanView && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Hadir hari ini" nilai={ringkasan?.hadir ?? 0} icon={Users} warna="success" />
-          <StatCard
-            label="Terlambat"
-            nilai={ringkasan?.terlambat ?? 0}
-            icon={Clock}
-            warna="warn"
-          />
-          <StatCard label="Belum presensi" nilai={ringkasan?.belum ?? 0} icon={UserX} warna="danger" />
-          <StatCard
-            label="Izin / dinas"
-            nilai={(ringkasan?.izin ?? 0) + (ringkasan?.dinas ?? 0)}
-            icon={Inbox}
-            warna="info"
-          />
-        </div>
-      )}
-
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <PresensiKinerjaCard
             tanggal={sekarang}
-            data={dataKartu(presensi, lencanaPeran(user))}
+            data={dataKartu(presensi, lencanaPeran(user), sekarang)}
             aksi={<TautanPresensi />}
           />
           <KartuJadwal />
@@ -164,9 +170,6 @@ function BerandaDesktop() {
 
         <div className="space-y-6">
           <LayananGrid items={layananPeran(user)} />
-          {/* FR-DSH-02 — antrean persetujuan & jurnal belum terisi (pimpinan). */}
-          {pimpinanView && <AntreanPersetujuan />}
-          {pimpinanView && <JurnalBelumTerisi />}
           <PanelPengumuman />
         </div>
       </div>
@@ -190,25 +193,32 @@ function TautanPresensi() {
 /* ------------------------------ BAGIAN BERSAMA ------------------------------ */
 
 function dataKartu(
-  presensi: ReturnType<typeof usePresensiHariIni>['data'],
+  status: StatusHariIni | undefined,
   lencana: string,
+  sekarang: Date,
 ): PresensiKinerjaData {
-  const jamDatang = presensi?.jam_datang ?? null
-  const jamPulang = presensi?.jam_pulang ?? null
+  const presensi = status?.presensi ?? null
+  const jamDatang = presensi?.masuk.jam ?? null
+  const jamPulang = presensi?.pulang.jam ?? null
+
+  // A-20 — Y = durasi jam kerja hari ini; X = menit berjalan sejak jam datang.
+  const menitKerjaTarget = Math.max(0, menitDariJam(status?.jam_pulang) - menitDariJam(status?.jam_masuk))
+  const akhir = jamPulang ?? formatJamSingkat(sekarang)
+  const menitKerja = jamDatang ? Math.max(0, menitDariJam(akhir) - menitDariJam(jamDatang)) : 0
 
   let lencanaFinal = lencana
   let varian: PresensiKinerjaData['lencanaVarian'] = 'netral'
 
-  if (presensi?.libur) {
+  if (status?.hari_libur) {
     lencanaFinal = 'LIBUR'
     varian = 'peringatan'
-  } else if (presensi?.berhalangan) {
-    lencanaFinal = (presensi.jenis_berhalangan ?? 'IZIN').toUpperCase()
+  } else if (status?.pengajuan) {
+    lencanaFinal = (status.pengajuan.label_jenis ?? status.pengajuan.jenis).toUpperCase()
     varian = 'peringatan'
-  } else if (!presensi?.status_masuk) {
+  } else if (!jamDatang) {
     lencanaFinal = 'BELUM PRESENSI'
     varian = 'bahaya'
-  } else if (presensi.status_masuk === 'terlambat') {
+  } else if (presensi?.masuk.status === 'terlambat') {
     lencanaFinal = 'TERLAMBAT'
     varian = 'peringatan'
   } else {
@@ -217,10 +227,10 @@ function dataKartu(
   }
 
   return {
-    jamDatang: jamDatang ? jamAtauNol(jamDatang) : null,
-    jamPulang: jamPulang ? jamAtauNol(jamPulang) : null,
-    menitKerja: presensi?.menit_kerja ?? 0,
-    menitKerjaTarget: presensi?.menit_kerja_target ?? 0,
+    jamDatang,
+    jamPulang,
+    menitKerja,
+    menitKerjaTarget,
     lencana: lencanaFinal,
     lencanaVarian: varian,
   }
