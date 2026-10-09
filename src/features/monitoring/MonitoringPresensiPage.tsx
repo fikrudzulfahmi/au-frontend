@@ -16,6 +16,7 @@ import { formatTanggalDari } from '@/lib/format'
 import { ROLE, punyaPeran } from '@/lib/roles'
 import { useAuth } from '@/features/auth/AuthContext'
 import type { BarisMonitoring, KategoriMonitoring, MonitoringHarian } from '@/features/presensi/types'
+import { PetaLokasiAbsen } from './PetaLokasiAbsen'
 import { VARIAN_KATEGORI } from '@/features/presensi/types'
 
 /** FR-PRS-10/11/13 — monitoring presensi harian, persetujuan luar radius, dan koreksi. */
@@ -266,9 +267,20 @@ function DetailPresensi({
           {baris.ada_foto && baris.presensi_id !== null ? (
             foto.data === undefined
               ? <p className="text-sm text-muted">Memuat foto…</p>
-              : <img src={foto.data} alt={`Foto presensi ${baris.nama}`} className="w-full rounded-control" />
+              : <img src={foto.data} alt={`Foto presensi ${baris.nama}`} className="mx-auto max-h-[320px] w-full object-contain" />
           ) : (
             <p className="rounded-control bg-app-soft px-3 py-2 text-sm text-muted">Tidak ada foto presensi hari ini.</p>
+          )}
+
+          {baris.masuk_lat !== null && baris.masuk_lng !== null && (
+            <PetaLokasiAbsen
+              lat={baris.masuk_lat}
+              lng={baris.masuk_lng}
+              lokasiLat={baris.lokasi_lat ?? null}
+              lokasiLng={baris.lokasi_lng ?? null}
+              radiusM={baris.lokasi_radius_m ?? null}
+              nama={baris.lokasi ?? 'Presensi'}
+            />
           )}
 
           <dl className="grid grid-cols-2 gap-3 text-sm">

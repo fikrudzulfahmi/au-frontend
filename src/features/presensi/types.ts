@@ -116,6 +116,11 @@ export interface BarisMonitoring {
   presensi_id: number | null
   masuk_jam: string | null
   pulang_jam: string | null
+  masuk_lat: number | null
+  masuk_lng: number | null
+  lokasi_lat: number | null
+  lokasi_lng: number | null
+  lokasi_radius_m: number | null
   masuk_status: string | null
   pulang_status: string | null
   masuk_validasi: string | null
