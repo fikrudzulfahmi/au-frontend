@@ -14,6 +14,7 @@ import { pesanError } from '@/lib/api'
 import { kompresFoto } from '@/lib/kompresFoto'
 import { GeolokasiError, bacaPosisi, formatJarak, terdekatLokasi, type Posisi } from '@/lib/geolokasi'
 import { ambilStatusHariIni, kirimPresensi } from './api'
+import { PetaPresensi } from './PetaPresensi'
 
 type Mode = 'masuk' | 'pulang'
 
@@ -105,6 +106,11 @@ export function PresensiPage() {
       setMembacaPosisi(false)
     }
   }, [])
+
+  // Baca lokasi otomatis saat halaman presensi dibuka (FR-PRS-06).
+  useEffect(() => {
+    void perbaruiPosisi()
+  }, [perbaruiPosisi])
 
   async function ambilFoto() {
     const video = videoRef.current
@@ -304,9 +310,16 @@ export function PresensiPage() {
 
           {/* ---------- Lokasi ---------- */}
           <div className="card p-5">
-            <h2 className="flex items-center gap-2 text-base font-bold text-strong">
-              <MapPin size={18} className="text-primary" /> Lokasi
-            </h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-base font-bold text-strong">
+                <MapPin size={18} className="text-primary" /> Lokasi
+              </h2>
+              {jarak !== null && (
+                <StatusBadge varian={jarak.diDalamRadius ? 'hadir' : 'alpa'}>
+                  {jarak.diDalamRadius ? 'Di dalam radius' : 'Di luar radius'}
+                </StatusBadge>
+              )}
+            </div>
 
             <div className="mt-3 space-y-3">
               {posisi === null ? (
@@ -331,6 +344,10 @@ export function PresensiPage() {
                     </dd>
                   </div>
                 </dl>
+              )}
+
+              {data !== undefined && data.lokasi.length > 0 && (
+                <PetaPresensi daftarLokasi={data.lokasi} posisi={posisi} />
               )}
 
               <Button varian="secondary" memuat={membacaPosisi} onClick={() => void perbaruiPosisi()}>
