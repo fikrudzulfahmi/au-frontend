@@ -82,8 +82,9 @@ describe('grid layanan (FR-UI-07)', () => {
     expect(labelStruktural).not.toContain('Jurnal')
   })
 
-  it('menandai fitur luar radius sebagai "Segera"', () => {
-    const luarRadius = layananPeran(guru).find((l) => l.label === 'Luar Radius')
-    expect(luarRadius?.segera).toBe(true)
+  it('menampilkan layanan "Ajukan Luar Radius" untuk guru', () => {
+    const luarRadius = layananPeran(guru).find((l) => l.label === 'Ajukan Luar Radius')
+    expect(luarRadius).toBeDefined()
+    expect(luarRadius?.segera).toBeFalsy()
   })
 })

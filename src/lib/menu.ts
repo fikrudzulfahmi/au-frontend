@@ -235,10 +235,9 @@ export function layananPeran(user: Pengguna | null): LayananItem[] {
 
   const luarRadius: LayananItem = {
     to: '/pengajuan/luar-radius/baru',
-    label: 'Luar Radius',
+    label: 'Ajukan Luar Radius',
     icon: MapPin,
     warna: 'biru',
-    segera: true,
   }
 
   const waliKelas: LayananItem = {
