@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   MapPin,
   MonitorPlay,
+  NotebookPen,
   PenLine,
   ScrollText,
   Settings,
@@ -133,8 +134,10 @@ export const MENU_SIDEBAR: NavGroup[] = [
     judul: 'Laporan',
     items: [
       { to: '/laporan/presensi/rekap', label: 'Rekap Presensi', icon: FileBarChart2, akses: semua },
+      { to: '/laporan/datang-pulang', label: 'Datang & Pulang', icon: Fingerprint, akses: semua },
       { to: '/laporan/presensi-siswa', label: 'Presensi Siswa', icon: Users, akses: semua },
       { to: '/laporan/jurnal', label: 'Laporan Jurnal', icon: BookOpen, akses: semua },
+      { to: '/laporan/jurnal/harian', label: 'Jurnal Harian', icon: NotebookPen, akses: masterBaca },
       { to: '/laporan/jurnal/kepatuhan', label: 'Kepatuhan Jurnal', icon: ShieldCheck, akses: masterBaca },
       { to: '/laporan/izin', label: 'Rekap Izin', icon: FileText, akses: semua },
     ],

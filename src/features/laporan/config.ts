@@ -1,4 +1,4 @@
-import { bolehLaporanJurnal, bolehLaporanPresensi } from '@/lib/roles'
+import { bolehLaporanJurnal, bolehLaporanPresensi, penggunaMemantau } from '@/lib/roles'
 import type { Pengguna } from '@/lib/roles'
 
 /** Filter yang dapat ditampilkan pada sebuah laporan, di luar periode. */
@@ -110,6 +110,20 @@ export const LAPORAN: KonfigurasiLaporan[] = [
     akses: bolehLaporanPresensi,
   },
   {
+    jalur: '/laporan/datang-pulang',
+    endpoint: '/laporan/presensi/datang-pulang',
+    kode: 'FR-LAP-14',
+    judul: 'Datang & Pulang Semua Pegawai',
+    keterangan:
+      'Matriks gaya mesin absensi: satu baris per pegawai, satu kolom per tanggal — jam datang, jam pulang, hari izin, atau tanda belum presensi.',
+    kelompok: 'Presensi Pegawai',
+    modeWaktu: 'periode',
+    filter: ['jenis_pegawai'],
+    pakaiSemester: true,
+    namaBerkas: 'datang-pulang-semua-pegawai.pdf',
+    akses: bolehLaporanPresensi,
+  },
+  {
     jalur: '/laporan/presensi-siswa',
     endpoint: '/laporan/jurnal/rekap-siswa',
     kode: 'FR-LAP-06',
@@ -163,6 +177,20 @@ export const LAPORAN: KonfigurasiLaporan[] = [
     namaBerkas: 'rekap-jam-mengajar.pdf',
     pakaiSemester: true,
     akses: bolehLaporanJurnal,
+  },
+  {
+    jalur: '/laporan/jurnal/harian',
+    endpoint: '/laporan/jurnal/harian',
+    kode: 'FR-LAP-13',
+    judul: 'Jurnal Harian per Kelas',
+    keterangan:
+      'Kelas mana yang sesinya sudah diisi guru pada satu tanggal, mana yang masih kosong, dan mana yang berhalangan (izin disetujui).',
+    kelompok: 'Jurnal & Siswa',
+    modeWaktu: 'tanggal',
+    filter: ['kelas'],
+    pakaiSemester: true,
+    namaBerkas: 'jurnal-harian-per-kelas.pdf',
+    akses: penggunaMemantau,
   },
 ]
 
