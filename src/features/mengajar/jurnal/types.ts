@@ -3,8 +3,8 @@
 /** Status sesi pada daftar jadwal beranda (FR-JRN-01, KP-4.6). */
 export type StatusSesi = 'belum' | 'sudah' | 'berhalangan'
 
-/** BR-23 — status presensi siswa hanya empat nilai ini. */
-export type StatusSiswa = 'H' | 'S' | 'I' | 'A'
+/** BR-23 — status presensi siswa. */
+export type StatusSiswa = 'H' | 'S' | 'I' | 'A' | 'B'
 
 export interface SesiJurnal {
   plotting_mapel_id: number
@@ -58,6 +58,7 @@ export interface RingkasanPresensi {
   S: number
   I: number
   A: number
+  B: number
 }
 
 export interface Jurnal {
@@ -94,6 +95,7 @@ export interface BarisRekapSiswa {
   sakit: number
   izin: number
   alpa: number
+  bolos: number
   total: number
   persen_hadir: number | null
 }
@@ -114,6 +116,7 @@ export const LABEL_STATUS_SISWA: Record<StatusSiswa, string> = {
   S: 'Sakit',
   I: 'Izin',
   A: 'Alpa',
+  B: 'Bolos',
 }
 
-export const STATUS_SISWA: StatusSiswa[] = ['H', 'S', 'I', 'A']
+export const STATUS_SISWA: StatusSiswa[] = ['H', 'S', 'I', 'A', 'B']

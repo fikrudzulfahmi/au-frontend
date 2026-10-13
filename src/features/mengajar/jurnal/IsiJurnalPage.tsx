@@ -24,6 +24,7 @@ const GAYA_STATUS: Record<StatusSiswa, string> = {
   S: 'bg-purple-soft text-purple ring-purple',
   I: 'bg-info-soft text-info ring-info',
   A: 'bg-danger-soft text-danger ring-danger',
+  B: 'bg-gray-soft text-gray ring-gray',
 }
 
 const MAKS_FOTO = 3
@@ -90,7 +91,7 @@ export function IsiJurnalPage() {
   }, [siswa.data])
 
   const ringkasan = useMemo(() => {
-    const hitung: Record<StatusSiswa, number> = { H: 0, S: 0, I: 0, A: 0 }
+    const hitung: Record<StatusSiswa, number> = { H: 0, S: 0, I: 0, A: 0, B: 0 }
     Object.values(baris).forEach((b) => {
       hitung[b.status] += 1
     })
@@ -413,7 +414,8 @@ export function IsiJurnalPage() {
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <p className="hidden text-xs text-muted sm:block">
-              Hadir {ringkasan.H} · Sakit {ringkasan.S} · Izin {ringkasan.I} · Alpa {ringkasan.A}
+              Hadir {ringkasan.H} · Sakit {ringkasan.S} · Izin {ringkasan.I} · Alpa {ringkasan.A} · Bolos{' '}
+              {ringkasan.B}
             </p>
 
             <Button

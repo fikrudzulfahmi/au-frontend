@@ -90,13 +90,14 @@ export function RekapWaliKelasPage() {
 
           {data && (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
                 {[
                   { label: 'Sesi jurnal', nilai: data.sesi },
                   { label: 'Hadir', nilai: data.ringkasan.H },
                   { label: 'Sakit', nilai: data.ringkasan.S },
                   { label: 'Izin', nilai: data.ringkasan.I },
                   { label: 'Alpa', nilai: data.ringkasan.A },
+                  { label: 'Bolos', nilai: data.ringkasan.B },
                 ].map((s) => (
                   <div key={s.label} className="card p-3 text-center">
                     <p className="text-xs font-bold uppercase tracking-wide text-muted">{s.label}</p>
@@ -117,6 +118,7 @@ export function RekapWaliKelasPage() {
                     { kunci: 's', judul: 'S', render: (s) => s.sakit },
                     { kunci: 'i', judul: 'I', render: (s) => s.izin },
                     { kunci: 'a', judul: 'A', render: (s) => s.alpa },
+                    { kunci: 'b', judul: 'B', render: (s) => s.bolos },
                     { kunci: 'total', judul: 'Total', render: (s) => s.total },
                     {
                       kunci: 'persen',

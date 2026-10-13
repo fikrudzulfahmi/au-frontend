@@ -41,7 +41,7 @@ function rekapContoh(): RekapTv {
         mapel: 'Matematika',
         label_jam: 'Jam ke-1',
       })),
-      presensi_siswa: { hadir: 10, sakit: 0, izin: 0, alpa: 0, total: 10, persen_hadir: 100 },
+      presensi_siswa: { hadir: 10, sakit: 0, izin: 0, alpa: 0, bolos: 0, total: 10, persen_hadir: 100 },
     },
     perizinan: {
       ringkasan: [{ label: 'Pengajuan', nilai: 2 }],

@@ -57,6 +57,7 @@ export interface PresensiSiswaTv {
   sakit: number
   izin: number
   alpa: number
+  bolos: number
   total: number
   persen_hadir: number | null
 }
