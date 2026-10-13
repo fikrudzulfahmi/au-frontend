@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { MENU_SIDEBAR, layananPeran, menuBawah } from './menu'
+import { MENU_SIDEBAR, cariItemAktif, grupAktif, layananPeran, menuBawah } from './menu'
 import type { Pengguna } from './roles'
 
 function pengguna(sebagian: Partial<Pengguna>): Pengguna {
@@ -67,6 +67,30 @@ describe('sidebar desktop (8.3)', () => {
     expect(judulGuru).toContain('Mengajar')
     expect(judulGuru).not.toContain('Master Data')
     expect(judulGuru).not.toContain('Pengaturan')
+  })
+})
+
+describe('menu aktif tunggal (FR-UI-12)', () => {
+  it('hanya menyorot satu item — induk tidak ikut aktif', () => {
+    expect(cariItemAktif('/laporan/jurnal/harian')?.label).toBe('Jurnal Harian')
+    expect(cariItemAktif('/presensi/riwayat')?.label).toBe('Riwayat Presensi')
+    expect(cariItemAktif('/pengajuan/izin/baru')?.label).toBe('Pengajuan')
+    expect(cariItemAktif('/pengumuman/kelola')?.label).toBe('Kelola Pengumuman')
+  })
+
+  it('menemukan item persis dan item turunan', () => {
+    expect(cariItemAktif('/master/siswa')?.label).toBe('Siswa')
+    expect(cariItemAktif('/mengajar/jurnal/isi/5')?.label).toBe('Isi Jurnal')
+  })
+
+  it('mengembalikan grup untuk auto-expand submenu', () => {
+    expect(grupAktif('/laporan/jurnal/harian')).toBe('Laporan')
+    expect(grupAktif('/pengaturan/tv')).toBe('Pengaturan')
+    expect(grupAktif('/tidak-ada')).toBeUndefined()
+  })
+
+  it('setiap grup sidebar kini punya ikon', () => {
+    for (const g of MENU_SIDEBAR) expect(g.icon).toBeTruthy()
   })
 })
 

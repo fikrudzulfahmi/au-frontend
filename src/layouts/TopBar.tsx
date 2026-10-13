@@ -4,7 +4,7 @@ import { Bell, Menu, X } from 'lucide-react'
 
 import { cn } from '@/lib/cn'
 import { formatJamLengkap, formatTanggalPanjang } from '@/lib/format'
-import { MENU_SIDEBAR } from '@/lib/menu'
+import { cariItemAktif } from '@/lib/menu'
 import { LABEL_PERAN } from '@/lib/roles'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useServerClock } from '@/lib/waktu'
@@ -18,9 +18,7 @@ export function TopBar() {
 
   useEffect(() => setMenuTerbuka(false), [location.pathname])
 
-  const judul = MENU_SIDEBAR.flatMap((g) => g.items).find((i) =>
-    location.pathname.startsWith(i.to),
-  )?.label
+  const judul = cariItemAktif(location.pathname)?.label
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur">

@@ -47,6 +47,8 @@ export interface NavItem {
 
 export interface NavGroup {
   judul: string
+  /** Ikon grup untuk menu tingkat 1 (8.3) & mode ciut. */
+  icon: LucideIcon
   items: NavItem[]
 }
 
@@ -63,6 +65,7 @@ const hanyaAdmin = (u: Pengguna | null) => punyaPeran(u, ROLE.admin)
 export const MENU_SIDEBAR: NavGroup[] = [
   {
     judul: 'Utama',
+    icon: Home,
     items: [
       { to: '/dashboard', label: 'Dashboard', icon: Home, akses: semua },
       { to: '/pengumuman', label: 'Pengumuman', icon: Bell, akses: semua },
@@ -70,6 +73,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Presensi Saya',
+    icon: Fingerprint,
     items: [
       { to: '/presensi', label: 'Presensi', icon: Fingerprint, akses: pegawaiAtauGuru, tengah: true },
       { to: '/presensi/riwayat', label: 'Riwayat Presensi', icon: History, akses: pegawaiAtauGuru },
@@ -78,6 +82,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Mengajar',
+    icon: BookOpen,
     items: [
       { to: '/mengajar/jadwal', label: 'Jadwal Mengajar', icon: CalendarDays, akses: guruSaja },
       { to: '/mengajar/jurnal/isi', label: 'Isi Jurnal', icon: PenLine, akses: guruSaja },
@@ -87,6 +92,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Monitoring & Persetujuan',
+    icon: ClipboardCheck,
     items: [
       {
         to: '/monitoring/presensi-harian',
@@ -112,6 +118,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Master Data',
+    icon: GraduationCap,
     items: [
       { to: '/master/tahun-pelajaran', label: 'Tahun Pelajaran', icon: CalendarRange, akses: masterBaca },
       { to: '/master/jurusan', label: 'Jurusan', icon: GraduationCap, akses: masterBaca },
@@ -123,6 +130,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Penugasan & Akademik',
+    icon: CalendarDays,
     items: [
       { to: '/plotting/kelas', label: 'Plotting Kelas', icon: Grid2x2, akses: pengelola },
       { to: '/plotting/mapel', label: 'Plotting Mapel', icon: ClipboardList, akses: pengelola },
@@ -132,6 +140,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Laporan',
+    icon: FileBarChart2,
     items: [
       { to: '/laporan/presensi/rekap', label: 'Rekap Presensi', icon: FileBarChart2, akses: semua },
       { to: '/laporan/datang-pulang', label: 'Datang & Pulang', icon: Fingerprint, akses: semua },
@@ -144,6 +153,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
   },
   {
     judul: 'Pengaturan',
+    icon: Settings,
     items: [
       { to: '/pengaturan/info-sekolah', label: 'Info Sekolah', icon: Landmark, akses: hanyaAdmin },
       { to: '/pengaturan/lokasi', label: 'Lokasi Presensi', icon: MapPin, akses: hanyaAdmin },
@@ -194,6 +204,23 @@ export function menuBawah(user: Pengguna | null): NavItem[] {
 
 export function itemAktif(user: Pengguna | null, grup: NavGroup[]): NavItem[] {
   return grup.flatMap((g) => g.items).filter((i) => (i.akses ? i.akses(user) : true))
+}
+
+/** Item menu yang cocok paling panjang — hanya SATU yang aktif (FR-UI-12). */
+export function cariItemAktif(pathname: string, grup: NavGroup[] = MENU_SIDEBAR): NavItem | undefined {
+  let terbaik: NavItem | undefined
+  for (const i of grup.flatMap((g) => g.items)) {
+    const cocok = pathname === i.to || (i.to !== '/' && pathname.startsWith(i.to + '/'))
+    if (cocok && (terbaik === undefined || i.to.length > terbaik.to.length)) terbaik = i
+  }
+  return terbaik
+}
+
+/** Grup yang memuat item aktif — dipakai auto-expand submenu sidebar. */
+export function grupAktif(pathname: string, grup: NavGroup[] = MENU_SIDEBAR): string | undefined {
+  const aktif = cariItemAktif(pathname, grup)
+  if (!aktif) return undefined
+  return grup.find((g) => g.items.some((i) => i.to === aktif.to))?.judul
 }
 
 /** Layanan grid (FR-UI-07) sesuai peran. */
