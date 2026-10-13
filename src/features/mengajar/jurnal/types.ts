@@ -66,6 +66,8 @@ export interface Jurnal {
   label_jam: string
   jam_ke_mulai: number
   jam_ke_selesai: number
+  /** Kunci sesi (FR-JRN-01) — dipakai menautkan baris riwayat ke halaman ubah. */
+  plotting_mapel_id: number
   kelas_id: number
   kelas: string | null
   mapel_id: number | null

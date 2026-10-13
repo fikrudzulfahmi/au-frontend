@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   MapPin,
   MonitorPlay,
+  PenLine,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -78,6 +79,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
     judul: 'Mengajar',
     items: [
       { to: '/mengajar/jadwal', label: 'Jadwal Mengajar', icon: CalendarDays, akses: guruSaja },
+      { to: '/mengajar/jurnal/isi', label: 'Isi Jurnal', icon: PenLine, akses: guruSaja },
       { to: '/mengajar/jurnal/riwayat', label: 'Jurnal Saya', icon: BookOpen, akses: guruSaja },
       { to: '/wali-kelas/rekap', label: 'Rekap Wali Kelas', icon: Users, akses: guruSaja },
     ],

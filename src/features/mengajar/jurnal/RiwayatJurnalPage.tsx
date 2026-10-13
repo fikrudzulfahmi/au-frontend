@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BookOpen, CalendarDays, Image as ImageIcon } from 'lucide-react'
+import { BookOpen, CalendarDays, Image as ImageIcon, PenLine } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/Button'
 import { DataTable } from '@/components/ui/DataTable'
@@ -40,6 +41,16 @@ export function RiwayatJurnalPage() {
         judul="Jurnal Saya"
         keterangan="Catatan pembelajaran yang Anda isi beserta presensi siswanya."
       />
+
+      {/* FR-JRN-06 — jalan masuk untuk MENGISI jurnal, bukan hanya meninjau riwayat.
+          Tanpa ini, guru hanya dapat mengisi lewat kartu jadwal di beranda, dan
+          kehilangan jalan sama sekali pada hari tanpa jadwal atau untuk tanggal lampau. */}
+      <Link
+        to="/mengajar/jurnal/isi"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-white hover:bg-primary/90"
+      >
+        <PenLine size={16} /> Isi Jurnal
+      </Link>
 
       <div className="card grid gap-3 p-4 sm:grid-cols-2">
         <BidangTeks
@@ -87,11 +98,20 @@ export function RiwayatJurnalPage() {
               {
                 kunci: 'aksi',
                 judul: '',
-                className: 'w-20 text-right',
+                className: 'w-40 text-right',
                 render: (j) => (
-                  <Button ukuran="sm" varian="secondary" onClick={() => setDetail(j)}>
-                    Detail
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button ukuran="sm" varian="secondary" onClick={() => setDetail(j)}>
+                      Detail
+                    </Button>
+                    {/* BR-20 — jurnal pemiliknya dapat diubah tanpa batas waktu. */}
+                    <Link
+                      to={`/mengajar/jurnal/isi/${j.plotting_mapel_id}-${j.jam_ke_mulai}?tanggal=${j.tanggal}&jurnal=${j.id}`}
+                      className="inline-flex min-h-[36px] items-center rounded-control px-3 text-sm font-semibold text-link hover:bg-app-soft"
+                    >
+                      Ubah
+                    </Link>
+                  </div>
                 ),
               },
               {

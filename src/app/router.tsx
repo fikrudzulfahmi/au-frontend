@@ -60,6 +60,9 @@ const PengajuanLuarRadiusBaruPage = lazy(() =>
 const JadwalGuruPage = lazy(() =>
   import('@/features/mengajar/JadwalGuruPage').then((m) => ({ default: m.JadwalGuruPage })),
 )
+const DaftarIsiJurnalPage = lazy(() =>
+  import('@/features/mengajar/jurnal/DaftarIsiJurnalPage').then((m) => ({ default: m.DaftarIsiJurnalPage })),
+)
 const IsiJurnalPage = lazy(() =>
   import('@/features/mengajar/jurnal/IsiJurnalPage').then((m) => ({ default: m.IsiJurnalPage })),
 )
@@ -204,6 +207,8 @@ export function AppRouter() {
             {/* Mengajar */}
             <Route path="/mengajar/jadwal" element={<JadwalGuruPage />} />
             {/* FR-JRN-02/03 — isi jurnal dan presensi siswa dalam satu halaman. */}
+            {/* FR-JRN-06 — guru memilih sesi (termasuk tanggal lampau) sebelum mengisi. */}
+            <Route path="/mengajar/jurnal/isi" element={<DaftarIsiJurnalPage />} />
             <Route path="/mengajar/jurnal/isi/:sesi" element={<IsiJurnalPage />} />
             <Route path="/mengajar/jurnal/riwayat" element={<RiwayatJurnalPage />} />
             {/* FR-JRN-10 — rekap presensi siswa kelas wali. */}
