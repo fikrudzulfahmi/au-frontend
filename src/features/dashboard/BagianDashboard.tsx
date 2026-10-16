@@ -6,7 +6,7 @@ import type { StatusVarian } from '@/components/ui/StatusBadge'
 import { formatTanggalDari, tanggalLokal } from '@/lib/format'
 import { useServerClock } from '@/lib/waktu'
 import { useAuth } from '@/features/auth/AuthContext'
-import { RingkasanKelasHarian } from '@/features/laporan/RingkasanKelasHarian'
+import { KartuKelasJurnal } from '@/features/laporan/KartuKelasJurnal'
 import {
   useAntreanPersetujuan,
   useJurnalBelumTerisi,
@@ -300,7 +300,8 @@ export function JurnalPerKelasHariIni() {
       </div>
 
       <p className="mt-1 text-xs text-muted">
-        Seluruh kelas ditampilkan — termasuk yang tidak punya jadwal hari ini.
+        Satu kartu per kelas: jam pelajaran, mapel, dan guru pengampunya — termasuk kelas yang
+        tidak punya jadwal hari ini.
       </p>
 
       <div className="mt-3">
@@ -310,7 +311,7 @@ export function JurnalPerKelasHariIni() {
           <p className="text-sm text-danger">Data jurnal per kelas tidak dapat dimuat.</p>
         )}
 
-        {data && <RingkasanKelasHarian data={data.kelas ?? []} />}
+        {data && <KartuKelasJurnal data={data.kelas ?? []} tanggal={tanggal} />}
       </div>
     </section>
   )

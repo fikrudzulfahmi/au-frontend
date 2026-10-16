@@ -1,0 +1,83 @@
+import type { StatusVarian } from '@/components/ui/StatusBadge'
+
+import type { RingkasanKelasHarianItem, SesiKelasHarian } from './types'
+
+/**
+ * Aturan tampilan keterisian jurnal (FR-LAP-13) yang dipakai bersama oleh
+ * ringkasan berbentuk tabel (halaman laporan) dan berbentuk kartu (beranda),
+ * supaya dua tampilan tidak pernah memberi label berbeda untuk data yang sama.
+ */
+
+/** Label + warna status satu sesi mengajar. */
+export interface StatusTampilan {
+  teks: string
+  varian: StatusVarian
+}
+
+/**
+ * Status satu kelas pada hari laporan.
+ *
+ * - 'Tidak ada jadwal' bila kelas tanpa jadwal (tanpa_jadwal = true atau sesi = 0),
+ *   jangan sampai dianggap atau diberi label 'belum terisi'.
+ * - 'N belum terisi' bila masih ada sesi mengajar yang jurnalnya belum diisi guru.
+ * - 'Semua terisi' bila seluruh sesi terjadwal telah terisi atau berhalangan dengan izin.
+ */
+export function tentukanStatusKelas(item: RingkasanKelasHarianItem): StatusTampilan {
+  if (item.tanpa_jadwal || item.sesi === 0) {
+    return { teks: 'Tidak ada jadwal', varian: 'netral' }
+  }
+
+  if (item.belum > 0) {
+    return { teks: `${item.belum} belum terisi`, varian: 'bahaya' }
+  }
+
+  return { teks: 'Semua terisi', varian: 'sukses' }
+}
+
+/**
+ * Status satu sesi mengajar.
+ *
+ * 'berhalangan' sengaja berbeda dari 'belum': sesi dengan izin disetujui bukan
+ * kelalaian guru, dan hanya sesi yang belum terisi tanpa izin yang perlu ditagih.
+ */
+export function tentukanStatusSesi(sesi: SesiKelasHarian): StatusTampilan {
+  if (sesi.status === 'sudah') {
+    return { teks: 'Sudah mengisi', varian: 'sukses' }
+  }
+
+  if (sesi.status === 'berhalangan') {
+    return { teks: 'Berhalangan', varian: 'izin' }
+  }
+
+  return { teks: 'Belum mengisi', varian: 'bahaya' }
+}
+
+/** Sesi pada satu kelas yang jurnalnya belum diisi — inti pertanyaan pemantau. */
+export function sesiBelum(k: RingkasanKelasHarianItem): SesiKelasHarian[] {
+  return (k.daftar ?? []).filter((s) => s.status === 'belum')
+}
+
+/**
+ * Urutan baca: kelas yang masih menggantung lebih dulu.
+ *
+ * Seluruh kelas tetap ditampilkan (permintaan pemantau), tetapi kelas yang
+ * belum lengkap tidak boleh tersembunyi di antara kelas yang sudah aman —
+ * karena itu yang belum terisi naik ke atas, kelas tanpa jadwal turun ke bawah.
+ */
+export function urutkanKelas(data: RingkasanKelasHarianItem[]): RingkasanKelasHarianItem[] {
+  return [...data].sort((a, b) => {
+    if (a.tanpa_jadwal !== b.tanpa_jadwal) return a.tanpa_jadwal ? 1 : -1
+    if (a.belum !== b.belum) return b.belum - a.belum
+    return a.nama.localeCompare(b.nama)
+  })
+}
+
+/**
+ * Sesi pada satu kelas menurut urutan jam mengajar.
+ *
+ * Daftar dari API sudah terurut, tetapi kartu menampilkan jam sebagai baris
+ * sehingga urutan jam harus dijamin di sini juga (mis. data tersaring).
+ */
+export function sesiTerurut(k: RingkasanKelasHarianItem): SesiKelasHarian[] {
+  return [...(k.daftar ?? [])].sort((a, b) => a.jam_ke_mulai - b.jam_ke_mulai)
+}

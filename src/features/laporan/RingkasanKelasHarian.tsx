@@ -4,56 +4,16 @@ import type { KolomTabel } from '@/components/ui/DataTable'
 import { DataTable } from '@/components/ui/DataTable'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { StatusVarian } from '@/components/ui/StatusBadge'
 import { cn } from '@/lib/cn'
-import type { RingkasanKelasHarianItem, SesiKelasHarian } from './types'
+import { sesiBelum, tentukanStatusKelas, urutkanKelas } from './ringkasanKelas'
+import type { RingkasanKelasHarianItem } from './types'
 
 /**
- * Menentukan label teks dan varian lencana untuk status keterisian jurnal per kelas.
+ * Kolom ringkasan per kelas pada halaman laporan.
  *
- * Mengikuti aturan BR laporan:
- * - 'Tidak ada jadwal' bila kelas tanpa jadwal (tanpa_jadwal = true atau sesi = 0),
- *   jangan sampai dianggap atau diberi label 'belum terisi'.
- * - 'N belum terisi' bila masih ada sesi mengajar yang jurnalnya belum diisi guru.
- * - 'Semua terisi' bila seluruh sesi terjadwal (sesi > 0) telah terisi atau berhalangan dengan izin.
- *
- * Teks eksplisit selalu ditampilkan agar tidak mengandalkan warna semata (aksesibilitas).
+ * Aturan label/warna status dipakai bersama kartu beranda dan tinggal di
+ * `ringkasanKelas.ts`, supaya dua tampilan tidak pernah berbeda tafsir.
  */
-function tentukanStatus(item: RingkasanKelasHarianItem): {
-  teks: string
-  varian: StatusVarian
-} {
-  if (item.tanpa_jadwal || item.sesi === 0) {
-    return { teks: 'Tidak ada jadwal', varian: 'netral' }
-  }
-
-  if (item.belum > 0) {
-    return { teks: `${item.belum} belum terisi`, varian: 'bahaya' }
-  }
-
-  return { teks: 'Semua terisi', varian: 'sukses' }
-}
-
-/** Sesi pada satu kelas yang jurnalnya belum diisi — inti pertanyaan pemantau. */
-function sesiBelum(k: RingkasanKelasHarianItem): SesiKelasHarian[] {
-  return (k.daftar ?? []).filter((s) => s.status === 'belum')
-}
-
-/**
- * Urutan baca: kelas yang masih menggantung lebih dulu.
- *
- * Seluruh kelas tetap ditampilkan (permintaan pemantau), tetapi kelas yang
- * belum lengkap tidak boleh tersembunyi di antara kelas yang sudah aman —
- * karena itu yang belum terisi naik ke atas, kelas tanpa jadwal turun ke bawah.
- */
-function urutkan(data: RingkasanKelasHarianItem[]): RingkasanKelasHarianItem[] {
-  return [...data].sort((a, b) => {
-    if (a.tanpa_jadwal !== b.tanpa_jadwal) return a.tanpa_jadwal ? 1 : -1
-    if (a.belum !== b.belum) return b.belum - a.belum
-    return a.nama.localeCompare(b.nama)
-  })
-}
-
 const KOLOM_RINGKASAN_KELAS: KolomTabel<RingkasanKelasHarianItem>[] = [
   {
     kunci: 'kelas',
@@ -100,7 +60,7 @@ const KOLOM_RINGKASAN_KELAS: KolomTabel<RingkasanKelasHarianItem>[] = [
     kunci: 'status',
     judul: 'Status',
     render: (k) => {
-      const { teks, varian } = tentukanStatus(k)
+      const { teks, varian } = tentukanStatusKelas(k)
       return <StatusBadge varian={varian}>{teks}</StatusBadge>
     },
   },
@@ -162,7 +122,7 @@ export function RingkasanKelasHarian({ data }: RingkasanKelasHarianProps) {
     )
   }
 
-  const kelas = urutkan(data)
+  const kelas = urutkanKelas(data)
   const belumLengkap = kelas.filter((k) => !k.tanpa_jadwal && k.belum > 0)
   const totalBelum = kelas.reduce((n, k) => n + k.belum, 0)
 
