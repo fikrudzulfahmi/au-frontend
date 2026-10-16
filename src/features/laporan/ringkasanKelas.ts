@@ -73,6 +73,19 @@ export function urutkanKelas(data: RingkasanKelasHarianItem[]): RingkasanKelasHa
 }
 
 /**
+ * Label jam satu sesi untuk tampilan kartu.
+ *
+ * Sesi dua jam (blok) ditulis sebagai rentang ("Jam ke-3–4") karena pada kartu
+ * satu baris = satu sesi, sehingga rentang harus terbaca dari barisnya sendiri.
+ * Sesi satu jam memakai label dari server agar tetap konsisten dengan laporan.
+ */
+export function labelJam(sesi: SesiKelasHarian): string {
+  return sesi.jam_ke_selesai > sesi.jam_ke_mulai
+    ? `Jam ke-${sesi.jam_ke_mulai}–${sesi.jam_ke_selesai}`
+    : sesi.label_jam
+}
+
+/**
  * Sesi pada satu kelas menurut urutan jam mengajar.
  *
  * Daftar dari API sudah terurut, tetapi kartu menampilkan jam sebagai baris

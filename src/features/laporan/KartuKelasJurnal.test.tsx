@@ -169,6 +169,31 @@ describe('KartuKelasJurnal', () => {
     expect(teks.indexOf('Matematika')).toBeLessThan(teks.indexOf('Jaringan Dasar'))
   })
 
+  it('menulis sesi dua jam sebagai rentang jam', () => {
+    const { container } = render(
+      <KartuKelasJurnal
+        data={[
+          kelas({
+            sesi: 1,
+            sudah: 0,
+            belum: 1,
+            daftar: [
+              sesi({
+                label_jam: 'Jam ke-3',
+                jam_ke_mulai: 3,
+                jam_ke_selesai: 4,
+                mapel: 'Praktik Kerja Lapangan',
+                kode_mapel: 'PKL',
+              }),
+            ],
+          }),
+        ]}
+      />,
+    )
+
+    expect(container.textContent).toContain('Jam ke-3–4')
+  })
+
   it('meringkas jumlah sesi yang belum mengisi', () => {
     const { container } = render(
       <KartuKelasJurnal

@@ -4,7 +4,13 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { cn } from '@/lib/cn'
 
-import { sesiTerurut, tentukanStatusKelas, tentukanStatusSesi, urutkanKelas } from './ringkasanKelas'
+import {
+  labelJam,
+  sesiTerurut,
+  tentukanStatusKelas,
+  tentukanStatusSesi,
+  urutkanKelas,
+} from './ringkasanKelas'
 import type { RingkasanKelasHarianItem } from './types'
 
 interface KartuKelasJurnalProps {
@@ -64,7 +70,7 @@ function KartuKelas({
               >
                 <div className="min-w-0">
                   <p className="text-sm text-strong">
-                    <span className="tnum font-semibold">{s.label_jam}</span>
+                    <span className="tnum font-semibold">{labelJam(s)}</span>
                     <span className="text-muted"> · </span>
                     {s.mapel}
                   </p>
