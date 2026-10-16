@@ -50,6 +50,27 @@ const OPSI_JENIS_PENGAJUAN = [
   { nilai: 'cuti', label: 'Cuti' },
 ]
 
+/**
+ * Nama bidang ringkasan yang lebih gamblang untuk laporan tertentu.
+ *
+ * Backend memakai label ringkas ("Terisi", "Belum", "Sesi") yang sama untuk semua
+ * laporan. Pada FR-LAP-13 angka itu dihitung per jam pelajaran, sehingga diberi
+ * satuan agar tidak terbaca sebagai jumlah kelas.
+ */
+const LABEL_RINGKASAN: Record<string, Record<string, string>> = {
+  'FR-LAP-13': {
+    Kelas: 'Kelas terdaftar',
+    Sesi: 'Jam terjadwal',
+    Terisi: 'Jam sudah diisi',
+    Belum: 'Jam belum diisi',
+    Berhalangan: 'Jam berhalangan (izin)',
+  },
+}
+
+function labelRingkasan(kode: string, label: string): string {
+  return LABEL_RINGKASAN[kode]?.[label] ?? label
+}
+
 const LABEL_FILTER: Record<JenisFilter, string> = {
   tanggal: 'Tanggal',
   pegawai: 'Pegawai',
@@ -472,13 +493,19 @@ function IsiLaporan({
       {(hasil.ringkasan ?? []).length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(hasil.ringkasan ?? []).map((r) => (
-            <StatCard key={r.label} label={r.label} nilai={r.nilai} />
+            <StatCard
+              key={r.label}
+              label={labelRingkasan(hasil.kode, r.label)}
+              nilai={r.nilai}
+            />
           ))}
         </div>
       )}
 
       {/* FR-LAP-13 menyajikan ringkasan status jurnal per kelas di atas detail sesi */}
-      {hasil.kode === 'FR-LAP-13' && <RingkasanKelasHarian data={hasil.kelas} />}
+      {hasil.kode === 'FR-LAP-13' && (
+        <RingkasanKelasHarian data={hasil.kelas} periode={hasil.periode} />
+      )}
 
       <DataTable
         data={baris}

@@ -84,8 +84,8 @@ describe('KartuKelasJurnal', () => {
     expect(teks).toContain('Siti Aminah, S.Pd.')
 
     // Keterangan per sesi harus eksplisit, bukan warna saja.
-    expect(teks).toContain('Sudah mengisi')
-    expect(teks).toContain('Belum mengisi')
+    expect(teks).toContain('Sudah diisi')
+    expect(teks).toContain('Belum diisi')
   })
 
   it('membedakan sesi berhalangan dari sesi yang belum diisi', () => {
@@ -143,7 +143,7 @@ describe('KartuKelasJurnal', () => {
     expect(teks).toContain('XI TKJ 2')
     expect(teks).toContain('Tidak ada jadwal')
     expect(teks).toContain('Tidak ada jadwal pada hari ini.')
-    expect(teks).not.toContain('Belum mengisi')
+    expect(teks).not.toContain('Belum diisi')
     expect(teks).toContain('Seluruh kelas dengan jadwal sudah mengisi jurnalnya.')
   })
 
@@ -213,7 +213,7 @@ describe('KartuKelasJurnal', () => {
 
     const teks = container.textContent ?? ''
 
-    expect(teks).toContain('2 sesi belum mengisi jurnal pada 2 kelas')
+    expect(teks).toContain('2 jam belum diisi pada 2 kelas')
   })
 
   it('menampilkan keadaan kosong bila tidak ada data kelas', () => {

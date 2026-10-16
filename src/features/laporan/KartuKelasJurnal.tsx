@@ -122,8 +122,8 @@ export function KartuKelasJurnal({ data, tanggal, className }: KartuKelasJurnalP
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control bg-danger-soft px-3 py-2">
           <TriangleAlert size={16} className="shrink-0 text-danger" aria-hidden />
           <span className="text-sm font-semibold text-danger">
-            {totalBelum} sesi belum mengisi jurnal pada {kelas.filter((k) => !k.tanpa_jadwal && k.belum > 0).length}{' '}
-            kelas
+            {totalBelum} jam belum diisi pada{' '}
+            {kelas.filter((k) => !k.tanpa_jadwal && k.belum > 0).length} kelas
           </span>
         </div>
       ) : (

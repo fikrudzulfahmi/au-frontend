@@ -19,8 +19,8 @@ export interface StatusTampilan {
  *
  * - 'Tidak ada jadwal' bila kelas tanpa jadwal (tanpa_jadwal = true atau sesi = 0),
  *   jangan sampai dianggap atau diberi label 'belum terisi'.
- * - 'N belum terisi' bila masih ada sesi mengajar yang jurnalnya belum diisi guru.
- * - 'Semua terisi' bila seluruh sesi terjadwal telah terisi atau berhalangan dengan izin.
+ * - 'N belum diisi' bila masih ada sesi mengajar yang jurnalnya belum diisi guru.
+ * - 'Lengkap' bila seluruh sesi terjadwal telah terisi atau berhalangan dengan izin.
  */
 export function tentukanStatusKelas(item: RingkasanKelasHarianItem): StatusTampilan {
   if (item.tanpa_jadwal || item.sesi === 0) {
@@ -28,10 +28,10 @@ export function tentukanStatusKelas(item: RingkasanKelasHarianItem): StatusTampi
   }
 
   if (item.belum > 0) {
-    return { teks: `${item.belum} belum terisi`, varian: 'bahaya' }
+    return { teks: `${item.belum} belum diisi`, varian: 'bahaya' }
   }
 
-  return { teks: 'Semua terisi', varian: 'sukses' }
+  return { teks: 'Lengkap', varian: 'sukses' }
 }
 
 /**
@@ -39,17 +39,20 @@ export function tentukanStatusKelas(item: RingkasanKelasHarianItem): StatusTampi
  *
  * 'berhalangan' sengaja berbeda dari 'belum': sesi dengan izin disetujui bukan
  * kelalaian guru, dan hanya sesi yang belum terisi tanpa izin yang perlu ditagih.
+ *
+ * Kata yang dipakai ("Sudah diisi" / "Belum diisi") mengikuti kolom Status pada
+ * tabel rincian laporan, supaya satu halaman tidak memakai dua istilah berbeda.
  */
 export function tentukanStatusSesi(sesi: SesiKelasHarian): StatusTampilan {
   if (sesi.status === 'sudah') {
-    return { teks: 'Sudah mengisi', varian: 'sukses' }
+    return { teks: 'Sudah diisi', varian: 'sukses' }
   }
 
   if (sesi.status === 'berhalangan') {
     return { teks: 'Berhalangan', varian: 'izin' }
   }
 
-  return { teks: 'Belum mengisi', varian: 'bahaya' }
+  return { teks: 'Belum diisi', varian: 'bahaya' }
 }
 
 /** Sesi pada satu kelas yang jurnalnya belum diisi — inti pertanyaan pemantau. */

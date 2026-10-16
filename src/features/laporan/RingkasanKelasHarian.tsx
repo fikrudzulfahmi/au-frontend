@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react'
+import { Info, TriangleAlert } from 'lucide-react'
 
 import type { KolomTabel } from '@/components/ui/DataTable'
 import { DataTable } from '@/components/ui/DataTable'
@@ -8,97 +8,16 @@ import { cn } from '@/lib/cn'
 import { sesiBelum, tentukanStatusKelas, urutkanKelas } from './ringkasanKelas'
 import type { RingkasanKelasHarianItem } from './types'
 
-/**
- * Kolom ringkasan per kelas pada halaman laporan.
- *
- * Aturan label/warna status dipakai bersama kartu beranda dan tinggal di
- * `ringkasanKelas.ts`, supaya dua tampilan tidak pernah berbeda tafsir.
- */
-const KOLOM_RINGKASAN_KELAS: KolomTabel<RingkasanKelasHarianItem>[] = [
-  {
-    kunci: 'kelas',
-    judul: 'Kelas',
-    render: (k) => <span className="font-semibold text-strong">{k.nama}</span>,
-  },
-  {
-    kunci: 'sesi',
-    judul: 'Sesi',
-    render: (k) => <span className="tnum">{k.sesi}</span>,
-  },
-  {
-    kunci: 'sudah',
-    judul: 'Terisi',
-    render: (k) => <span className="tnum">{k.sudah}</span>,
-  },
-  {
-    kunci: 'belum',
-    judul: 'Belum',
-    render: (k) => (
-      <span className={cn('tnum', k.belum > 0 && !k.tanpa_jadwal && 'font-bold text-danger')}>
-        {k.belum}
-      </span>
-    ),
-  },
-  {
-    kunci: 'berhalangan',
-    judul: 'Berhalangan',
-    sembunyiMobile: true,
-    render: (k) => <span className="tnum">{k.berhalangan}</span>,
-  },
-  {
-    kunci: 'persen_terisi',
-    judul: '% Terisi',
-    sembunyiMobile: true,
-    render: (k) => {
-      if (k.tanpa_jadwal || k.persen_terisi === null || k.persen_terisi === undefined) {
-        return <span className="text-muted">—</span>
-      }
-      return <span className="tnum font-medium">{k.persen_terisi}%</span>
-    },
-  },
-  {
-    kunci: 'status',
-    judul: 'Status',
-    render: (k) => {
-      const { teks, varian } = tentukanStatusKelas(k)
-      return <StatusBadge varian={varian}>{teks}</StatusBadge>
-    },
-  },
-  {
-    // Menjawab langsung "jurnal mana yang belum diisi": bukan hanya jumlahnya,
-    // tetapi jam dan mata pelajaran yang menggantung pada kelas itu.
-    kunci: 'rincian',
-    judul: 'Jurnal belum diisi',
-    render: (k) => {
-      const belum = sesiBelum(k)
-
-      if (k.tanpa_jadwal) {
-        return <span className="text-xs text-muted">Tidak ada sesi terjadwal hari ini</span>
-      }
-
-      if (belum.length === 0) {
-        return <span className="text-xs text-success">Seluruh sesi sudah terisi</span>
-      }
-
-      return (
-        <ul className="space-y-0.5">
-          {belum.map((s) => (
-            <li key={`${s.jam_ke_mulai}-${s.kode_mapel}`} className="text-xs text-strong">
-              <span className="font-semibold">{s.label_jam}</span>
-              {' · '}
-              {s.mapel}
-              {s.guru ? <span className="text-muted"> — {s.guru}</span> : null}
-              {s.alasan ? <span className="text-warn-text"> ({s.alasan})</span> : null}
-            </li>
-          ))}
-        </ul>
-      )
-    },
-  },
-]
+/** Angka persen gaya Indonesia (koma desimal), seragam dengan laporan lain. */
+function persen(nilai: number | null | undefined): string {
+  if (nilai === null || nilai === undefined) return '—'
+  return `${String(nilai).replace('.', ',')}%`
+}
 
 interface RingkasanKelasHarianProps {
   data?: RingkasanKelasHarianItem[]
+  /** Periode/tanggal laporan untuk judul blok, mis. "16 Oktober 2026". */
+  periode?: string
 }
 
 /**
@@ -109,8 +28,12 @@ interface RingkasanKelasHarianProps {
  *
  * Seluruh kelas pada tahun pelajaran ikut ditampilkan — termasuk yang tidak punya
  * jadwal hari itu — karena kelas yang hilang dari daftar terbaca seolah aman.
+ *
+ * Setiap angka diberi satuan dan pembandingnya ("3 dari 4 jam", "13,6% keterisian"),
+ * dan arti kolom "Berhalangan (izin)" dijelaskan pada catatan kaki — supaya pembaca
+ * tidak perlu menebak apakah kelas itu dianggap lalai atau tidak.
  */
-export function RingkasanKelasHarian({ data }: RingkasanKelasHarianProps) {
+export function RingkasanKelasHarian({ data, periode }: RingkasanKelasHarianProps) {
   if (!data || data.length === 0) {
     return (
       <div className="card overflow-hidden">
@@ -123,16 +46,135 @@ export function RingkasanKelasHarian({ data }: RingkasanKelasHarianProps) {
   }
 
   const kelas = urutkanKelas(data)
-  const belumLengkap = kelas.filter((k) => !k.tanpa_jadwal && k.belum > 0)
-  const totalBelum = kelas.reduce((n, k) => n + k.belum, 0)
+  const kelasBerjadwal = kelas.filter((k) => !k.tanpa_jadwal && k.sesi > 0)
+  const belumLengkap = kelasBerjadwal.filter((k) => k.belum > 0)
+  const totalSesi = kelasBerjadwal.reduce((n, k) => n + k.sesi, 0)
+  const totalSudah = kelasBerjadwal.reduce((n, k) => n + k.sudah, 0)
+  const totalBelum = kelasBerjadwal.reduce((n, k) => n + k.belum, 0)
+  const totalBerhalangan = kelasBerjadwal.reduce((n, k) => n + k.berhalangan, 0)
+  const sesiDinilai = totalSesi - totalBerhalangan
+  const persenTotal = sesiDinilai > 0 ? Math.round((totalSudah / sesiDinilai) * 1000) / 10 : null
+
+  const kolom: KolomTabel<RingkasanKelasHarianItem>[] = [
+    {
+      kunci: 'kelas',
+      judul: 'Kelas',
+      render: (k) => <span className="font-semibold text-strong">{k.nama}</span>,
+    },
+    {
+      kunci: 'sesi',
+      judul: 'Jam terjadwal',
+      render: (k) =>
+        k.tanpa_jadwal || k.sesi === 0 ? (
+          <span className="text-muted">—</span>
+        ) : (
+          <span className="tnum">{k.sesi} jam</span>
+        ),
+    },
+    {
+      kunci: 'sudah',
+      judul: 'Sudah diisi',
+      render: (k) =>
+        // Kelas tanpa jadwal tidak diberi angka 0: nol terbaca sebagai
+        // "tidak ada yang mengisi", padahal memang tidak ada pelajaran.
+        k.tanpa_jadwal || k.sesi === 0 ? (
+          <span className="text-muted">—</span>
+        ) : (
+          <span className={cn('tnum', k.sudah > 0 && 'font-medium text-success')}>{k.sudah}</span>
+        ),
+    },
+    {
+      kunci: 'belum',
+      judul: 'Belum diisi',
+      render: (k) =>
+        k.tanpa_jadwal || k.sesi === 0 ? (
+          <span className="text-muted">—</span>
+        ) : (
+          <span className={cn('tnum', k.belum > 0 && 'font-bold text-danger')}>{k.belum}</span>
+        ),
+    },
+    {
+      kunci: 'berhalangan',
+      judul: 'Berhalangan (izin)',
+      sembunyiMobile: true,
+      render: (k) =>
+        k.tanpa_jadwal || k.sesi === 0 ? (
+          <span className="text-muted">—</span>
+        ) : (
+          <span className={cn('tnum', k.berhalangan > 0 && 'text-info')}>{k.berhalangan}</span>
+        ),
+    },
+    {
+      kunci: 'persen_terisi',
+      judul: '% keterisian',
+      sembunyiMobile: true,
+      render: (k) => {
+        if (
+          k.tanpa_jadwal ||
+          k.sesi === 0 ||
+          k.persen_terisi === null ||
+          k.persen_terisi === undefined
+        ) {
+          return <span className="text-muted">—</span>
+        }
+        return <span className="tnum font-medium">{persen(k.persen_terisi)}</span>
+      },
+    },
+    {
+      kunci: 'status',
+      judul: 'Status',
+      render: (k) => {
+        const status = tentukanStatusKelas(k)
+        return <StatusBadge varian={status.varian}>{status.teks}</StatusBadge>
+      },
+    },
+    {
+      // Menjawab langsung "jurnal mana yang belum diisi": bukan hanya jumlahnya,
+      // tetapi jam, mata pelajaran, guru, dan alasan sesi itu belum terisi.
+      kunci: 'rincian',
+      judul: `Jurnal belum diisi (${totalBelum})`,
+      render: (k) => {
+        const belum = sesiBelum(k)
+
+        if (k.tanpa_jadwal || k.sesi === 0) {
+          return <span className="text-xs text-muted">Tidak ada sesi terjadwal pada hari ini</span>
+        }
+
+        if (belum.length === 0) {
+          return (
+            <span className="text-xs text-success">
+              Seluruh {k.sesi} jam sudah terisi
+              {k.berhalangan > 0 ? ` (${k.berhalangan} berhalangan izin)` : ''}
+            </span>
+          )
+        }
+
+        return (
+          <ul className="space-y-1">
+            {belum.map((s) => (
+              <li key={`${s.jam_ke_mulai}-${s.kode_mapel}`} className="text-xs text-strong">
+                <span className="font-semibold">{s.label_jam}</span>
+                {' · '}
+                {s.mapel}
+                {s.guru ? <span className="text-muted"> — {s.guru}</span> : null}
+                {s.alasan ? <span className="text-warn-text"> ({s.alasan})</span> : null}
+              </li>
+            ))}
+          </ul>
+        )
+      },
+    },
+  ]
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-        <h3 className="text-sm font-bold text-strong">Ringkasan per Kelas</h3>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
+        <h3 className="text-sm font-bold text-strong">
+          Ringkasan per Kelas{periode ? ` · ${periode}` : ''}
+        </h3>
         <span className="text-xs text-muted">
-          {kelas.length} kelas terdaftar
-          {belumLengkap.length > 0 ? ` · ${totalBelum} sesi belum terisi` : null}
+          {kelas.length} kelas terdaftar · {totalSesi} jam terjadwal · {totalBelum} belum diisi ·{' '}
+          {persenTotal === null ? '—' : persen(persenTotal)} keterisian
         </span>
       </div>
 
@@ -140,12 +182,9 @@ export function RingkasanKelasHarian({ data }: RingkasanKelasHarianProps) {
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control bg-danger-soft px-3 py-2">
           <TriangleAlert size={16} className="shrink-0 text-danger" aria-hidden />
           <span className="text-sm font-semibold text-danger">
-            {belumLengkap.length} dari {kelas.filter((k) => !k.tanpa_jadwal).length} kelas belum
-            lengkap:
+            {belumLengkap.length} dari {kelasBerjadwal.length} kelas belum lengkap:
           </span>
-          <span className="text-sm text-strong">
-            {belumLengkap.map((k) => k.nama).join(', ')}
-          </span>
+          <span className="text-sm text-strong">{belumLengkap.map((k) => k.nama).join(', ')}</span>
         </div>
       ) : (
         <div className="rounded-control bg-success-soft px-3 py-2 text-sm font-semibold text-success">
@@ -156,9 +195,20 @@ export function RingkasanKelasHarian({ data }: RingkasanKelasHarianProps) {
       <DataTable
         data={kelas}
         kunciBaris={(k) => k.kelas_id}
-        kolom={KOLOM_RINGKASAN_KELAS}
+        kolom={kolom}
         kosong="Tidak ada data ringkasan kelas."
       />
+
+      <p className="flex items-start gap-1.5 px-1 text-xs text-muted">
+        <Info size={13} className="mt-0.5 shrink-0" aria-hidden />
+        <span>
+          <strong className="text-strong">Berhalangan (izin)</strong> = guru tidak masuk dengan izin
+          disetujui, sehingga sesi itu tidak dihitung sebagai belum diisi.{' '}
+          <strong className="text-strong">% keterisian</strong> = jam sudah diisi ÷ (jam terjadwal −
+          jam berhalangan). Tanda “—” pada jam terjadwal berarti kelas tidak punya pelajaran pada
+          hari itu.
+        </span>
+      </p>
     </div>
   )
 }

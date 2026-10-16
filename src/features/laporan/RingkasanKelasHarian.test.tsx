@@ -57,10 +57,12 @@ describe('RingkasanKelasHarian', () => {
 
     // Kelas tanpa jadwal diberi label sendiri, bukan "belum terisi".
     expect(teks).toContain('Tidak ada jadwal')
-    expect(teks).toContain('Tidak ada sesi terjadwal hari ini')
-    expect(teks).toContain('1 belum terisi')
-    expect(teks).toContain('Semua terisi')
+    expect(teks).toContain('Tidak ada sesi terjadwal pada hari ini')
+    expect(teks).toContain('1 belum diisi')
+    expect(teks).toContain('Lengkap')
     expect(teks).toContain('3 kelas terdaftar')
+    // Angka diberi satuan dan pembandingnya, bukan telanjang.
+    expect(teks).toContain('6 jam terjadwal')
   })
 
   it('menyebut nama kelas yang belum lengkap pada peringatan', () => {
@@ -77,7 +79,7 @@ describe('RingkasanKelasHarian', () => {
     const teks = container.textContent ?? ''
 
     expect(teks).toContain('1 dari 3 kelas belum lengkap')
-    expect(teks).toContain('2 sesi belum terisi')
+    expect(teks).toContain('2 belum diisi')
   })
 
   it('tidak menuduh kelas tanpa jadwal sebagai belum lengkap', () => {
@@ -138,6 +140,32 @@ describe('RingkasanKelasHarian', () => {
     expect(teks).toContain('Jam ke-3')
     expect(teks).toContain('Pemrograman Web')
     expect(teks).toContain('Ahmad Fauzi S.Pd.')
+  })
+
+  it('menjelaskan arti berhalangan dan cara hitung persentase', () => {
+    const { container } = render(
+      <RingkasanKelasHarian
+        periode="16 Oktober 2026"
+        data={[
+          kelas({ kelas_id: 1, nama: 'X RPL 1', sesi: 4, sudah: 1, belum: 2, berhalangan: 1 }),
+        ]}
+      />,
+    )
+
+    const teks = container.textContent ?? ''
+
+    // Judul menyebut periode agar blok tidak ambigu bila laporan berganti tanggal.
+    expect(teks).toContain('Ringkasan per Kelas · 16 Oktober 2026')
+
+    // Total di kepala blok diberi satuan.
+    expect(teks).toContain('4 jam terjadwal')
+    expect(teks).toContain('2 belum diisi')
+    expect(teks).toContain('33,3% keterisian')
+
+    // Catatan kaki menjelaskan kolom yang mudah disalahpahami.
+    expect(teks).toContain('Berhalangan (izin)')
+    expect(teks).toContain('tidak dihitung sebagai belum diisi')
+    expect(teks).toContain('% keterisian')
   })
 
   it('menampilkan keadaan kosong bila tidak ada data kelas', () => {
