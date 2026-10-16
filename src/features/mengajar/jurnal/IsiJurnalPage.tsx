@@ -17,17 +17,9 @@ import { useServerClock } from '@/lib/waktu'
 import { cn } from '@/lib/cn'
 import { useAuth } from '@/features/auth/AuthContext'
 import { ambilSesiHariIni, ambilSiswaKelas, isiJurnal, perbaruiJurnal } from './api'
+import { GAYA_STATUS } from './gayaStatus'
 import { LABEL_STATUS_SISWA, STATUS_SISWA } from './types'
 import type { BarisPresensiSiswa, StatusSiswa } from './types'
-
-/** Warna tombol status presensi siswa. */
-const GAYA_STATUS: Record<StatusSiswa, string> = {
-  H: 'bg-success-soft text-success ring-success',
-  S: 'bg-purple-soft text-purple ring-purple',
-  I: 'bg-info-soft text-info ring-info',
-  A: 'bg-danger-soft text-danger ring-danger',
-  B: 'bg-gray-soft text-gray ring-gray',
-}
 
 const MAKS_FOTO = 3
 
@@ -106,7 +98,7 @@ export function IsiJurnalPage() {
   }, [siswa.data])
 
   const ringkasan = useMemo(() => {
-    const hitung: Record<StatusSiswa, number> = { H: 0, S: 0, I: 0, A: 0, B: 0 }
+    const hitung: Record<StatusSiswa, number> = { H: 0, S: 0, I: 0, A: 0, B: 0, T: 0 }
     Object.values(baris).forEach((b) => {
       hitung[b.status] += 1
     })
@@ -480,7 +472,7 @@ export function IsiJurnalPage() {
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <p className="hidden text-xs text-muted sm:block">
               Hadir {ringkasan.H} · Sakit {ringkasan.S} · Izin {ringkasan.I} · Alpa {ringkasan.A} · Bolos{' '}
-              {ringkasan.B}
+              {ringkasan.B} · Terlambat {ringkasan.T}
             </p>
 
             <Button

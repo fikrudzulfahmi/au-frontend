@@ -90,7 +90,7 @@ export function RekapWaliKelasPage() {
 
           {data && (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-7">
                 {[
                   { label: 'Sesi jurnal', nilai: data.sesi },
                   { label: 'Hadir', nilai: data.ringkasan.H },
@@ -98,6 +98,7 @@ export function RekapWaliKelasPage() {
                   { label: 'Izin', nilai: data.ringkasan.I },
                   { label: 'Alpa', nilai: data.ringkasan.A },
                   { label: 'Bolos', nilai: data.ringkasan.B },
+                  { label: 'Terlambat', nilai: data.ringkasan.T },
                 ].map((s) => (
                   <div key={s.label} className="card p-3 text-center">
                     <p className="text-xs font-bold uppercase tracking-wide text-muted">{s.label}</p>
@@ -119,16 +120,17 @@ export function RekapWaliKelasPage() {
                     { kunci: 'i', judul: 'I', render: (s) => s.izin },
                     { kunci: 'a', judul: 'A', render: (s) => s.alpa },
                     { kunci: 'b', judul: 'B', render: (s) => s.bolos },
+                    { kunci: 't', judul: 'T', render: (s) => s.terlambat },
                     { kunci: 'total', judul: 'Total', render: (s) => s.total },
                     {
                       kunci: 'persen',
-                      judul: '% Hadir',
+                      judul: '% Kehadiran',
                       render: (s) =>
-                        s.persen_hadir === null ? (
+                        s.persen_kehadiran === null ? (
                           <span className="text-muted">—</span>
                         ) : (
                           <span className="font-semibold text-strong tabular-nums">
-                            {s.persen_hadir}%
+                            {s.persen_kehadiran}%
                           </span>
                         ),
                     },

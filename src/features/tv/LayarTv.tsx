@@ -379,6 +379,7 @@ function PresensiSiswa({ siswa }: { siswa: RekapTv['jurnal']['presensi_siswa'] }
     { label: 'Izin', nilai: siswa.izin },
     { label: 'Alpa', nilai: siswa.alpa },
     { label: 'Bolos', nilai: siswa.bolos },
+    { label: 'Terlambat', nilai: siswa.terlambat },
   ]
 
   return (
@@ -386,7 +387,7 @@ function PresensiSiswa({ siswa }: { siswa: RekapTv['jurnal']['presensi_siswa'] }
       <p className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-white/45">
         <Clock size={12} /> Presensi Siswa (agregat)
       </p>
-      <div className="mt-1.5 grid grid-cols-5 gap-2">
+      <div className="mt-1.5 grid grid-cols-6 gap-2">
         {item.map((i) => (
           <div key={i.label}>
             <p className="tnum text-[18px] font-extrabold leading-none text-white">{i.nilai}</p>

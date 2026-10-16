@@ -58,8 +58,10 @@ export interface PresensiSiswaTv {
   izin: number
   alpa: number
   bolos: number
+  terlambat: number
   total: number
-  persen_hadir: number | null
+  /** (hadir + terlambat) / total. */
+  persen_kehadiran: number | null
 }
 
 export interface JurnalTv {

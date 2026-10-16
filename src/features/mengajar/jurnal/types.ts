@@ -4,7 +4,7 @@
 export type StatusSesi = 'belum' | 'sudah' | 'berhalangan'
 
 /** BR-23 — status presensi siswa. */
-export type StatusSiswa = 'H' | 'S' | 'I' | 'A' | 'B'
+export type StatusSiswa = 'H' | 'S' | 'I' | 'A' | 'B' | 'T'
 
 export interface SesiJurnal {
   plotting_mapel_id: number
@@ -77,6 +77,8 @@ export interface RingkasanPresensi {
   I: number
   A: number
   B: number
+  /** Terlambat — hadir tetapi datang setelah pelajaran dimulai. */
+  T: number
 }
 
 export interface Jurnal {
@@ -114,8 +116,10 @@ export interface BarisRekapSiswa {
   izin: number
   alpa: number
   bolos: number
+  terlambat: number
   total: number
-  persen_hadir: number | null
+  /** (hadir + terlambat) / total — siswa terlambat tetap dihitung hadir. */
+  persen_kehadiran: number | null
 }
 
 export interface RekapSiswa {
@@ -135,6 +139,8 @@ export const LABEL_STATUS_SISWA: Record<StatusSiswa, string> = {
   I: 'Izin',
   A: 'Alpa',
   B: 'Bolos',
+  T: 'Terlambat',
 }
 
-export const STATUS_SISWA: StatusSiswa[] = ['H', 'S', 'I', 'A', 'B']
+/** Urutan tombol status pada halaman isi jurnal (FR-JRN-03). */
+export const STATUS_SISWA: StatusSiswa[] = ['H', 'S', 'I', 'A', 'B', 'T']

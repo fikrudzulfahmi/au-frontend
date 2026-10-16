@@ -139,10 +139,11 @@ export function RiwayatJurnalPage() {
               },
               {
                 kunci: 'presensi',
-                judul: 'H/S/I/A',
+                judul: 'H/S/I/A/B/T',
                 render: (j) => (
                   <span className="whitespace-nowrap tabular-nums text-xs font-semibold">
-                    {j.ringkasan.H}/{j.ringkasan.S}/{j.ringkasan.I}/{j.ringkasan.A}
+                    {j.ringkasan.H}/{j.ringkasan.S}/{j.ringkasan.I}/{j.ringkasan.A}/{j.ringkasan.B}/
+                    {j.ringkasan.T}
                   </span>
                 ),
               },
