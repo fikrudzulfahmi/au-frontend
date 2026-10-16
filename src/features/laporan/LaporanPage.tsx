@@ -28,6 +28,7 @@ import { penggunaMemantau } from '@/lib/roles'
 import type { JenisFilter, KonfigurasiLaporan } from './config'
 import { keBarisLaporan, teksSel } from './types'
 import type { BarisLaporan, HasilLaporan } from './types'
+import { RingkasanKelasHarian } from './RingkasanKelasHarian'
 import { useDataLaporan, usePengaturanDokumen } from './useDataLaporan'
 
 const OPSI_JENIS_PEGAWAI = [
@@ -475,6 +476,9 @@ function IsiLaporan({
           ))}
         </div>
       )}
+
+      {/* FR-LAP-13 menyajikan ringkasan status jurnal per kelas di atas detail sesi */}
+      {hasil.kode === 'FR-LAP-13' && <RingkasanKelasHarian data={hasil.kelas} />}
 
       <DataTable
         data={baris}

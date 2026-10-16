@@ -10,10 +10,12 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useToast } from '@/components/ui/Toast'
 import { kelasInput } from '@/components/ui/FormField'
 import { pesanPerBidang } from '@/lib/crud'
+import { kompresFoto } from '@/lib/kompresFoto'
 import { tanggalLokal } from '@/lib/format'
 import { pesanError } from '@/lib/api'
 import { useServerClock } from '@/lib/waktu'
 import { cn } from '@/lib/cn'
+import { useAuth } from '@/features/auth/AuthContext'
 import { ambilSesiHariIni, ambilSiswaKelas, isiJurnal, perbaruiJurnal } from './api'
 import { LABEL_STATUS_SISWA, STATUS_SISWA } from './types'
 import type { BarisPresensiSiswa, StatusSiswa } from './types'
@@ -30,6 +32,17 @@ const GAYA_STATUS: Record<StatusSiswa, string> = {
 const MAKS_FOTO = 3
 
 /**
+ * Foto kegiatan yang sudah dikompres di klien (A-12/BR-29).
+ *
+ * Server menolak foto di atas 1 MB dan PHP membatasi unggahan 2 MB, sedangkan foto
+ * kamera ponsel biasa 3–8 MB — jadi kompresi di klien wajib, bukan sekadar hemat kuota.
+ */
+interface FotoSiapKirim {
+  berkas: File
+  byte: number
+}
+
+/**
  * FR-JRN-02 / FR-JRN-03 — isi jurnal dan presensi siswa dalam satu halaman.
  *
  * Sesi datang dari penanda URL (`:sesi` = `plottingMapelId-jamKeMulai`) dan tanggal
@@ -37,6 +50,7 @@ const MAKS_FOTO = 3
  * halaman ini tidak pernah mengarang sesi sendiri (FR-JRN-06).
  */
 export function IsiJurnalPage() {
+  const { user } = useAuth()
   const { sesi = '' } = useParams()
   const [cari] = useSearchParams()
   const navigate = useNavigate()
@@ -56,7 +70,8 @@ export function IsiJurnalPage() {
   const [materi, setMateri] = useState('')
   const [kegiatan, setKegiatan] = useState('')
   const [catatan, setCatatan] = useState('')
-  const [foto, setFoto] = useState<File[]>([])
+  const [foto, setFoto] = useState<FotoSiapKirim[]>([])
+  const [sedangKompres, setSedangKompres] = useState(false)
   const [baris, setBaris] = useState<Record<number, { status: StatusSiswa; keterangan: string }>>({})
   const [galat, setGalat] = useState<Record<string, string>>({})
 
@@ -114,7 +129,7 @@ export function IsiJurnalPage() {
       }
 
       if (jurnalId) {
-        return perbaruiJurnal(Number(jurnalId), badan, foto)
+        return perbaruiJurnal(Number(jurnalId), badan, foto.map((f) => f.berkas))
       }
 
       return isiJurnal(
@@ -125,7 +140,7 @@ export function IsiJurnalPage() {
           tanggal,
           jam_ke_mulai: jamKeMulai,
         },
-        foto,
+        foto.map((f) => f.berkas),
       )
     },
     onSuccess: (hasil) => {
@@ -145,17 +160,43 @@ export function IsiJurnalPage() {
     simpan.mutate()
   }
 
-  function tambahFoto(daftar: FileList | null) {
+  /**
+   * A-12 / BR-29 — foto kegiatan dikompres di klien sebelum dikirim.
+   *
+   * Tanpa langkah ini foto kamera ponsel (3–8 MB) selalu ditolak server: request
+   * validation membatasi 1 MB per foto dan PHP menolak berkas di atas
+   * `upload_max_filesize`, sehingga pengguna hanya melihat galat "tidak bisa upload".
+   */
+  async function tambahFoto(daftar: FileList | null) {
     if (!daftar) return
 
-    const gabung = [...foto, ...Array.from(daftar)]
-    if (gabung.length > MAKS_FOTO) {
+    const masuk = Array.from(daftar)
+    if (foto.length + masuk.length > MAKS_FOTO) {
       toast.gagal(`Foto kegiatan maksimal ${MAKS_FOTO} buah.`)
 
       return
     }
 
-    setFoto(gabung)
+    setSedangKompres(true)
+    try {
+      const siap: FotoSiapKirim[] = []
+
+      for (const berkas of masuk) {
+        const hasil = await kompresFoto(berkas, {
+          sisiMaks: 1280,
+          targetKb: 400,
+          nama: `jurnal-${Date.now()}-${siap.length + 1}.jpg`,
+        })
+
+        siap.push({ berkas: hasil.berkas, byte: hasil.byte })
+      }
+
+      setFoto((sebelum) => [...sebelum, ...siap])
+    } catch {
+      toast.gagal('Foto gagal diproses di peramban. Coba pilih foto lain.')
+    } finally {
+      setSedangKompres(false)
+    }
   }
 
   if (sesiHariIni.isLoading) {
@@ -172,6 +213,13 @@ export function IsiJurnalPage() {
   }
 
   const terkunci = !sesiTerpilih.boleh_isi && !jurnalId
+  // Sesi milik guru lain hanya mungkin muncul bagi guru piket hari itu; server
+  // yang memutuskan (boleh_isi), di sini hanya diberitahukan agar tidak
+  // mengagetkan: jurnal yang diisi tercatat atas nama pengampu sesi.
+  const sebagaiPiket =
+    sesiTerpilih.pegawai_id !== undefined &&
+    user?.pegawai_id != null &&
+    sesiTerpilih.pegawai_id !== user.pegawai_id
 
   return (
     <div className="space-y-4 pb-24">
@@ -179,6 +227,22 @@ export function IsiJurnalPage() {
         judul={jurnalId ? 'Ubah Jurnal' : 'Isi Jurnal'}
         keterangan={`${sesiTerpilih.kelas ?? '-'} · ${sesiTerpilih.mapel ?? '-'} · ${sesiTerpilih.label_jam}`}
       />
+
+      {sebagaiPiket && (
+        <div className="flex items-start gap-3 rounded-control bg-primary-soft px-4 py-3">
+          <Info size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+          <div className="text-sm">
+            <p className="font-semibold text-strong">
+              Anda mengisi sebagai guru piket untuk kelas{' '}
+              {sesiTerpilih.kelas ?? 'ini'}
+            </p>
+            <p className="text-muted">
+              Pengampu: {sesiTerpilih.guru ?? 'guru lain'}. Jurnal ini tercatat sebagai milik
+              pengampu dengan keterangan bahwa Anda yang mengisinya.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Ringkasan sesi */}
       <div className="card flex flex-wrap items-center gap-x-5 gap-y-2 p-4 text-sm">
@@ -263,31 +327,32 @@ export function IsiJurnalPage() {
             <label
               className={cn(
                 'inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2 text-sm font-semibold text-muted',
-                (foto.length >= MAKS_FOTO || terkunci) && 'pointer-events-none opacity-50',
+                (foto.length >= MAKS_FOTO || terkunci || sedangKompres) && 'pointer-events-none opacity-50',
               )}
             >
-              <ImagePlus size={16} /> Tambah foto
+              <ImagePlus size={16} /> {sedangKompres ? 'Mengompres…' : 'Tambah foto'}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 multiple
                 className="hidden"
                 onChange={(e) => {
-                  tambahFoto(e.target.files)
+                  void tambahFoto(e.target.files)
                   e.target.value = ''
                 }}
               />
             </label>
 
-            {foto.map((berkas, i) => (
+            {foto.map((siap, i) => (
               <span
-                key={`${berkas.name}-${i}`}
+                key={`${siap.berkas.name}-${i}`}
                 className="inline-flex items-center gap-2 rounded-xl bg-app-soft px-3 py-2 text-xs font-semibold text-strong"
               >
-                {berkas.name}
+                {siap.berkas.name}
+                <span className="font-normal text-muted">{(siap.byte / 1024).toFixed(0)} KB</span>
                 <button
                   type="button"
-                  aria-label={`Buang ${berkas.name}`}
+                  aria-label={`Buang ${siap.berkas.name}`}
                   className="text-danger"
                   onClick={() => setFoto(foto.filter((_, j) => j !== i))}
                 >
@@ -420,7 +485,12 @@ export function IsiJurnalPage() {
 
             <Button
               onClick={kirim}
-              disabled={simpan.isPending || materi.trim() === '' || kegiatan.trim() === ''}
+              disabled={
+                simpan.isPending ||
+                sedangKompres ||
+                materi.trim() === '' ||
+                kegiatan.trim() === ''
+              }
             >
               <Save size={16} /> {simpan.isPending ? 'Menyimpan…' : 'Simpan Jurnal'}
             </Button>

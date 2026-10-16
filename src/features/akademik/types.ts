@@ -201,3 +201,36 @@ export const OPSI_TIPE_SLOT = [
 ]
 
 export const OPSI_HARI = NAMA_HARI.map((nama, indeks) => ({ nilai: indeks + 1, label: nama }))
+
+/**
+ * Penugasan guru piket: siapa bertugas pada hari apa dalam satu semester.
+ *
+ * Berbeda dari `jadwal` yang menempel pada plotting mapel, penugasan ini berdiri
+ * sendiri per (semester, guru, hari) dan menjadi dasar hak guru piket mengisi
+ * jurnal kelas lain pada hari tugasnya.
+ */
+export interface PenugasanPiket {
+  id: number
+  semester_id: number
+  semester?: string | null
+  pegawai_id: number
+  nip?: string | null
+  nama?: string | null
+  hari: number
+  nama_hari: string
+  catatan: string | null
+  is_active: boolean
+}
+
+/** Guru aktif berjenis guru — pilihan pada layar penetapan piket. */
+export interface GuruPilihan {
+  id: number
+  nip: string
+  nama: string
+}
+
+/** Label hari dari server; jangan didefinisikan ulang di klien. */
+export interface PenugasanPiketMeta {
+  semester_id: number
+  hari: Array<{ kode: number; nama: string }>
+}

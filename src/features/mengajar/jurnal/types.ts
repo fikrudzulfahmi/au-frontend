@@ -22,6 +22,13 @@ export interface SesiJurnal {
   alasan: string | null
   /** KP-4.6 / BR-19 — server yang memutuskan, bukan klien. */
   boleh_isi: boolean
+  /**
+   * Pengampu sesi menurut jadwal. Hanya dikirim untuk guru piket, yang daftar
+   * sesinya mencakup seluruh kelas — sesi biasa selalu milik pengguna sendiri.
+   */
+  pegawai_id?: number
+  guru?: string | null
+  nip?: string | null
 }
 
 export interface SemesterRingkas {
@@ -34,6 +41,17 @@ export interface SemesterRingkas {
 export interface HariIniJurnal {
   tanggal: string
   semester: SemesterRingkas
+  /**
+   * Penugasan piket pada tanggal ini. Bila `bertugas`, `sesi` berisi seluruh
+   * kelas sekolah (bukan hanya jadwal pengguna) dan setiap sesi memuat nama
+   * pengampunya — guru piket menggantikan pengampu yang berhalangan.
+   */
+  piket: {
+    bertugas: boolean
+    hari: number
+    nama_hari: string | null
+    catatan: string | null
+  }
   sesi: SesiJurnal[]
   ringkasan: {
     total: number

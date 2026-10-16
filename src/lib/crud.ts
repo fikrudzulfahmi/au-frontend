@@ -16,8 +16,13 @@ export function bersihkanParams(params: Record<string, unknown>): Record<string,
 export function pesanPerBidang(error: unknown): Record<string, string> {
   if (!(error instanceof ApiError) || !error.errors) return {}
 
+  // Kunci bersarang seperti `foto.0` / `presensi.3.status` dipetakan ke bidang
+  // induknya, supaya galat unggahan berkas tetap tampil di sebelah bidangnya.
   return Object.fromEntries(
-    Object.entries(error.errors).map(([bidang, daftar]) => [bidang, daftar[0]]),
+    Object.entries(error.errors).map(([bidang, daftar]) => [
+      bidang.includes('.') ? bidang.split('.')[0] : bidang,
+      daftar[0],
+    ]),
   )
 }
 

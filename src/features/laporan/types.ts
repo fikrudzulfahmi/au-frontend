@@ -18,6 +18,41 @@ export interface RingkasanLaporan {
 /** Satu sel matriks laporan; `null` berarti data tidak ada (mis. belum presensi). */
 export type SelLaporan = string | number | null
 
+/**
+ * Rincian satu sesi jadwal mengajar di kelas pada laporan harian jurnal (FR-LAP-13).
+ */
+export interface SesiKelasHarian {
+  label_jam: string
+  jam_ke_mulai: number
+  jam_ke_selesai: number
+  mapel: string
+  kode_mapel: string
+  guru_id: number
+  nip: string | null
+  guru: string
+  jurnal_id: number | null
+  materi: string | null
+  status: 'sudah' | 'belum' | 'berhalangan'
+  alasan: string | null
+}
+
+/**
+ * Ringkasan status keterisian jurnal per kelas pada laporan harian (FR-LAP-13).
+ * Menampung seluruh kelas sekolah (termasuk yang tidak memiliki jadwal pada hari itu)
+ * agar pimpinan sekolah dapat melihat kelas mana saja yang belum terisi.
+ */
+export interface RingkasanKelasHarianItem {
+  kelas_id: number
+  nama: string
+  sesi: number
+  sudah: number
+  belum: number
+  berhalangan: number
+  tanpa_jadwal: boolean
+  persen_terisi: number | null
+  daftar: SesiKelasHarian[]
+}
+
 export interface HasilLaporan {
   kode: string
   judul: string
@@ -25,6 +60,8 @@ export interface HasilLaporan {
   kolom: string[]
   baris: SelLaporan[][]
   ringkasan?: RingkasanLaporan[]
+  /** Ringkasan keterisian per kelas untuk FR-LAP-13 (Jurnal Harian per Kelas). */
+  kelas?: RingkasanKelasHarianItem[]
   /** Bidang tambahan per laporan; tidak dipakai tabel generik. */
   pegawai?: unknown
   guru?: unknown

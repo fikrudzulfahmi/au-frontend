@@ -110,6 +110,9 @@ const JamPelajaranPage = lazy(() =>
 const JadwalPage = lazy(() =>
   import('@/features/akademik/JadwalPage').then((m) => ({ default: m.JadwalPage })),
 )
+const PenugasanPiketPage = lazy(() =>
+  import('@/features/akademik/PenugasanPiketPage').then((m) => ({ default: m.PenugasanPiketPage })),
+)
 
 const MonitoringPresensiPage = lazy(() =>
   import('@/features/monitoring/MonitoringPresensiPage').then((m) => ({
@@ -240,6 +243,9 @@ export function AppRouter() {
             <Route path="/plotting/mapel" element={<PlottingMapelPage />} />
             <Route path="/akademik/jam-pelajaran" element={<JamPelajaranPage />} />
             <Route path="/akademik/jadwal" element={<JadwalPage />} />
+            {/* Penetapan guru piket menentukan siapa yang boleh mengisi jurnal
+                kelas lain, jadi rutenya hanya untuk admin. */}
+            <Route path="/akademik/penugasan-piket" element={<PenugasanPiketPage />} />
 
             {/* Monitoring & persetujuan */}
             <Route path="/monitoring/presensi-harian" element={<MonitoringPresensiPage />} />

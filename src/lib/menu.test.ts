@@ -83,6 +83,18 @@ describe('menu aktif tunggal (FR-UI-12)', () => {
     expect(cariItemAktif('/mengajar/jurnal/isi/5')?.label).toBe('Isi Jurnal')
   })
 
+  it('menyembunyikan Penugasan Guru Piket dari selain admin', () => {
+    const kepsek = pengguna({ peran: ['kepala_sekolah'] })
+    const item = cariItemAktif('/akademik/penugasan-piket')
+
+    // Menu ini menentukan siapa yang boleh menulis jurnal guru lain.
+    expect(item?.label).toBe('Penugasan Guru Piket')
+    expect(item?.akses?.(admin)).toBe(true)
+    expect(item?.akses?.(guru)).toBe(false)
+    expect(item?.akses?.(kepsek)).toBe(false)
+    expect(grupAktif('/akademik/penugasan-piket')).toBe(grupAktif('/akademik/jadwal'))
+  })
+
   it('mengembalikan grup untuk auto-expand submenu', () => {
     expect(grupAktif('/laporan/jurnal/harian')).toBe('Laporan')
     expect(grupAktif('/pengaturan/tv')).toBe('Pengaturan')

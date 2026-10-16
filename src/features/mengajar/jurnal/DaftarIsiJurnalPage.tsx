@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { CalendarDays, PenLine } from 'lucide-react'
+import { CalendarDays, PenLine, ShieldCheck } from 'lucide-react'
 
 import { BidangTeks } from '@/components/ui/Bidang'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { formatTanggalDari, tanggalLokal } from '@/lib/format'
+import { useAuth } from '@/features/auth/AuthContext'
 import { ambilSesiHariIni } from './api'
 
 /**
@@ -23,6 +24,7 @@ import { ambilSesiHariIni } from './api'
  * (BR-19/BR-20), bukan dihitung di sisi klien.
  */
 export function DaftarIsiJurnalPage() {
+  const { user } = useAuth()
   const [tanggal, setTanggal] = useState(() => tanggalLokal(new Date()))
 
   const sesi = useQuery({
@@ -32,6 +34,10 @@ export function DaftarIsiJurnalPage() {
 
   const data = sesi.data?.data
   const daftar = data?.sesi ?? []
+  const piket = data?.piket?.bertugas === true
+  // Sesi milik guru lain: hanya muncul bagi guru piket hari itu.
+  const milikOrangLain = (pegawaiId?: number) =>
+    pegawaiId !== undefined && user?.pegawai_id != null && pegawaiId !== user.pegawai_id
 
   const gaya: Record<string, { varian: 'hadir' | 'menunggu' | 'izin'; label: string }> = {
     sudah: { varian: 'hadir', label: 'Sudah diisi' },
@@ -56,6 +62,28 @@ export function DaftarIsiJurnalPage() {
           petunjuk="Bawaannya hari ini. Anda juga dapat mengisi jurnal untuk tanggal lampau."
         />
       </div>
+
+      {/* Guru piket hari itu menerima daftar seluruh kelas — katakan terus terang,
+          karena daftar sepanjang ini di luar jadwal mengajarnya sendiri. */}
+      {piket && (
+        <div className="flex items-start gap-3 rounded-control bg-primary-soft px-4 py-3">
+          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-strong">
+              Anda bertugas piket
+              {data?.piket.nama_hari ? ` hari ${data.piket.nama_hari}` : ''} — daftar di bawah
+              mencakup seluruh kelas.
+            </p>
+            <p className="text-xs text-muted">
+              Isi jurnal kelas yang pengampunya berhalangan. Sesi milik guru lain ditandai nama
+              pengampunya.
+            </p>
+            {data?.piket.catatan ? (
+              <p className="text-xs text-muted">Catatan piket: {data.piket.catatan}</p>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {sesi.isLoading && <p className="card p-5 text-sm text-muted">Memuat sesi…</p>}
 
@@ -98,10 +126,16 @@ export function DaftarIsiJurnalPage() {
                       </p>
                       <p className="text-xs text-muted">
                         {s.label_jam} · {s.jam_mulai}–{s.jam_selesai}
+                        {milikOrangLain(s.pegawai_id)
+                          ? ` · Pengampu: ${s.guru ?? 'guru lain'}`
+                          : ''}
                       </p>
                     </div>
 
-                    <StatusBadge varian={tanda.varian}>{tanda.label}</StatusBadge>
+                    <div className="flex items-center gap-2">
+                      {milikOrangLain(s.pegawai_id) && <StatusBadge varian="dinas">Piket</StatusBadge>}
+                      <StatusBadge varian={tanda.varian}>{tanda.label}</StatusBadge>
+                    </div>
                   </div>
 
                   {/* Gerbang isi datang dari server (BR-19/KP-4.6). */}

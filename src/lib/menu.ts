@@ -136,6 +136,7 @@ export const MENU_SIDEBAR: NavGroup[] = [
       { to: '/plotting/mapel', label: 'Plotting Mapel', icon: ClipboardList, akses: pengelola },
       { to: '/akademik/jam-pelajaran', label: 'Jam Pelajaran', icon: Clock, akses: pengelola },
       { to: '/akademik/jadwal', label: 'Jadwal Pelajaran', icon: CalendarDays, akses: pengelola },
+      { to: '/akademik/penugasan-piket', label: 'Penugasan Guru Piket', icon: UserCheck, akses: hanyaAdmin },
     ],
   },
   {

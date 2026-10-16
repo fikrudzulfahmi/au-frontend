@@ -3,11 +3,14 @@ import { Bell, ClipboardList, FileWarning, Inbox, Megaphone, TrendingUp } from '
 
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { StatusVarian } from '@/components/ui/StatusBadge'
-import { formatTanggalDari } from '@/lib/format'
+import { formatTanggalDari, tanggalLokal } from '@/lib/format'
+import { useServerClock } from '@/lib/waktu'
 import { useAuth } from '@/features/auth/AuthContext'
+import { RingkasanKelasHarian } from '@/features/laporan/RingkasanKelasHarian'
 import {
   useAntreanPersetujuan,
   useJurnalBelumTerisi,
+  useJurnalPerKelas,
   usePengajuanTerakhir,
   usePengumumanAktif,
   useRekapBulanIni,
@@ -265,7 +268,53 @@ export function JurnalBelumTerisi() {
   )
 }
 
-/* ------------------------------ FR-PMN / BR-36 ------------------------------ */
+/* ------------------------------ FR-LAP-13 ------------------------------ */
+
+/**
+ * Keterisian jurnal **seluruh kelas** hari ini — beranda admin & kepala sekolah.
+ *
+ * Melengkapi daftar per guru (FR-DSH-02): yang dicari pimpinan di sini adalah
+ * "kelas mana yang jurnalnya belum diisi", dan kelas tanpa jadwal ikut muncul
+ * sebagai "Tidak ada jadwal" supaya kelas yang absen dari daftar tidak terbaca
+ * seolah sudah aman.
+ */
+export function JurnalPerKelasHariIni() {
+  const { sekarang } = useServerClock()
+  // Jam server dipakai juga untuk tanggal laporan agar tanggal beranda dan
+  // tanggal data tidak pernah berbeda (klien bisa salah tanggal).
+  const tanggal = tanggalLokal(sekarang)
+  const { data, isLoading, isError } = useJurnalPerKelas(tanggal)
+
+  return (
+    <section className="card p-5" aria-label="Keterisian jurnal per kelas">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-base font-bold text-strong">
+          <ClipboardList size={17} className="text-primary" /> Jurnal per Kelas Hari Ini
+        </h2>
+        <Link
+          to={`/laporan/jurnal/harian?tanggal=${sekarang}`}
+          className="text-xs font-semibold text-link"
+        >
+          Buka laporan harian
+        </Link>
+      </div>
+
+      <p className="mt-1 text-xs text-muted">
+        Seluruh kelas ditampilkan — termasuk yang tidak punya jadwal hari ini.
+      </p>
+
+      <div className="mt-3">
+        {isLoading && <p className="text-sm text-muted">Memuat jurnal per kelas…</p>}
+
+        {isError && (
+          <p className="text-sm text-danger">Data jurnal per kelas tidak dapat dimuat.</p>
+        )}
+
+        {data && <RingkasanKelasHarian data={data.kelas ?? []} />}
+      </div>
+    </section>
+  )
+}
 
 /** Pengumuman aktif pada beranda (BR-36); diisi dari Fase 6. */
 export function PanelPengumuman() {

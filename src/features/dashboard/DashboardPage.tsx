@@ -33,6 +33,7 @@ import { ambilSesiHariIni } from '@/features/mengajar/jurnal/api'
 import {
   AntreanPersetujuan,
   JurnalBelumTerisi,
+  JurnalPerKelasHariIni,
   PanelPengumuman,
   PengajuanTerakhir,
   RingkasanBulanIni,
@@ -144,6 +145,9 @@ function BerandaDesktop() {
           <AntreanPersetujuan />
           <JurnalBelumTerisi />
         </div>
+
+        {/* FR-LAP-13 — daftar seluruh kelas beserta jurnal yang belum diisi. */}
+        <JurnalPerKelasHariIni />
       </div>
     )
   }

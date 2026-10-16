@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { get } from '@/lib/api'
+import type { HasilLaporan } from '@/features/laporan/types'
 
 /**
  * Bagian 5.17 Dashboard — data pelengkap beranda.
@@ -123,6 +124,25 @@ export function useJurnalBelumTerisi(aktif: boolean) {
       return res.data
     },
     enabled: aktif,
+    staleTime: 60_000,
+  })
+}
+
+/**
+ * Keterisian jurnal per kelas pada satu tanggal (FR-LAP-13 dipakai ulang di beranda).
+ *
+ * Sengaja memakai laporan harian, bukan daftar sesi guru: laporan itulah yang
+ * menyertakan seluruh kelas — termasuk kelas tanpa jadwal — sehingga tidak ada
+ * kelas yang luput dari pemantauan.
+ */
+export function useJurnalPerKelas(tanggal: string) {
+  return useQuery({
+    queryKey: ['dashboard', 'jurnal-per-kelas', tanggal],
+    queryFn: async () => {
+      const res = await get<{ data: HasilLaporan }>('/laporan/jurnal/harian', { tanggal })
+      return res.data
+    },
+    enabled: tanggal !== '',
     staleTime: 60_000,
   })
 }
