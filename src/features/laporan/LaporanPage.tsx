@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertCircle, FileSpreadsheet, FileText, Filter, Loader2, Lock } from 'lucide-react'
+import { AlertCircle, FileSpreadsheet, FileText, Filter, Info, Loader2, Lock } from 'lucide-react'
 
 import { BidangPilihan, BidangTeks } from '@/components/ui/Bidang'
 import { Button } from '@/components/ui/Button'
@@ -504,15 +504,31 @@ function IsiLaporan({
 
       {/* FR-LAP-13 menyajikan ringkasan status jurnal per kelas di atas detail sesi */}
       {hasil.kode === 'FR-LAP-13' && (
-        <RingkasanKelasHarian data={hasil.kelas} periode={hasil.periode} />
+        <RingkasanKelasHarian data={hasil.kelas} periode={hasil.periode} libur={hasil.libur} />
       )}
 
-      <DataTable
-        data={baris}
-        kunciBaris={(b) => b.kunci}
-        kolom={kolom}
-        kosong="Tidak ada data pada periode/filter ini."
-      />
+      {/* Hari libur tidak punya sesi, jadi tabel detail dikosongkan dengan alasan
+          yang jelas — bukan "tidak ada data" yang terbaca seperti kegagalan. */}
+      {hasil.libur?.ada === true ? (
+        <div className="card flex items-start gap-3 border-l-4 border-l-pending p-5">
+          <Info size={18} className="mt-0.5 shrink-0 text-pending" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-strong">
+              Hari libur{hasil.libur.keterangan ? `: ${hasil.libur.keterangan}` : ''}
+            </p>
+            <p className="text-xs text-muted">
+              Tidak ada sesi yang dihitung dan tidak ada jurnal yang wajib diisi pada hari ini.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          data={baris}
+          kunciBaris={(b) => b.kunci}
+          kolom={kolom}
+          kosong="Tidak ada data pada periode/filter ini."
+        />
+      )}
 
       {baris.length > 0 && (
         <p className="text-xs text-muted">{baris.length} baris ditampilkan.</p>

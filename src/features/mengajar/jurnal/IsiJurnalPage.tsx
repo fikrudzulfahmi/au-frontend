@@ -56,8 +56,12 @@ export function IsiJurnalPage() {
     return [Number(a), Number(b)]
   }, [sesi])
 
-  const tanggal = cari.get('tanggal') ?? tanggalLokal(sekarang)
   const jurnalId = cari.get('jurnal')
+  const hariIni = tanggalLokal(sekarang)
+  // Pengisian terikat hari berjalan: formulir BARU selalu memakai tanggal hari
+  // ini, meskipun tautan lama membawa `?tanggal=` lain. Saat MENGUBAH jurnal
+  // lama (BR-20), tanggal jurnal itulah yang dipakai agar sesinya tetap cocok.
+  const tanggal = jurnalId ? cari.get('tanggal') ?? hariIni : hariIni
 
   const [materi, setMateri] = useState('')
   const [kegiatan, setKegiatan] = useState('')
@@ -254,8 +258,18 @@ export function IsiJurnalPage() {
         <div className="card flex items-start gap-3 border-l-4 border-l-pending p-4">
           <Info size={18} className="mt-0.5 shrink-0 text-pending" />
           <div className="text-sm">
-            <p className="font-semibold text-strong">Jurnal belum dapat diisi</p>
-            <p className="text-muted">{sesiTerpilih.alasan ?? 'Sesi ini tidak dapat diisi.'}</p>
+            <p className="font-semibold text-strong">
+              {sesiHariIni.data?.data.libur.ada ? 'Hari libur' : 'Jurnal belum dapat diisi'}
+            </p>
+            <p className="text-muted">
+              {sesiHariIni.data?.data.libur.ada
+                ? `Hari ini libur${
+                    sesiHariIni.data.data.libur.keterangan
+                      ? ` (${sesiHariIni.data.data.libur.keterangan})`
+                      : ''
+                  }. Tidak ada kewajiban mengisi jurnal.`
+                : sesiTerpilih.alasan ?? 'Sesi ini tidak dapat diisi.'}
+            </p>
           </div>
         </div>
       )}

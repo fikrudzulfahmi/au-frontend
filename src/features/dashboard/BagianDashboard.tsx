@@ -311,7 +311,18 @@ export function JurnalPerKelasHariIni() {
           <p className="text-sm text-danger">Data jurnal per kelas tidak dapat dimuat.</p>
         )}
 
-        {data && <KartuKelasJurnal data={data.kelas ?? []} tanggal={tanggal} />}
+        {data && data.libur?.ada === true && (
+          <div className="rounded-control border-l-4 border-l-pending bg-surface px-4 py-3">
+            <p className="text-sm font-semibold text-strong">
+              Hari libur{data.libur.keterangan ? `: ${data.libur.keterangan}` : ''}
+            </p>
+            <p className="text-xs text-muted">Tidak ada jurnal yang wajib diisi pada hari libur.</p>
+          </div>
+        )}
+
+        {data && data.libur?.ada !== true && (
+          <KartuKelasJurnal data={data.kelas ?? []} tanggal={tanggal} />
+        )}
       </div>
     </section>
   )

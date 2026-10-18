@@ -40,6 +40,17 @@ export interface SemesterRingkas {
 
 export interface HariIniJurnal {
   tanggal: string
+  /** Tanggal hari berjalan menurut server — pengisian hanya boleh untuk tanggal ini. */
+  hari_ini: string
+  /** `false` bila tanggal bukan hari ini atau tanggalnya hari libur. */
+  boleh_isi: boolean
+  /** Hari libur tidak punya kewajiban jurnal (KP-5.4/BR-24). */
+  libur: {
+    ada: boolean
+    keterangan: string | null
+    tanggal_mulai: string | null
+    tanggal_selesai: string | null
+  }
   semester: SemesterRingkas
   /**
    * Penugasan piket pada tanggal ini. Bila `bertugas`, `sesi` berisi seluruh

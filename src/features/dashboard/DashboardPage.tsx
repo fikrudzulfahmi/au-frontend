@@ -255,6 +255,9 @@ function KartuJadwal() {
 
   const data = sesi.data?.data
   const daftar = data?.sesi ?? []
+  // Hari libur: tidak ada kewajiban jurnal, jadi kartu ini menerangkan libur
+  // alih-alih menampilkan sesi "Belum" yang terbaca seperti tunggakan.
+  const libur = data?.libur.ada === true
 
   const gaya: Record<string, { varian: 'hadir' | 'menunggu' | 'izin'; label: string }> = {
     sudah: { varian: 'hadir', label: 'Sudah' },
@@ -281,7 +284,21 @@ function KartuJadwal() {
         <p className="mt-3 text-sm text-danger">Jadwal hari ini tidak dapat dimuat.</p>
       )}
 
-      {data && daftar.length === 0 && (
+      {libur && (
+        <div className="mt-3 flex items-start gap-3 rounded-control bg-app-soft p-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pastel-blue text-primary">
+            <CalendarDays size={17} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-strong">
+              Hari libur{data?.libur.keterangan ? `: ${data.libur.keterangan}` : ''}
+            </p>
+            <p className="text-xs text-muted">Tidak ada jurnal yang wajib diisi pada hari libur.</p>
+          </div>
+        </div>
+      )}
+
+      {data && !libur && daftar.length === 0 && (
         <div className="mt-3 flex items-start gap-3 rounded-control bg-app-soft p-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pastel-blue text-primary">
             <CalendarDays size={17} />
@@ -293,7 +310,7 @@ function KartuJadwal() {
         </div>
       )}
 
-      {data && daftar.length > 0 && (
+      {data && !libur && daftar.length > 0 && (
         <>
           <p className="mt-2 text-xs font-semibold text-muted">
             {data.ringkasan.sudah} sudah · {data.ringkasan.belum} belum
@@ -319,8 +336,9 @@ function KartuJadwal() {
                     <StatusBadge varian={tanda.varian}>{tanda.label}</StatusBadge>
                   </div>
 
-                  {/* Gerbang isi diambil dari server (BR-19 / KP-4.6). */}
-                  {s.boleh_isi && (
+                  {/* Gerbang isi diambil dari server (BR-19 / KP-4.6), termasuk
+                      syarat "hari ini dan bukan hari libur". */}
+                  {data.boleh_isi && s.boleh_isi && (
                     <Link
                       to={`/mengajar/jurnal/isi/${s.plotting_mapel_id}-${s.jam_ke_mulai}?tanggal=${data.tanggal}`}
                       className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-link"

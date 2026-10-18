@@ -174,3 +174,22 @@ describe('RingkasanKelasHarian', () => {
     expect(screen.getByText('Belum ada data kelas')).toBeDefined()
   })
 })
+
+describe('RingkasanKelasHarian — hari libur', () => {
+  it('menerangkan hari libur dan tidak menyebut kelas belum terisi', () => {
+    const { container } = render(
+      <RingkasanKelasHarian
+        data={[]}
+        periode="17 Oktober 2026"
+        libur={{ ada: true, keterangan: 'Libur sekolah' }}
+      />,
+    )
+
+    const teks = container.textContent ?? ''
+
+    expect(teks).toContain('Hari libur: Libur sekolah')
+    expect(teks).toContain('tidak ada jurnal yang wajib diisi')
+    expect(teks).not.toContain('Belum ada data kelas')
+    expect(screen.queryByRole('table')).toBeNull()
+  })
+})

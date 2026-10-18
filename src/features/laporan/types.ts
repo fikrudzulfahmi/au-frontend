@@ -62,6 +62,13 @@ export interface HasilLaporan {
   ringkasan?: RingkasanLaporan[]
   /** Ringkasan keterisian per kelas untuk FR-LAP-13 (Jurnal Harian per Kelas). */
   kelas?: RingkasanKelasHarianItem[]
+  /** Hari libur: tidak ada sesi yang dihitung "belum terisi" (KP-5.4/BR-24). */
+  libur?: {
+    ada: boolean
+    keterangan: string | null
+    tanggal_mulai: string | null
+    tanggal_selesai: string | null
+  }
   /** Bidang tambahan per laporan; tidak dipakai tabel generik. */
   pegawai?: unknown
   guru?: unknown

@@ -18,6 +18,11 @@ interface RingkasanKelasHarianProps {
   data?: RingkasanKelasHarianItem[]
   /** Periode/tanggal laporan untuk judul blok, mis. "16 Oktober 2026". */
   periode?: string
+  /** Hari libur: tidak ada sesi yang wajib diisi, jadi tabel per kelas tidak relevan. */
+  libur?: {
+    ada: boolean
+    keterangan: string | null
+  }
 }
 
 /**
@@ -33,7 +38,25 @@ interface RingkasanKelasHarianProps {
  * dan arti kolom "Berhalangan (izin)" dijelaskan pada catatan kaki — supaya pembaca
  * tidak perlu menebak apakah kelas itu dianggap lalai atau tidak.
  */
-export function RingkasanKelasHarian({ data, periode }: RingkasanKelasHarianProps) {
+export function RingkasanKelasHarian({ data, periode, libur }: RingkasanKelasHarianProps) {
+  // Hari libur: tidak ada sesi, jadi tidak ada yang bisa "belum diisi".
+  if (libur?.ada === true) {
+    return (
+      <div className="card flex items-start gap-3 border-l-4 border-l-pending p-5">
+        <Info size={18} className="mt-0.5 shrink-0 text-pending" aria-hidden />
+        <div>
+          <p className="text-sm font-semibold text-strong">
+            Hari libur{libur.keterangan ? `: ${libur.keterangan}` : ''}
+          </p>
+          <p className="text-xs text-muted">
+            Tidak ada sesi terjadwal yang dihitung dan tidak ada jurnal yang wajib diisi
+            {periode ? ` pada ${periode}` : ''}.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (!data || data.length === 0) {
     return (
       <div className="card overflow-hidden">
