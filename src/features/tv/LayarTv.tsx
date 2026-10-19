@@ -260,7 +260,7 @@ export function LayarTv({ onKeluar }: Props) {
             </section>
 
             {/* Tambahan: presensi pegawai & perizinan (daftar bergulir otomatis) */}
-            <section className="grid h-[200px] shrink-0 grid-cols-[2fr_1fr] gap-4">
+            <section className="grid h-[200px] shrink-0 grid-cols-[2fr_1fr] grid-rows-1 gap-4">
               <PanelPresensi presensi={rekap.presensi} />
               <PanelPerizinan perizinan={rekap.perizinan} />
             </section>
@@ -461,13 +461,13 @@ function PanelPresensi({ presensi }: { presensi: PresensiTv }) {
   const { belum_presensi: belum, sudah_presensi: sudah } = presensi
 
   return (
-    <div className="card flex min-w-0 flex-col gap-2 px-6 py-3">
+    <div className="card flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden px-6 py-3">
       <div className="flex shrink-0 items-center gap-4">
         <JudulPanel ikon={UserCheck} warna="text-success" judul="Presensi Pegawai" />
         <RingkasanChip ringkasan={presensi.ringkasan} />
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-6">
+      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-1 gap-6">
         <div className="flex min-h-0 flex-col">
           <p className="shrink-0 pb-1 text-[15px] font-extrabold text-danger">Belum presensi ({belum.length})</p>
           {belum.length === 0 ? (
@@ -519,7 +519,7 @@ function PanelPerizinan({ perizinan }: { perizinan: PerizinanTv }) {
   const daftar = perizinan.daftar
 
   return (
-    <div className="card flex min-w-0 flex-col gap-2 px-6 py-3">
+    <div className="card flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden px-6 py-3">
       <div className="flex shrink-0 items-center gap-4">
         <JudulPanel ikon={Users} warna="text-warn-text" judul="Perizinan" />
         <RingkasanChip ringkasan={perizinan.ringkasan} />
