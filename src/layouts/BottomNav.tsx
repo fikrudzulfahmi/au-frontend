@@ -42,7 +42,7 @@ export function BottomNav({ tersembunyi = false }: BottomNavProps) {
           <div className="absolute inset-0 rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(15,45,63,.10)]">
             <span
               aria-hidden="true"
-              className="absolute left-1/2 top-0 h-[74px] w-[74px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-app"
+              className="absolute left-1/2 top-[-8px] h-[78px] w-[78px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-app"
             />
           </div>
 
@@ -50,7 +50,7 @@ export function BottomNav({ tersembunyi = false }: BottomNavProps) {
           <NavLink
             to={tengah.to}
             aria-label={tengah.label}
-            className="absolute left-1/2 top-0 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-[62%] items-center justify-center rounded-full bg-primary text-white shadow-fab ring-[5px] ring-app transition-transform active:scale-95"
+            className="absolute left-1/2 top-[-8px] z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-fab ring-[5px] ring-app transition-transform active:scale-95"
           >
             {adminMode ? (
               <tengah.icon size={26} strokeWidth={2.2} />
