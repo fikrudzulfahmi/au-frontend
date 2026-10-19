@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, ClipboardList, FileWarning, Inbox, Megaphone, TrendingUp } from 'lucide-react'
+import { Bell, ClipboardList, FileWarning, Inbox, Megaphone, Search, TrendingUp, X } from 'lucide-react'
 
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { StatusVarian } from '@/components/ui/StatusBadge'
@@ -278,12 +279,15 @@ export function JurnalBelumTerisi() {
  * sebagai "Tidak ada jadwal" supaya kelas yang absen dari daftar tidak terbaca
  * seolah sudah aman.
  */
-export function JurnalPerKelasHariIni() {
+export function JurnalPerKelasHariIni({ bisaCari = false }: { bisaCari?: boolean } = {}) {
   const { sekarang } = useServerClock()
+  const [cari, setCari] = useState('')
   // Jam server dipakai juga untuk tanggal laporan agar tanggal beranda dan
   // tanggal data tidak pernah berbeda (klien bisa salah tanggal).
   const tanggal = tanggalLokal(sekarang)
   const { data, isLoading, isError } = useJurnalPerKelas(tanggal)
+  const kunci = cari.trim().toLowerCase()
+  const kelasTersaring = (data?.kelas ?? []).filter((k) => kunci === '' || k.nama.toLowerCase().includes(kunci))
 
   return (
     <section className="card p-5" aria-label="Keterisian jurnal per kelas">
@@ -304,6 +308,39 @@ export function JurnalPerKelasHariIni() {
         tidak punya jadwal hari ini.
       </p>
 
+      {bisaCari && data && data.libur?.ada !== true && (
+        <div className="mt-3">
+          <label htmlFor="cari-kelas-jurnal" className="sr-only">
+            Cari kelas
+          </label>
+          <div className="relative">
+            <Search
+              size={16}
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+            />
+            <input
+              id="cari-kelas-jurnal"
+              type="search"
+              value={cari}
+              onChange={(e) => setCari(e.target.value)}
+              placeholder="Cari kelas, mis. X RPL 1"
+              className="w-full rounded-control border border-line bg-surface py-2.5 pl-9 pr-9 text-sm text-strong outline-none focus:border-primary"
+            />
+            {cari !== '' && (
+              <button
+                type="button"
+                onClick={() => setCari('')}
+                aria-label="Hapus pencarian"
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-app-soft"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mt-3">
         {isLoading && <p className="text-sm text-muted">Memuat jurnal per kelas…</p>}
 
@@ -321,7 +358,22 @@ export function JurnalPerKelasHariIni() {
         )}
 
         {data && data.libur?.ada !== true && (
-          <KartuKelasJurnal data={data.kelas ?? []} tanggal={tanggal} />
+          <>
+            {bisaCari && (
+              <p className="mb-2 text-xs font-medium text-muted">
+                {kunci === ''
+                  ? `${kelasTersaring.length} kelas hari ini`
+                  : `${kelasTersaring.length} dari ${(data.kelas ?? []).length} kelas cocok`}
+              </p>
+            )}
+            {kelasTersaring.length === 0 ? (
+              <p className="rounded-control bg-app-soft px-4 py-3 text-sm text-muted">
+                Tidak ada kelas yang cocok dengan “{cari.trim()}”.
+              </p>
+            ) : (
+              <KartuKelasJurnal data={kelasTersaring} tanggal={tanggal} />
+            )}
+          </>
         )}
       </div>
     </section>

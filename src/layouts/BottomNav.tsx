@@ -1,4 +1,6 @@
+import { useCallback, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { LayoutGrid } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/cn'
@@ -6,6 +8,7 @@ import { LambangSipandu } from '@/components/ui/Logo'
 import { menuBawah } from '@/lib/menu'
 import { adminTanpaPegawai } from '@/lib/roles'
 import { useAuth } from '@/features/auth/AuthContext'
+import { MenuLainnya } from './MenuLainnya'
 
 interface BottomNavProps {
   /** FR-UI-09: disembunyikan pada halaman presensi/kamera penuh layar. */
@@ -22,11 +25,17 @@ export function BottomNav({ tersembunyi = false }: BottomNavProps) {
   const items = menuBawah(user)
   const tengah = items[2]
   const kiri = items.slice(0, 2)
-  const kanan = items.slice(3)
+  // Slot 4 dipakai tombol "Lainnya" (seluruh menu sidebar); slot 5 tetap item terakhir.
+  const kanan = items.slice(4)
+  const [menuBuka, setMenuBuka] = useState(false)
+  const tutupMenu = useCallback(() => setMenuBuka(false), [])
   const adminMode = adminTanpaPegawai(user)
 
   const aktif = (to: string) =>
     location.pathname === to || (to !== '/dashboard' && location.pathname.startsWith(`${to}/`))
+
+  // "Lainnya" menyala bila halaman aktif tidak termasuk empat tab yang tampak.
+  const aktifLainnya = ![tengah, ...kiri, ...kanan].some((i) => aktif(i.to))
 
   if (tersembunyi) return null
 
@@ -66,12 +75,29 @@ export function BottomNav({ tersembunyi = false }: BottomNavProps) {
               <ItemNav key={item.to} item={item} aktif={aktif(item.to)} />
             ))}
             <li aria-hidden="true" />
+            <li>
+              <button
+                type="button"
+                onClick={() => setMenuBuka(true)}
+                aria-haspopup="dialog"
+                aria-expanded={menuBuka}
+                className={cn(
+                  'flex h-full w-full flex-col items-center justify-center gap-1 text-[10px]',
+                  aktifLainnya ? 'font-bold text-primary' : 'text-muted',
+                )}
+              >
+                <LayoutGrid size={22} />
+                <span className="leading-none">Lainnya</span>
+              </button>
+            </li>
             {kanan.map((item) => (
               <ItemNav key={item.to} item={item} aktif={aktif(item.to)} />
             ))}
           </ul>
         </div>
       </div>
+
+      <MenuLainnya terbuka={menuBuka} onTutup={tutupMenu} />
     </nav>
   )
 }

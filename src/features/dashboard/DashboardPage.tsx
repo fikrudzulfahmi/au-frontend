@@ -54,6 +54,9 @@ function BerandaMobile() {
   const { data: sekolah } = useSekolah()
   const { sekarang } = useServerClock()
   const { data: presensi } = usePresensiHariIni()
+  const { data: ringkasan } = useRingkasanHariIni()
+  // FR-DSH-02 — pimpinan melihat rekap presensi & jurnal per kelas juga di HP.
+  const pimpinanView = punyaPeran(user, ROLE.admin, ROLE.kepalaSekolah, ROLE.wakasekKurikulum)
 
   return (
     <div className="-mx-4 -mt-4 pb-4">
@@ -97,6 +100,24 @@ function BerandaMobile() {
 
       <div className="relative z-10 -mt-10 space-y-4 px-4">
         <PresensiKinerjaCard tanggal={sekarang} data={dataKartu(presensi, lencanaPeran(user), sekarang)} />
+
+        {pimpinanView && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard label="Hadir hari ini" nilai={ringkasan?.hadir ?? 0} icon={Users} warna="success" />
+              <StatCard label="Terlambat" nilai={ringkasan?.terlambat ?? 0} icon={Clock} warna="warn" />
+              <StatCard label="Belum presensi" nilai={ringkasan?.belum ?? 0} icon={UserX} warna="danger" />
+              <StatCard
+                label="Izin / dinas"
+                nilai={(ringkasan?.izin ?? 0) + (ringkasan?.dinas ?? 0)}
+                icon={Inbox}
+                warna="info"
+              />
+            </div>
+
+            <JurnalPerKelasHariIni bisaCari />
+          </>
+        )}
 
         <LayananGrid items={layananPeran(user)} />
 
