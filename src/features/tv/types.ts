@@ -33,6 +33,10 @@ export interface PegawaiRingkas {
   inisial: string
   nama: string
   jenis_pegawai?: string
+  /** Hanya pada `sudah_presensi`: jam masuk (HH:mm[:ss]) dan keterlambatan. */
+  jam_masuk?: string | null
+  menit_terlambat?: number
+  status?: string
 }
 
 export interface PresensiTv {

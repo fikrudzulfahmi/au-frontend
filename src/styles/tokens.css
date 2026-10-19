@@ -105,10 +105,23 @@
   }
 
   /* FR-TV-13: scroll otomatis daftar panjang di layar TV */
+  .tv-gulir {
+    animation: tv-gulir 20s linear infinite;
+  }
+
   .tv-marquee {
     display: inline-block;
     white-space: nowrap;
     animation: tv-marquee 40s linear infinite;
+  }
+}
+
+@keyframes tv-gulir {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
   }
 }
 

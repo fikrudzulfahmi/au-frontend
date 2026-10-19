@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import {
   BookOpen,
   Cake,
@@ -31,7 +31,7 @@ import {
   pecahKartu,
 } from './logika'
 import type { KartuTv } from './logika'
-import type { KartuPengumumanTv, RekapTv, SekolahRingkas, TampilanTv } from './types'
+import type { KartuPengumumanTv, PerizinanTv, PresensiTv, RekapTv, SekolahRingkas, TampilanTv } from './types'
 
 interface Props {
   onKeluar: () => void
@@ -40,7 +40,6 @@ interface Props {
 /** Ukuran kanvas desain TV; seluruh isi digambar pada kanvas ini lalu diskalakan. */
 const LEBAR_KANVAS = 1920
 const TINGGI_KANVAS = 1080
-const MAKS_NAMA_PANEL = 8
 
 /** KP-6.9 — skala seragam mengikuti ukuran jendela, sehingga tidak ada elemen terpotong. */
 function useSkalaLayar(): number {
@@ -260,31 +259,10 @@ export function LayarTv({ onKeluar }: Props) {
               )}
             </section>
 
-            {/* Tambahan: presensi pegawai & perizinan */}
-            <section className="grid h-[112px] shrink-0 grid-cols-2 gap-4">
-              <PanelTambahan
-                judul="Presensi Pegawai"
-                ikon={UserCheck}
-                warna="text-success"
-                ringkasan={rekap.presensi.ringkasan}
-                nama={rekap.presensi.belum_presensi.map((p) => p.nama)}
-                labelDaftar="Belum presensi"
-                kosong="Semua pegawai sudah presensi."
-              />
-              <PanelTambahan
-                judul="Perizinan"
-                ikon={Users}
-                warna="text-warn-text"
-                ringkasan={rekap.perizinan.ringkasan}
-                nama={rekap.perizinan.daftar.map(
-                  (z) =>
-                    `${z.nama} (${z.label_jenis}${
-                      rekap.perizinan.tampilkan_alasan && z.alasan ? ` · ${potongTeks(z.alasan, 24)}` : ''
-                    })`,
-                )}
-                labelDaftar="Hari ini"
-                kosong="Tidak ada perizinan hari ini."
-              />
+            {/* Tambahan: presensi pegawai & perizinan (daftar bergulir otomatis) */}
+            <section className="grid h-[200px] shrink-0 grid-cols-[2fr_1fr] gap-4">
+              <PanelPresensi presensi={rekap.presensi} />
+              <PanelPerizinan perizinan={rekap.perizinan} />
             </section>
 
             {/* FR-TV-09/10 — pengumuman dan ulang tahun */}
@@ -432,42 +410,134 @@ function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
   )
 }
 
-interface PanelTambahanProps {
-  judul: string
-  ikon: LucideIcon
-  warna: string
-  ringkasan: Array<{ label: string; nilai: number }>
-  nama: string[]
-  labelDaftar: string
-  kosong: string
-}
+/** Daftar yang bergulir pelan dan berulang bila isinya melebihi tinggi panel (tanpa gulir manual). */
+function DaftarGulir({ jumlah, children }: { jumlah: number; children: ReactNode }) {
+  const wadah = useRef<HTMLDivElement>(null)
+  const satu = useRef<HTMLDivElement>(null)
+  const [gulir, setGulir] = useState(false)
 
-/** Panel tambahan ringkas: angka + beberapa nama; sisanya dihitung. */
-function PanelTambahan({ judul, ikon: Ikon, warna, ringkasan, nama, labelDaftar, kosong }: PanelTambahanProps) {
-  const tampil = nama.slice(0, MAKS_NAMA_PANEL)
-  const sisa = nama.length - tampil.length
+  useLayoutEffect(() => {
+    const tinggiIsi = satu.current?.offsetHeight ?? 0
+    const tinggiWadah = wadah.current?.clientHeight ?? 0
+    setGulir(tinggiIsi > tinggiWadah + 1)
+  }, [jumlah, children])
 
   return (
-    <div className="card flex min-w-0 flex-col justify-center gap-2 px-6">
-      <div className="flex items-center gap-4">
-        <h2 className="flex shrink-0 items-center gap-2 text-[20px] font-extrabold">
-          <Ikon size={22} className={warna} /> {judul}
-        </h2>
-        <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-0.5">
-          {ringkasan.slice(0, 5).map((r) => (
-            <span key={r.label} className="text-[15px] font-semibold text-muted">
-              {r.label} <b className="tnum text-[18px] text-strong">{r.nilai}</b>
-            </span>
-          ))}
+    <div ref={wadah} className="min-h-0 flex-1 overflow-hidden">
+      <div className={gulir ? 'tv-gulir' : undefined} style={{ animationDuration: `${Math.max(10, jumlah * 3)}s` }}>
+        <div ref={satu}>{children}</div>
+        {gulir && <div aria-hidden>{children}</div>}
+      </div>
+    </div>
+  )
+}
+
+function RingkasanChip({ ringkasan }: { ringkasan: Array<{ label: string; nilai: number }> }) {
+  return (
+    <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-0.5">
+      {ringkasan.slice(0, 5).map((r) => (
+        <span key={r.label} className="text-[15px] font-semibold text-muted">
+          {r.label} <b className="tnum text-[18px] text-strong">{r.nilai}</b>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function JudulPanel({ ikon: Ikon, warna, judul }: { ikon: LucideIcon; warna: string; judul: string }) {
+  return (
+    <h2 className="flex shrink-0 items-center gap-2 text-[20px] font-extrabold">
+      <Ikon size={22} className={warna} /> {judul}
+    </h2>
+  )
+}
+
+function jamPendek(jam: string | null | undefined): string {
+  return jam ? jam.slice(0, 5) : '—'
+}
+
+/** Presensi pegawai: kiri yang belum presensi, kanan yang sudah (jam + tepat waktu/terlambat). */
+function PanelPresensi({ presensi }: { presensi: PresensiTv }) {
+  const { belum_presensi: belum, sudah_presensi: sudah } = presensi
+
+  return (
+    <div className="card flex min-w-0 flex-col gap-2 px-6 py-3">
+      <div className="flex shrink-0 items-center gap-4">
+        <JudulPanel ikon={UserCheck} warna="text-success" judul="Presensi Pegawai" />
+        <RingkasanChip ringkasan={presensi.ringkasan} />
+      </div>
+
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-6">
+        <div className="flex min-h-0 flex-col">
+          <p className="shrink-0 pb-1 text-[15px] font-extrabold text-danger">Belum presensi ({belum.length})</p>
+          {belum.length === 0 ? (
+            <p className="text-[16px] font-medium text-muted">Semua pegawai sudah presensi.</p>
+          ) : (
+            <DaftarGulir jumlah={belum.length}>
+              {belum.map((p) => (
+                <p key={p.nama} className="truncate py-0.5 text-[16px] font-semibold">
+                  {p.nama}
+                  {p.jenis_pegawai && <span className="ml-2 text-[13px] font-medium text-muted">{p.jenis_pegawai}</span>}
+                </p>
+              ))}
+            </DaftarGulir>
+          )}
+        </div>
+
+        <div className="flex min-h-0 flex-col">
+          <p className="shrink-0 pb-1 text-[15px] font-extrabold text-success">Sudah presensi ({sudah.length})</p>
+          {sudah.length === 0 ? (
+            <p className="text-[16px] font-medium text-muted">Belum ada yang presensi.</p>
+          ) : (
+            <DaftarGulir jumlah={sudah.length}>
+              {sudah.map((p) => {
+                const telat = p.status === 'terlambat' || (p.menit_terlambat ?? 0) > 0
+
+                return (
+                  <div key={p.nama} className="flex items-center gap-3 py-0.5">
+                    <span className="tnum w-[52px] shrink-0 text-[16px] font-bold text-primary">
+                      {jamPendek(p.jam_masuk)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[16px] font-semibold">{p.nama}</span>
+                    <StatusBadge varian={telat ? 'terlambat' : 'hadir'} className="shrink-0 text-[13px]">
+                      {telat
+                        ? `Terlambat${(p.menit_terlambat ?? 0) > 0 ? ` ${p.menit_terlambat} mnt` : ''}`
+                        : 'Tepat waktu'}
+                    </StatusBadge>
+                  </div>
+                )
+              })}
+            </DaftarGulir>
+          )}
         </div>
       </div>
-      {nama.length === 0 ? (
-        <p className="text-[16px] font-medium text-muted">{kosong}</p>
+    </div>
+  )
+}
+
+function PanelPerizinan({ perizinan }: { perizinan: PerizinanTv }) {
+  const daftar = perizinan.daftar
+
+  return (
+    <div className="card flex min-w-0 flex-col gap-2 px-6 py-3">
+      <div className="flex shrink-0 items-center gap-4">
+        <JudulPanel ikon={Users} warna="text-warn-text" judul="Perizinan" />
+        <RingkasanChip ringkasan={perizinan.ringkasan} />
+      </div>
+      {daftar.length === 0 ? (
+        <p className="text-[16px] font-medium text-muted">Tidak ada perizinan hari ini.</p>
       ) : (
-        <p className="truncate text-[16px] font-medium text-muted">
-          <b className="text-strong">{labelDaftar}:</b> {tampil.join(' · ')}
-          {sisa > 0 ? ` · +${sisa} lainnya` : ''}
-        </p>
+        <DaftarGulir jumlah={daftar.length}>
+          {daftar.map((z) => (
+            <p key={`${z.nama}-${z.label_jenis}`} className="truncate py-0.5 text-[16px] font-semibold">
+              {z.nama}
+              <span className="ml-2 text-[13px] font-medium text-muted">
+                {z.label_jenis}
+                {perizinan.tampilkan_alasan && z.alasan ? ` · ${potongTeks(z.alasan, 30)}` : ''}
+              </span>
+            </p>
+          ))}
+        </DaftarGulir>
       )}
     </div>
   )

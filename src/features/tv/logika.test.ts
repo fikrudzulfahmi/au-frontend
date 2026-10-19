@@ -178,10 +178,10 @@ describe('kartu kelas TV', () => {
     const hasil = pecahKartu([k, kelas(2, 'X B', 0)])
 
     expect(hasil.map((c) => [c.kelas.nama, c.bagian, c.total, c.sesi.length])).toEqual([
-      ['X A', 1, 2, 5],
-      ['X A', 2, 2, 3],
+      ['X A', 1, 2, 4],
+      ['X A', 2, 2, 4],
       ['X B', 1, 1, 0],
     ])
-    expect(hasil[0]?.sesi.map((x) => x.jam_ke_mulai)).toEqual([1, 2, 3, 4, 5])
+    expect(hasil[0]?.sesi.map((x) => x.jam_ke_mulai)).toEqual([1, 2, 3, 4])
   })
 })

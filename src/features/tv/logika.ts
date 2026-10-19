@@ -93,7 +93,7 @@ function ringkasanJurnal(rekap: RekapTv): RingkasanItem[] {
 /** Satu baris kartu per halaman (4 kolom) agar tiap kartu tinggi dan terbaca dari jauh. */
 export const KELAS_PER_HALAMAN = 4
 /** Sesi maksimal per kartu; kelas yang sesinya lebih banyak dilanjutkan di kartu berikutnya. */
-export const MAKS_SESI_KARTU = 5
+export const MAKS_SESI_KARTU = 4
 
 /**
  * Urutan baca kartu kelas TV — sama dengan dasbor admin: kelas yang paling
