@@ -64,6 +64,28 @@ export interface PresensiSiswaTv {
   persen_kehadiran: number | null
 }
 
+/** Satu sesi mengajar pada kartu kelas TV (tanpa NIP/materi, BR-33). */
+export interface SesiKelasTv {
+  label_jam: string
+  jam_ke_mulai: number
+  mapel: string
+  guru: string
+  status: 'sudah' | 'belum' | 'berhalangan'
+}
+
+/** Keterisian jurnal satu kelas hari ini — sumber sama dengan dasbor admin. */
+export interface KelasJurnalTv {
+  kelas_id: number
+  nama: string
+  sesi: number
+  sudah: number
+  belum: number
+  berhalangan: number
+  tanpa_jadwal: boolean
+  persen_terisi: number | null
+  daftar: SesiKelasTv[]
+}
+
 export interface JurnalTv {
   tersedia: boolean
   terjadwal: number
@@ -72,6 +94,9 @@ export interface JurnalTv {
   berhalangan: number
   persen: number
   guru_belum: JurnalBarisTv[]
+  kelas: KelasJurnalTv[]
+  /** Terisi bila hari ini libur: jurnal tidak ditagih. */
+  libur: { keterangan: string | null } | null
   presensi_siswa: PresensiSiswaTv
 }
 

@@ -19,7 +19,6 @@ import type { RekapTv } from '@/features/tv/types'
 
 interface PengaturanTv {
   tv_aktif: boolean
-  tv_izinkan_npsn: boolean
   tv_interval_detik: number
   tv_masa_berlaku_hari: number
   tv_tema: string
@@ -90,7 +89,6 @@ export function PengaturanTvPage() {
     mutationFn: (isi: PengaturanTv) =>
       put<{ data: PengaturanTv }>('/pengaturan/tv', {
         tv_aktif: isi.tv_aktif,
-        tv_izinkan_npsn: isi.tv_izinkan_npsn,
         tv_interval_detik: isi.tv_interval_detik,
         tv_masa_berlaku_hari: isi.tv_masa_berlaku_hari,
         tv_tema: isi.tv_tema,
@@ -245,18 +243,6 @@ export function PengaturanTvPage() {
             ]}
             kosongLabel="— Pilih —"
             pesanError={galatBidang.tv_aktif}
-          />
-
-          <BidangPilihan
-            label="Izinkan masuk dengan NPSN"
-            id="tv-npsn"
-            nilai={form.tv_izinkan_npsn ? 'ya' : 'tidak'}
-            onUbah={(v) => ubah('tv_izinkan_npsn', v === 'ya')}
-            opsi={[
-              { nilai: 'ya', label: 'Ya' },
-              { nilai: 'tidak', label: 'Tidak' },
-            ]}
-            pesanError={galatBidang.tv_izinkan_npsn}
           />
 
           <BidangTeks

@@ -1,4 +1,4 @@
-import type { RekapTv, RingkasanItem } from './types'
+import type { KelasJurnalTv, RekapTv, RingkasanItem, SesiKelasTv } from './types'
 
 /**
  * BR-33 / FR-TV-17 — layar TV tidak boleh memuat data pribadi.
@@ -87,6 +87,61 @@ function ringkasanJurnal(rekap: RekapTv): RingkasanItem[] {
     { label: 'Terisi', nilai: j.terisi },
     { label: 'Belum Terisi', nilai: j.belum_terisi },
     { label: 'Persen', nilai: j.persen },
+  ]
+}
+
+/** Kartu kelas per halaman TV (4 kolom × 2 baris) dan sesi tampil per kartu. */
+export const KELAS_PER_HALAMAN = 8
+export const MAKS_SESI_KARTU = 4
+
+/**
+ * Urutan baca kartu kelas TV — sama dengan dasbor admin: kelas yang paling
+ * banyak belum diisi di depan. Kelas tanpa jadwal tidak dibuat kartu; jumlahnya
+ * dilaporkan terpisah.
+ */
+export function kelasUntukTv(data: KelasJurnalTv[]): { tampil: KelasJurnalTv[]; tanpaJadwal: number } {
+  const berjadwal = data.filter((k) => !k.tanpa_jadwal && k.sesi > 0)
+  const urut = [...berjadwal].sort((a, b) => {
+    if (a.belum !== b.belum) return b.belum - a.belum
+    return a.nama.localeCompare(b.nama, 'id', { numeric: true })
+  })
+
+  return { tampil: urut, tanpaJadwal: data.length - berjadwal.length }
+}
+
+/** Membagi kartu kelas menjadi halaman yang diputar otomatis (tanpa gulir, KP-6.9). */
+export function bagiHalamanKelas<T>(kelas: T[], perHalaman: number = KELAS_PER_HALAMAN): T[][] {
+  const hasil: T[][] = []
+  for (let i = 0; i < kelas.length; i += perHalaman) hasil.push(kelas.slice(i, i + perHalaman))
+  return hasil
+}
+
+/**
+ * Sesi yang dimuat pada satu kartu: yang belum diisi diprioritaskan agar tidak
+ * terpotong, lalu tampil kembali urut jam.
+ */
+export function sesiKartu(
+  daftar: SesiKelasTv[],
+  maks: number = MAKS_SESI_KARTU,
+): { tampil: SesiKelasTv[]; sisa: number } {
+  const prioritas = (s: SesiKelasTv): number => (s.status === 'belum' ? 0 : s.status === 'berhalangan' ? 1 : 2)
+  const terpilih = [...daftar]
+    .sort((a, b) => prioritas(a) - prioritas(b) || a.jam_ke_mulai - b.jam_ke_mulai)
+    .slice(0, maks)
+    .sort((a, b) => a.jam_ke_mulai - b.jam_ke_mulai)
+
+  return { tampil: terpilih, sisa: Math.max(0, daftar.length - terpilih.length) }
+}
+
+/** Empat angka utama strip jurnal TV — dari rekap server, bukan hitung ulang (BR-37). */
+export function angkaJurnal(rekap: RekapTv): RingkasanItem[] {
+  const j = rekap.jurnal
+
+  return [
+    { label: 'Sesi Terjadwal', nilai: j.terjadwal },
+    { label: 'Sudah Diisi', nilai: j.terisi },
+    { label: 'Belum Diisi', nilai: j.belum_terisi },
+    { label: 'Berhalangan', nilai: j.berhalangan },
   ]
 }
 

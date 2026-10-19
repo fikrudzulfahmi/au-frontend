@@ -22,11 +22,10 @@ interface Props {
 export function HalamanKodeTv({ onMasuk }: Props) {
   const { data: sekolah } = useSekolah()
   const [kode, setKode] = useState('')
-  const [npsn, setNpsn] = useState('')
   const [memuat, setMemuat] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
 
-  const bisaKirim = !memuat && (kode.trim().length >= 4 || npsn.trim().length >= 4)
+  const bisaKirim = !memuat && kode.trim().length >= 4
 
   async function kirim(): Promise<void> {
     if (!bisaKirim) return
@@ -34,7 +33,7 @@ export function HalamanKodeTv({ onMasuk }: Props) {
     setGalat(null)
 
     try {
-      await masukTv(kode, npsn)
+      await masukTv(kode)
       onMasuk()
     } catch (error) {
       // BR-32 — pesan penguncian/penolakan server ditampilkan apa adanya.
@@ -46,16 +45,16 @@ export function HalamanKodeTv({ onMasuk }: Props) {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden px-6 py-10 text-center">
-      <Logo ukuran="lg" terang />
+      <Logo ukuran="lg" />
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Layar TV Sekolah</h1>
-        <p className="mt-1 text-sm text-white/70">
+        <h1 className="text-2xl font-extrabold text-strong">Layar TV Sekolah</h1>
+        <p className="mt-1 text-sm text-muted">
           {sekolah?.nama_sekolah ?? 'Info sekolah belum diisi'}
         </p>
       </div>
 
       <form
-        className="w-full max-w-sm rounded-card bg-white/5 p-6 ring-1 ring-white/10"
+        className="w-full max-w-sm card p-6"
         onSubmit={(e) => {
           e.preventDefault()
           void kirim()
@@ -77,28 +76,10 @@ export function HalamanKodeTv({ onMasuk }: Props) {
           />
         </FormField>
 
-        <FormField
-          label="Atau NPSN Sekolah"
-          htmlFor="npsn-tv"
-          petunjuk="Bila admin mengizinkan, NPSN dapat dipakai sebagai ganti kode."
-          className="mt-4"
-        >
-          <input
-            id="npsn-tv"
-            value={npsn}
-            onChange={(e) => setNpsn(e.target.value)}
-            maxLength={16}
-            autoComplete="off"
-            inputMode="numeric"
-            placeholder="NPSN"
-            className={`${kelasInput} tnum text-center`}
-          />
-        </FormField>
-
         {galat && (
           <p
             role="alert"
-            className="mt-4 rounded-control bg-danger/15 px-3 py-2 text-xs font-semibold text-danger-soft"
+            className="mt-4 rounded-control bg-danger-soft px-3 py-2 text-xs font-semibold text-danger"
           >
             {galat}
           </p>
@@ -108,7 +89,7 @@ export function HalamanKodeTv({ onMasuk }: Props) {
           <Tv size={17} /> Buka Layar TV
         </Button>
 
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-white/60">
+        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted">
           <MonitorPlay size={13} /> Layar ini hanya menampilkan rekap; tidak perlu akun pengguna.
         </p>
       </form>

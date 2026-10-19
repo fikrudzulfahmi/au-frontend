@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import type { RekapTv } from './types'
+import type { KelasJurnalTv, RekapTv, SesiKelasTv } from './types'
 import {
   MAKS_BARIS_KOLOM,
+  bagiHalamanKelas,
   bagiKolomTv,
   durasiMarqueeDetik,
   faktorSkalaFont,
+  kelasUntukTv,
   pindaiKunciTerlarang,
   potongTeks,
+  sesiKartu,
 } from './logika'
 
 function rekapContoh(): RekapTv {
@@ -34,6 +37,8 @@ function rekapContoh(): RekapTv {
       belum_terisi: 18,
       berhalangan: 0,
       persen: 25,
+      kelas: [],
+      libur: null,
       guru_belum: Array.from({ length: 18 }, (_, i) => ({
         inisial: `G${i}`,
         nama: `Guru ${i}`,
@@ -131,5 +136,48 @@ describe('logika layar TV', () => {
     expect(potongTeks('  Selamat   datang ', 40)).toBe('Selamat datang')
     expect(potongTeks('x'.repeat(50), 10)).toHaveLength(10)
     expect(potongTeks('x'.repeat(50), 10).endsWith('…')).toBe(true)
+  })
+})
+
+describe('kartu kelas TV', () => {
+  const kelas = (id: number, nama: string, belum: number, tanpa = false): KelasJurnalTv => ({
+    kelas_id: id,
+    nama,
+    sesi: tanpa ? 0 : 3,
+    sudah: 3 - belum,
+    belum,
+    berhalangan: 0,
+    tanpa_jadwal: tanpa,
+    persen_terisi: null,
+    daftar: [],
+  })
+
+  it('mengurutkan kelas dengan jurnal belum diisi terbanyak di depan dan memisahkan kelas tanpa jadwal', () => {
+    const hasil = kelasUntukTv([kelas(1, 'X A', 0), kelas(2, 'X B', 2), kelas(3, 'X C', 1, true), kelas(4, 'X D', 3)])
+
+    expect(hasil.tampil.map((k) => k.nama)).toEqual(['X D', 'X B', 'X A'])
+    expect(hasil.tanpaJadwal).toBe(1)
+  })
+
+  it('membagi kelas menjadi halaman tanpa gulir', () => {
+    const banyak = Array.from({ length: 19 }, (_, i) => i)
+
+    expect(bagiHalamanKelas(banyak).map((h) => h.length)).toEqual([8, 8, 3])
+    expect(bagiHalamanKelas([])).toEqual([])
+  })
+
+  it('memprioritaskan sesi belum diisi pada kartu yang terbatas', () => {
+    const sesi = (jam: number, status: SesiKelasTv['status']): SesiKelasTv => ({
+      label_jam: `Jam ke-${jam}`,
+      jam_ke_mulai: jam,
+      mapel: 'M',
+      guru: 'G',
+      status,
+    })
+    const daftar = [sesi(1, 'sudah'), sesi(2, 'sudah'), sesi(3, 'sudah'), sesi(4, 'sudah'), sesi(5, 'belum')]
+    const { tampil, sisa } = sesiKartu(daftar)
+
+    expect(tampil.map((s) => s.jam_ke_mulai)).toEqual([1, 2, 3, 5])
+    expect(sisa).toBe(1)
   })
 })

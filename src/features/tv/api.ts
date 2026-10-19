@@ -89,11 +89,10 @@ export interface MasukTvHasil {
   sekolah: SekolahRingkas | null
 }
 
-/** FR-TV-02/03 — tukar kode TV (atau NPSN) menjadi token TV. */
-export async function masukTv(kode: string, npsn: string): Promise<MasukTvHasil> {
+/** FR-TV-02/03 — tukar kode TV menjadi token TV. */
+export async function masukTv(kode: string): Promise<MasukTvHasil> {
   const { data } = await apiTv.post<{ data: MasukTvHasil }>('/tv/masuk', {
     kode: kode.trim() === '' ? null : kode.trim(),
-    npsn: npsn.trim() === '' ? null : npsn.trim(),
     nama_perangkat: namaPerangkat(),
   })
 
