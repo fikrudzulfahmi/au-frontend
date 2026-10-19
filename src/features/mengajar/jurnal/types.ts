@@ -23,6 +23,14 @@ export interface SesiJurnal {
   /** KP-4.6 / BR-19 — server yang memutuskan, bukan klien. */
   boleh_isi: boolean
   /**
+   * Khusus guru piket: `false` bila jurnal sesi ini tidak boleh ia ubah lagi —
+   * mis. jurnal diisi pengampu sendiri, atau pengampu sudah presensi masuk
+   * sehingga jurnal kembali ke tangan guru tersebut.
+   */
+  boleh_ubah?: boolean
+  /** Khusus guru piket: pengampu sesi sudah presensi masuk hari ini. */
+  pengampu_hadir?: boolean
+  /**
    * Pengampu sesi menurut jadwal. Hanya dikirim untuk guru piket, yang daftar
    * sesinya mencakup seluruh kelas — sesi biasa selalu milik pengguna sendiri.
    */
