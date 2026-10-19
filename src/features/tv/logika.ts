@@ -90,9 +90,10 @@ function ringkasanJurnal(rekap: RekapTv): RingkasanItem[] {
   ]
 }
 
-/** Kartu kelas per halaman TV (4 kolom × 2 baris) dan sesi tampil per kartu. */
-export const KELAS_PER_HALAMAN = 8
-export const MAKS_SESI_KARTU = 4
+/** Satu baris kartu per halaman (4 kolom) agar tiap kartu tinggi dan terbaca dari jauh. */
+export const KELAS_PER_HALAMAN = 4
+/** Sesi maksimal per kartu; kelas yang sesinya lebih banyak dilanjutkan di kartu berikutnya. */
+export const MAKS_SESI_KARTU = 5
 
 /**
  * Urutan baca kartu kelas TV — sama dengan dasbor admin: kelas yang paling
@@ -109,28 +110,37 @@ export function kelasUntukTv(data: KelasJurnalTv[]): { tampil: KelasJurnalTv[]; 
   return { tampil: urut, tanpaJadwal: data.length - berjadwal.length }
 }
 
-/** Membagi kartu kelas menjadi halaman yang diputar otomatis (tanpa gulir, KP-6.9). */
-export function bagiHalamanKelas<T>(kelas: T[], perHalaman: number = KELAS_PER_HALAMAN): T[][] {
+/** Membagi kartu menjadi halaman yang diputar otomatis (tanpa gulir, KP-6.9). */
+export function bagiHalamanKelas<T>(kartu: T[], perHalaman: number = KELAS_PER_HALAMAN): T[][] {
   const hasil: T[][] = []
-  for (let i = 0; i < kelas.length; i += perHalaman) hasil.push(kelas.slice(i, i + perHalaman))
+  for (let i = 0; i < kartu.length; i += perHalaman) hasil.push(kartu.slice(i, i + perHalaman))
   return hasil
 }
 
-/**
- * Sesi yang dimuat pada satu kartu: yang belum diisi diprioritaskan agar tidak
- * terpotong, lalu tampil kembali urut jam.
- */
-export function sesiKartu(
-  daftar: SesiKelasTv[],
-  maks: number = MAKS_SESI_KARTU,
-): { tampil: SesiKelasTv[]; sisa: number } {
-  const prioritas = (s: SesiKelasTv): number => (s.status === 'belum' ? 0 : s.status === 'berhalangan' ? 1 : 2)
-  const terpilih = [...daftar]
-    .sort((a, b) => prioritas(a) - prioritas(b) || a.jam_ke_mulai - b.jam_ke_mulai)
-    .slice(0, maks)
-    .sort((a, b) => a.jam_ke_mulai - b.jam_ke_mulai)
+export interface KartuTv {
+  kelas: KelasJurnalTv
+  sesi: SesiKelasTv[]
+  /** Bagian ke-n (mulai 1) dari `total` kartu untuk kelas yang sama. */
+  bagian: number
+  total: number
+}
 
-  return { tampil: terpilih, sisa: Math.max(0, daftar.length - terpilih.length) }
+/**
+ * Memecah kelas menjadi kartu: semua sesi ditampilkan (urut jam). Kelas dengan
+ * sesi melebihi `maks` dilanjutkan pada kartu berikutnya, urutan kelas tetap.
+ */
+export function pecahKartu(kelas: KelasJurnalTv[], maks: number = MAKS_SESI_KARTU): KartuTv[] {
+  return kelas.flatMap((k) => {
+    const urut = [...k.daftar].sort((a, b) => a.jam_ke_mulai - b.jam_ke_mulai)
+    const total = Math.max(1, Math.ceil(urut.length / maks))
+
+    return Array.from({ length: total }, (_, i) => ({
+      kelas: k,
+      sesi: urut.slice(i * maks, (i + 1) * maks),
+      bagian: i + 1,
+      total,
+    }))
+  })
 }
 
 /** Empat angka utama strip jurnal TV — dari rekap server, bukan hitung ulang (BR-37). */

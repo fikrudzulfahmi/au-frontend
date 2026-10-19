@@ -28,9 +28,10 @@ import {
   faktorSkalaFont,
   kelasUntukTv,
   potongTeks,
-  sesiKartu,
+  pecahKartu,
 } from './logika'
-import type { KartuPengumumanTv, KelasJurnalTv, RekapTv, SekolahRingkas, TampilanTv } from './types'
+import type { KartuTv } from './logika'
+import type { KartuPengumumanTv, RekapTv, SekolahRingkas, TampilanTv } from './types'
 
 interface Props {
   onKeluar: () => void
@@ -119,7 +120,7 @@ export function LayarTv({ onKeluar }: Props) {
   const [halaman, setHalaman] = useState(0)
 
   const { tampil: kelasTampil, tanpaJadwal } = kelasUntukTv(rekap?.jurnal.kelas ?? [])
-  const daftarHalaman = bagiHalamanKelas(kelasTampil)
+  const daftarHalaman = bagiHalamanKelas(pecahKartu(kelasTampil))
   const jumlahHalaman = daftarHalaman.length
 
   useEffect(() => {
@@ -196,6 +197,17 @@ export function LayarTv({ onKeluar }: Props) {
                 </span>
                 <h1 className="text-[28px] font-extrabold">Monitoring Jurnal Mengajar Hari Ini</h1>
                 <div className="ml-auto flex items-center gap-3">
+                  {!libur &&
+                    (totalBelum > 0 ? (
+                      <span className="flex items-center gap-2 rounded-full bg-danger-soft px-4 py-1.5 text-[18px] font-bold text-danger">
+                        <TriangleAlert size={20} /> {totalBelum} jam belum diisi pada {kelasBelum} kelas
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2 rounded-full bg-success-soft px-4 py-1.5 text-[18px] font-bold text-success">
+                        <CircleCheck size={20} />
+                        {kelasTampil.length > 0 ? 'Semua jurnal sudah terisi' : 'Tidak ada sesi terjadwal'}
+                      </span>
+                    ))}
                   {persenSiswa !== null && (
                     <span className="tnum rounded-full bg-success-soft px-4 py-1 text-[15px] font-bold text-success">
                       Kehadiran siswa {persenSiswa}%
@@ -233,27 +245,9 @@ export function LayarTv({ onKeluar }: Props) {
                     <PersenTerisi persen={rekap.jurnal.persen} />
                   </div>
 
-                  {totalBelum > 0 ? (
-                    <div className="flex shrink-0 items-center gap-3 rounded-control bg-danger-soft px-5 py-3 text-danger">
-                      <TriangleAlert size={24} />
-                      <span className="text-[20px] font-bold">
-                        {totalBelum} jam belum diisi pada {kelasBelum} kelas
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex shrink-0 items-center gap-3 rounded-control bg-success-soft px-5 py-3 text-success">
-                      <CircleCheck size={24} />
-                      <span className="text-[20px] font-bold">
-                        {kelasTampil.length > 0
-                          ? 'Seluruh kelas dengan jadwal sudah mengisi jurnalnya.'
-                          : 'Tidak ada sesi mengajar terjadwal hari ini.'}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-4 gap-4">
+                  <div className="grid min-h-0 flex-1 grid-cols-4 gap-4">
                     {kelasHalaman.map((k) => (
-                      <KartuKelasTv key={k.kelas_id} kelas={k} />
+                      <KartuKelasTv key={`${k.kelas.kelas_id}-${k.bagian}`} kartu={k} />
                     ))}
                   </div>
 
@@ -267,7 +261,7 @@ export function LayarTv({ onKeluar }: Props) {
             </section>
 
             {/* Tambahan: presensi pegawai & perizinan */}
-            <section className="grid h-[130px] shrink-0 grid-cols-2 gap-4">
+            <section className="grid h-[112px] shrink-0 grid-cols-2 gap-4">
               <PanelTambahan
                 judul="Presensi Pegawai"
                 ikon={UserCheck}
@@ -294,7 +288,7 @@ export function LayarTv({ onKeluar }: Props) {
             </section>
 
             {/* FR-TV-09/10 — pengumuman dan ulang tahun */}
-            <section className="flex h-[88px] shrink-0 items-stretch gap-4">
+            <section className="flex h-[76px] shrink-0 items-stretch gap-4">
               <div className="card flex min-w-0 flex-[3] items-center gap-5 px-6">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-warn-bg text-warn-text">
                   <Megaphone size={26} />
@@ -366,8 +360,8 @@ function IndikatorKoneksi({ terputus, pesan }: { terputus: boolean; pesan: strin
 
 function AngkaUtama({ label, nilai, warna }: { label: string; nilai: number; warna: string }) {
   return (
-    <div className="rounded-control bg-app-soft px-5 py-3">
-      <p className={cn('tnum text-[44px] font-extrabold leading-none', warna)}>{nilai}</p>
+    <div className="rounded-control bg-app-soft px-5 py-2">
+      <p className={cn('tnum text-[38px] font-extrabold leading-none', warna)}>{nilai}</p>
       <p className="mt-1 text-[15px] font-semibold text-muted">{label}</p>
     </div>
   )
@@ -377,8 +371,8 @@ function PersenTerisi({ persen }: { persen: number | null }) {
   const nilai = persen === null ? 0 : Math.max(0, Math.min(100, persen))
 
   return (
-    <div className="rounded-control bg-primary-soft px-5 py-3">
-      <p className="tnum text-[44px] font-extrabold leading-none text-primary">
+    <div className="rounded-control bg-primary-soft px-5 py-2">
+      <p className="tnum text-[38px] font-extrabold leading-none text-primary">
         {persen === null ? '—' : `${persen}%`}
       </p>
       <p className="mt-1 text-[15px] font-semibold text-muted">Keterisian jurnal</p>
@@ -389,9 +383,9 @@ function PersenTerisi({ persen }: { persen: number | null }) {
   )
 }
 
-/** Satu kartu per kelas — pola sama dengan dasbor admin (KartuKelasJurnal). */
-function KartuKelasTv({ kelas }: { kelas: KelasJurnalTv }) {
-  const { tampil, sisa } = sesiKartu(kelas.daftar)
+/** Satu kartu per kelas — pola sama dengan dasbor admin; semua sesi tampil. */
+function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
+  const { kelas, sesi, bagian, total } = kartu
   const lengkap = kelas.belum === 0
 
   return (
@@ -403,34 +397,36 @@ function KartuKelasTv({ kelas }: { kelas: KelasJurnalTv }) {
     >
       <header
         className={cn(
-          'flex items-center justify-between gap-2 px-4 py-2.5',
+          'flex items-center justify-between gap-2 px-4 py-3',
           lengkap ? 'bg-success-soft' : 'bg-danger-soft',
         )}
       >
-        <h2 className="truncate text-[22px] font-extrabold">{kelas.nama}</h2>
-        <StatusBadge varian={lengkap ? 'sukses' : 'bahaya'} className="shrink-0 text-[14px]">
+        <h2 className="truncate text-[26px] font-extrabold">
+          {kelas.nama}
+          {total > 1 && <span className="ml-2 text-[16px] font-semibold text-muted">({bagian}/{total})</span>}
+        </h2>
+        <StatusBadge varian={lengkap ? 'sukses' : 'bahaya'} className="shrink-0 text-[15px]">
           {lengkap ? 'Lengkap' : `${kelas.belum} belum diisi`}
         </StatusBadge>
       </header>
 
       <ul className="min-h-0 flex-1 divide-y divide-line px-4">
-        {tampil.map((s) => (
-          <li key={`${s.jam_ke_mulai}-${s.mapel}`} className="flex items-center justify-between gap-3 py-1.5">
+        {sesi.map((s) => (
+          <li key={`${s.jam_ke_mulai}-${s.mapel}`} className="flex items-center justify-between gap-3 py-2">
             <div className="min-w-0">
-              <p className="truncate text-[16px] font-bold">
-                {s.label_jam} · {potongTeks(s.mapel, 22)}
+              <p className="truncate text-[18px] font-bold">
+                {s.label_jam} · {potongTeks(s.mapel, 24)}
               </p>
-              <p className="truncate text-[14px] font-medium text-muted">{s.guru}</p>
+              <p className="truncate text-[15px] font-medium text-muted">{s.guru}</p>
             </div>
             <StatusBadge
               varian={s.status === 'sudah' ? 'sukses' : s.status === 'berhalangan' ? 'izin' : 'bahaya'}
-              className="shrink-0 text-[13px]"
+              className="shrink-0 text-[14px]"
             >
               {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
             </StatusBadge>
           </li>
         ))}
-        {sisa > 0 && <li className="py-1 text-[13px] font-semibold text-muted">+{sisa} sesi lainnya</li>}
       </ul>
     </article>
   )

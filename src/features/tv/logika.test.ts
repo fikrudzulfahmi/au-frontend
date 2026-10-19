@@ -10,7 +10,7 @@ import {
   kelasUntukTv,
   pindaiKunciTerlarang,
   potongTeks,
-  sesiKartu,
+  pecahKartu,
 } from './logika'
 
 function rekapContoh(): RekapTv {
@@ -162,22 +162,26 @@ describe('kartu kelas TV', () => {
   it('membagi kelas menjadi halaman tanpa gulir', () => {
     const banyak = Array.from({ length: 19 }, (_, i) => i)
 
-    expect(bagiHalamanKelas(banyak).map((h) => h.length)).toEqual([8, 8, 3])
+    expect(bagiHalamanKelas(banyak).map((h) => h.length)).toEqual([4, 4, 4, 4, 3])
     expect(bagiHalamanKelas([])).toEqual([])
   })
 
-  it('memprioritaskan sesi belum diisi pada kartu yang terbatas', () => {
-    const sesi = (jam: number, status: SesiKelasTv['status']): SesiKelasTv => ({
+  it('menampilkan semua sesi dan melanjutkan kelas yang melebihi batas pada kartu berikutnya', () => {
+    const sesi = (jam: number): SesiKelasTv => ({
       label_jam: `Jam ke-${jam}`,
       jam_ke_mulai: jam,
       mapel: 'M',
       guru: 'G',
-      status,
+      status: jam === 8 ? 'belum' : 'sudah',
     })
-    const daftar = [sesi(1, 'sudah'), sesi(2, 'sudah'), sesi(3, 'sudah'), sesi(4, 'sudah'), sesi(5, 'belum')]
-    const { tampil, sisa } = sesiKartu(daftar)
+    const k = { ...kelas(1, 'X A', 1), daftar: [8, 3, 1, 2, 4, 5, 6, 7].map(sesi) }
+    const hasil = pecahKartu([k, kelas(2, 'X B', 0)])
 
-    expect(tampil.map((s) => s.jam_ke_mulai)).toEqual([1, 2, 3, 5])
-    expect(sisa).toBe(1)
+    expect(hasil.map((c) => [c.kelas.nama, c.bagian, c.total, c.sesi.length])).toEqual([
+      ['X A', 1, 2, 5],
+      ['X A', 2, 2, 3],
+      ['X B', 1, 1, 0],
+    ])
+    expect(hasil[0]?.sesi.map((x) => x.jam_ke_mulai)).toEqual([1, 2, 3, 4, 5])
   })
 })
