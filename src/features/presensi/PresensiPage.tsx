@@ -374,7 +374,9 @@ export function PresensiPage() {
                 </dl>
               )}
 
-              {data !== undefined && data.lokasi.length > 0 && (
+              {/* Peta tetap tampil walau admin belum menetapkan lokasi default, supaya guru
+                  bisa melihat posisinya sendiri saat melapor ke operator. */}
+              {data !== undefined && (data.lokasi.length > 0 || posisi !== null) && (
                 <PetaPresensi daftarLokasi={data.lokasi} posisi={posisi} />
               )}
 
