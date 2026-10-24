@@ -1,10 +1,39 @@
-import { render } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { PetaPresensi } from './PetaPresensi'
+import { render, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LokasiPresensi } from '@/lib/geolokasi'
 
+// Leaflet asli memakai `window` saat modul dimuat dan menjalankan timer tile;
+// di Vitest modul itu bisa termuat setelah lingkungan uji dibongkar sehingga CI
+// gagal "window is not defined". Semua API yang dipakai peta dipalsukan di sini.
+const lapisan = () => {
+  const l: Record<string, unknown> = {}
+  l.addTo = () => l
+  l.bindPopup = () => l
+  return l
+}
+
+const peta = { remove: vi.fn(), fitBounds: vi.fn(), setView: vi.fn() }
+const panggilan = {
+  map: vi.fn(() => peta),
+  tileLayer: vi.fn(() => lapisan()),
+  polygon: vi.fn(() => lapisan()),
+  circle: vi.fn(() => lapisan()),
+  circleMarker: vi.fn(() => lapisan()),
+  marker: vi.fn(() => lapisan()),
+  latLngBounds: vi.fn(() => ({})),
+  control: { layers: vi.fn(() => lapisan()) },
+}
+
+vi.mock('leaflet', () => panggilan)
+
+const { PetaPresensi } = await import('./PetaPresensi')
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
 describe('PetaPresensi', () => {
-  it('merender wadah peta presensi dengan lokasi zona poligon', () => {
+  it('menggambar zona poligon bila lokasi punya minimal 3 titik sudut', async () => {
     const lokasi: LokasiPresensi[] = [
       {
         id: 1,
@@ -25,11 +54,14 @@ describe('PetaPresensi', () => {
       <PetaPresensi daftarLokasi={lokasi} posisi={{ lat: -7.8654, lng: 111.465, akurasi_m: 10 }} />,
     )
 
-    const kontainer = getByLabelText('Peta lokasi presensi')
-    expect(kontainer).toBeDefined()
+    expect(getByLabelText('Peta lokasi presensi')).toBeDefined()
+    await waitFor(() => expect(panggilan.map).toHaveBeenCalledTimes(1))
+    expect(panggilan.polygon).toHaveBeenCalledTimes(1)
+    expect(panggilan.circle).not.toHaveBeenCalled()
+    expect(panggilan.circleMarker).toHaveBeenCalledTimes(1)
   })
 
-  it('merender wadah peta presensi dengan lokasi lingkaran radius (poligon null)', () => {
+  it('memakai lingkaran radius saat lokasi tidak punya poligon', async () => {
     const lokasi: LokasiPresensi[] = [
       {
         id: 2,
@@ -42,11 +74,10 @@ describe('PetaPresensi', () => {
       },
     ]
 
-    const { getByLabelText } = render(
-      <PetaPresensi daftarLokasi={lokasi} posisi={null} />,
-    )
+    render(<PetaPresensi daftarLokasi={lokasi} posisi={null} />)
 
-    const kontainer = getByLabelText('Peta lokasi presensi')
-    expect(kontainer).toBeDefined()
+    await waitFor(() => expect(panggilan.map).toHaveBeenCalledTimes(1))
+    expect(panggilan.circle).toHaveBeenCalledTimes(1)
+    expect(panggilan.polygon).not.toHaveBeenCalled()
   })
 })
