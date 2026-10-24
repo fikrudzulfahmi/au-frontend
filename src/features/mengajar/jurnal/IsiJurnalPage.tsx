@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarDays, CheckCheck, Clock, GraduationCap, ImagePlus, Info, Save, Trash2 } from 'lucide-react'
@@ -17,7 +17,9 @@ import { pesanError } from '@/lib/api'
 import { useServerClock } from '@/lib/waktu'
 import { cn } from '@/lib/cn'
 import { useAuth } from '@/features/auth/AuthContext'
-import { ambilSesiHariIni, ambilSiswaKelas, isiJurnal, perbaruiJurnal } from './api'
+import { ambilJurnal, ambilSesiHariIni, ambilSiswaKelas, isiJurnal, perbaruiJurnal } from './api'
+import { FotoJurnal } from './FotoJurnal'
+import { isiFormDariJurnal } from './formJurnal'
 import { GAYA_STATUS } from './gayaStatus'
 import { LABEL_STATUS_SISWA, STATUS_SISWA } from './types'
 import type { BarisPresensiSiswa, StatusSiswa } from './types'
@@ -84,10 +86,40 @@ export function IsiJurnalPage() {
     (s) => s.plotting_mapel_id === plottingMapelId && s.jam_ke_mulai === jamKeMulai,
   )
 
+  // BR-20 — saat mengubah jurnal, isi lama harus terbuka kembali di formulir.
+  // Tanpa ini guru hanya melihat formulir kosong dan harus mengetik ulang semuanya.
+  const jurnalLama = useQuery({
+    queryKey: ['jurnal', 'detail', Number(jurnalId ?? 0)],
+    queryFn: () => ambilJurnal(Number(jurnalId)),
+    enabled: jurnalId !== null,
+  })
+
+  const fotoLama = useMemo(() => jurnalLama.data?.data.foto ?? [], [jurnalLama.data])
+
+  const kelasId = sesiTerpilih?.kelas_id ?? jurnalLama.data?.data.kelas_id
+  const semesterId = sesiHariIni.data?.data.semester.id
+
+  // Isi formulir sekali saja, dari jurnal yang sedang diubah. `useRef` menjaga
+  // agar penyegaran cache di latar belakang tidak menimpa ketikan pengguna.
+  const formTerisi = useRef(false)
+
+  useEffect(() => {
+    const lama = jurnalLama.data?.data
+    if (!lama || formTerisi.current) return
+
+    const isi = isiFormDariJurnal(lama)
+
+    formTerisi.current = true
+    setMateri(isi.materi)
+    setKegiatan(isi.kegiatan)
+    setCatatan(isi.catatan)
+    setBaris((sebelum) => ({ ...sebelum, ...isi.baris }))
+  }, [jurnalLama.data])
+
   const siswa = useQuery({
-    queryKey: ['jurnal', 'siswa-kelas', sesiTerpilih?.kelas_id, sesiHariIni.data?.data.semester.id],
-    queryFn: () => ambilSiswaKelas(sesiTerpilih!.kelas_id, sesiHariIni.data!.data.semester.id),
-    enabled: sesiTerpilih !== undefined,
+    queryKey: ['jurnal', 'siswa-kelas', kelasId, semesterId],
+    queryFn: () => ambilSiswaKelas(kelasId!, semesterId),
+    enabled: kelasId !== undefined,
   })
 
   // Daftar siswa datang default hadir (FR-JRN-03); guru hanya mengubah yang tidak hadir.
@@ -171,7 +203,7 @@ export function IsiJurnalPage() {
     if (!daftar) return
 
     const masuk = Array.from(daftar)
-    if (foto.length + masuk.length > MAKS_FOTO) {
+    if (foto.length + fotoLama.length + masuk.length > MAKS_FOTO) {
       toast.gagal(`Foto kegiatan maksimal ${MAKS_FOTO} buah.`)
 
       return
@@ -204,8 +236,21 @@ export function IsiJurnalPage() {
     }
   }
 
-  if (sesiHariIni.isLoading) {
-    return <p className="card p-6 text-sm text-muted">Memuat sesi…</p>
+  if (sesiHariIni.isLoading || (jurnalId !== null && jurnalLama.isLoading)) {
+    return (
+      <p className="card p-6 text-sm text-muted">
+        {jurnalId !== null ? 'Memuat isi jurnal…' : 'Memuat sesi…'}
+      </p>
+    )
+  }
+
+  if (jurnalId !== null && jurnalLama.isError) {
+    return (
+      <EmptyState
+        judul="Jurnal tidak dapat dibuka"
+        keterangan={pesanError(jurnalLama.error)}
+      />
+    )
   }
 
   if (sesiTerpilih === undefined) {
@@ -342,11 +387,23 @@ export function IsiJurnalPage() {
             </span>
           </span>
 
+          {fotoLama.length > 0 && (
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              {fotoLama.map((f) => (
+                <FotoJurnal key={f.id} fotoId={f.id} />
+              ))}
+              <span className="text-xs text-muted">
+                Foto tersimpan{foto.length > 0 ? '; foto baru ditambahkan setelahnya' : ''}.
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             <label
               className={cn(
                 'inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2 text-sm font-semibold text-muted',
-                (foto.length >= MAKS_FOTO || terkunci || sedangKompres) && 'pointer-events-none opacity-50',
+                (foto.length + fotoLama.length >= MAKS_FOTO || terkunci || sedangKompres) &&
+                  'pointer-events-none opacity-50',
               )}
             >
               <ImagePlus size={16} /> {sedangKompres ? 'Mengompres…' : 'Tambah foto'}
