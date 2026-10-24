@@ -49,6 +49,84 @@ const KOSONG: FormSekolah = {
   instagram: '', facebook: '', youtube: '', tiktok: '', x: '', whatsapp: '', latitude: '', longitude: '',
 }
 
+/**
+ * FR-SCH-02 — kartu berkas gambar: menampilkan gambar yang SEDANG dipakai dari
+ * server, plus pratinjau berkas yang baru dipilih sebelum disimpan. Tanpa ini
+ * admin tidak tahu logo/favicon mana yang benar-benar tersimpan.
+ */
+function KartuBerkas({
+  label,
+  keterangan,
+  tersimpan,
+  berkas,
+  onPilih,
+  onBatal,
+}: {
+  label: string
+  keterangan: string
+  tersimpan: string | null
+  berkas?: File
+  onPilih: (berkas: File | undefined) => void
+  onBatal: () => void
+}) {
+  const [pratinjau, setPratinjau] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!berkas) {
+      setPratinjau(null)
+      return
+    }
+    const url = URL.createObjectURL(berkas)
+    setPratinjau(url)
+    return () => URL.revokeObjectURL(url)
+  }, [berkas])
+
+  return (
+    <div className="rounded-control border border-line p-3">
+      <p className="text-sm font-semibold text-strong">{label}</p>
+      <p className="text-xs text-muted">{keterangan}</p>
+
+      <div className="mt-3 flex items-start gap-3">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-control border border-line bg-app-soft">
+          {tersimpan ? (
+            <img src={tersimpan} alt={label} className="h-full w-full object-contain" />
+          ) : (
+            <span className="px-1 text-center text-[11px] leading-tight text-muted">Belum ada</span>
+          )}
+        </div>
+        <div className="min-w-0 text-xs">
+          <p className="font-semibold text-strong">{tersimpan ? 'Sedang dipakai' : 'Belum ada gambar'}</p>
+          <p className="mt-0.5 text-muted">
+            {tersimpan ? 'Gambar di atas berasal dari server, bukan pratinjau sementara.' : 'Unggah gambar lalu simpan.'}
+          </p>
+        </div>
+      </div>
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => onPilih(e.target.files?.[0])}
+        className="mt-3 w-full rounded-control border border-line bg-surface px-3 py-2 text-xs text-strong"
+      />
+
+      {pratinjau && (
+        <div className="mt-3 flex items-start gap-3 rounded-control bg-app-soft p-2">
+          <img src={pratinjau} alt={`Pratinjau ${label}`} className="h-16 w-16 shrink-0 rounded border border-line object-contain" />
+          <div className="min-w-0 text-xs">
+            <p className="font-semibold text-strong">Akan diterapkan</p>
+            <p className="mt-0.5 truncate text-muted">
+              {berkas?.name} · {Math.max(1, Math.round((berkas?.size ?? 0) / 1024))} KB
+            </p>
+            <button type="button" onClick={onBatal} className="mt-1 font-semibold text-danger hover:underline">
+              Batalkan pilihan
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** FR-SCH-01..06 — Info Sekolah + tab Landing Page. Kunci: NPSN wajib 8 digit (KP-1.6). */
 export function InfoSekolahPage() {
   const qc = useQueryClient()
@@ -123,6 +201,9 @@ export function InfoSekolahPage() {
     onSuccess: () => {
       toast.sukses('Info Sekolah disimpan.')
       setGalat({})
+      // Berkas yang sudah terkirim dikosongkan agar kartu kembali menampilkan
+      // gambar tersimpan dari server, bukan pratinjau berkas lokal.
+      setLogo({})
       void qc.invalidateQueries({ queryKey: ['pengaturan', 'sekolah'] })
       void qc.invalidateQueries({ queryKey: ['publik', 'sekolah'] })
     },
@@ -245,15 +326,32 @@ export function InfoSekolahPage() {
             <h2 className="flex items-center gap-2 text-base font-bold text-strong">
               <ImageIcon size={18} /> Logo & Foto
             </h2>
-            <p className="mt-1 text-xs text-muted">Maksimal 1 MB sebelum dikompres; hasil akhir di bawah 300 KB.</p>
+            <p className="mt-1 text-xs text-muted">
+              Maksimal 1 MB sebelum dikompres; hasil akhir di bawah 300 KB. Gambar yang tampil adalah
+              gambar yang sedang dipakai sistem.
+            </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {([['kiri', 'Logo Utama (kiri kop)'], ['kanan', 'Logo Kedua (kanan kop)'], ['favicon', 'Favicon'], ['hero', 'Foto Sampul']] as const).map(([k, label]) => (
-                <label key={k} className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-strong">{label}</span>
-                  <input type="file" accept="image/*"
-                    onChange={(e) => setLogo((s) => ({ ...s, [k]: e.target.files?.[0] }))}
-                    className="w-full rounded-control border border-line bg-surface px-3 py-2.5 text-sm text-strong" />
-                </label>
+              {(
+                [
+                  ['kiri', 'Logo Utama (kiri kop)', 'Tampil di kop laporan PDF/Excel.', sekolah.data?.data.logo_kiri_url],
+                  ['kanan', 'Logo Kedua (kanan kop)', 'Tampil di sudut kanan kop laporan.', sekolah.data?.data.logo_kanan_url],
+                  ['favicon', 'Favicon', 'Ikon tab peramban; berlaku setelah halaman dimuat ulang.', sekolah.data?.data.favicon_url],
+                  ['hero', 'Foto Sampul', 'Gambar utama landing page.', sekolah.data?.data.hero_foto_url],
+                ] as const
+              ).map(([k, label, keterangan, tersimpan]) => (
+                <KartuBerkas
+                  key={k}
+                  label={label}
+                  keterangan={keterangan}
+                  tersimpan={tersimpan ?? null}
+                  berkas={logo[k]}
+                  onPilih={(f) => setLogo((s) => ({ ...s, [k]: f }))}
+                  onBatal={() => setLogo((s) => {
+                    const berikut = { ...s }
+                    delete berikut[k]
+                    return berikut
+                  })}
+                />
               ))}
             </div>
           </section>

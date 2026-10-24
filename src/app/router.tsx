@@ -10,6 +10,7 @@ import { LAPORAN } from '@/features/laporan/config'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { NotFoundPage } from '@/features/umum/NotFoundPage'
+import { useFaviconSekolah } from '@/features/sekolah/useFaviconSekolah'
 
 /**
  * Fase 7 (FR-LND-11 / optimasi kinerja jam sibuk) — pemecahan bundel lewat rute.
@@ -174,6 +175,9 @@ function Memuat() {
 }
 
 export function AppRouter() {
+  // FR-SCH-02 — favicon mengikuti gambar yang diunggah admin.
+  useFaviconSekolah()
+
   return (
     <BrowserRouter>
       <Suspense fallback={<Memuat />}>

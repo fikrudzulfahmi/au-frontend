@@ -43,6 +43,8 @@ interface KopPengaturan {
   tampilkan_logo_kanan: boolean
   ada_logo_kiri: boolean
   ada_logo_kanan: boolean
+  logo_kiri_url: string | null
+  logo_kanan_url: string | null
 }
 
 interface TataLetakTtd {
@@ -275,16 +277,20 @@ function BagianKop({ kop }: { kop: KopPengaturan }) {
         <p className="text-sm font-bold text-strong">Posisi Logo</p>
         {(
           [
-            ['tampilkan_logo_kiri', 'Logo kiri', kop.ada_logo_kiri],
-            ['tampilkan_logo_kanan', 'Logo kanan', kop.ada_logo_kanan],
+            ['tampilkan_logo_kiri', 'Logo kiri', kop.ada_logo_kiri, kop.logo_kiri_url],
+            ['tampilkan_logo_kanan', 'Logo kanan', kop.ada_logo_kanan, kop.logo_kanan_url],
           ] as const
-        ).map(([kunci, label, ada]) => (
+        ).map(([kunci, label, ada, url]) => (
           <label key={kunci} className="flex items-center gap-2 text-sm text-strong">
             <input
               type="checkbox"
               checked={nilai[kunci]}
               onChange={(e) => setNilai((n) => ({ ...n, [kunci]: e.target.checked }))}
             />
+            {/* Thumbnail memperlihatkan logo yang benar-benar akan tercetak di kop. */}
+            {url ? (
+              <img src={url} alt={label} className="h-8 w-8 rounded border border-line bg-white object-contain p-0.5" />
+            ) : null}
             {label}
             {!ada && <span className="text-xs text-muted">(belum ada berkas — unggah di Info Sekolah)</span>}
           </label>
