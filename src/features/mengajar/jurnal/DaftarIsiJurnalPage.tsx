@@ -88,8 +88,9 @@ export function DaftarIsiJurnalPage() {
               mencakup seluruh kelas.
             </p>
             <p className="text-xs text-muted">
-              Isi jurnal kelas yang pengampunya tidak masuk — izin, sakit, alpa, atau dinas luar.
-              Sesi milik guru yang sudah presensi masuk diisi oleh guru tersebut, bukan oleh piket.
+              Anda boleh mengisi jurnal kelas mana pun, termasuk sesi guru yang tetap presensi masuk
+              tetapi berhalangan masuk kelas karena kegiatan lain. Jurnal tercatat atas nama pengampu
+              dengan keterangan bahwa Anda yang mengisi.
             </p>
             {data?.piket.catatan ? (
               <p className="text-xs text-muted">Catatan piket: {data.piket.catatan}</p>
@@ -165,8 +166,7 @@ export function DaftarIsiJurnalPage() {
                   )}
 
                   {/* BR-20 — jurnal guru pemilik dapat diubah tanpa batas waktu.
-                      Untuk guru piket, server menutup penyuntingan (`boleh_ubah:false`)
-                      begitu pengampu presensi masuk. */}
+                      Guru piket tetap boleh menyunting jurnal yang ia isi sepanjang hari. */}
                   {!s.boleh_isi && s.status === 'sudah' && s.jurnal_id !== null && s.boleh_ubah !== false && (
                     <Link
                       to={`/mengajar/jurnal/isi/${s.plotting_mapel_id}-${s.jam_ke_mulai}?tanggal=${data.tanggal}&jurnal=${s.jurnal_id}`}

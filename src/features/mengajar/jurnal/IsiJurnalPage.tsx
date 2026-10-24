@@ -243,7 +243,8 @@ export function IsiJurnalPage() {
             </p>
             <p className="text-muted">
               Pengampu: {sesiTerpilih.guru ?? 'guru lain'}. Jurnal ini tercatat sebagai milik
-              pengampu dengan keterangan bahwa Anda yang mengisinya.
+              pengampu dengan keterangan bahwa Anda yang mengisinya — berlaku juga bila pengampu
+              sudah presensi masuk namun tertahan kegiatan lain.
             </p>
           </div>
         </div>

@@ -24,8 +24,8 @@ export interface SesiJurnal {
   boleh_isi: boolean
   /**
    * Khusus guru piket: `false` bila jurnal sesi ini tidak boleh ia ubah lagi —
-   * mis. jurnal diisi pengampu sendiri, atau pengampu sudah presensi masuk
-   * sehingga jurnal kembali ke tangan guru tersebut.
+   * yaitu ketika jurnal diisi pengampu sendiri. Kehadiran pengampu tidak lagi
+   * menutup hak piket.
    */
   boleh_ubah?: boolean
   /** Khusus guru piket: pengampu sesi sudah presensi masuk hari ini. */
