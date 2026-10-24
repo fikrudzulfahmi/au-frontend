@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast'
 import { cn } from '@/lib/cn'
 import { pesanError } from '@/lib/api'
 import { kompresFoto } from '@/lib/kompresFoto'
+import { usePengaturanFoto } from '@/lib/fotoPengaturan'
 import { GeolokasiError, bacaPosisi, formatJarak, terdekatLokasi, type Posisi } from '@/lib/geolokasi'
 import { ambilStatusHariIni, kirimPresensi } from './api'
 import { PetaPresensi } from './PetaPresensi'
@@ -36,6 +37,8 @@ export function PresensiPage() {
   const [galatKamera, setGalatKamera] = useState<string | null>(null)
   const [foto, setFoto] = useState<{ berkas: File; url: string; byte: number } | null>(null)
   const [sedangKompres, setSedangKompres] = useState(false)
+  // Batas kompresi foto dari Pengaturan Sistem (bukan angka tetap di kode).
+  const setelanFoto = usePengaturanFoto()
   const [posisi, setPosisi] = useState<Posisi | null>(null)
   const [galatPosisi, setGalatPosisi] = useState<string | null>(null)
   const [membacaPosisi, setMembacaPosisi] = useState(false)
@@ -132,7 +135,11 @@ export function PresensiPage() {
         kanvas.toBlob((b) => (b === null ? gagal(new Error('Gagal mengambil gambar.')) : selesai(b)), 'image/jpeg', 0.9),
       )
 
-      const hasil = await kompresFoto(mentah, { sisiMaks: 800, targetKb: 150 })
+      const hasil = await kompresFoto(mentah, {
+        sisiMaks: setelanFoto.sisiMaks,
+        kualitas: setelanFoto.kualitas,
+        targetKb: setelanFoto.targetKb,
+      })
 
       setFoto((lama) => {
         if (lama !== null) URL.revokeObjectURL(lama.url)

@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast'
 import { kelasInput } from '@/components/ui/FormField'
 import { pesanPerBidang } from '@/lib/crud'
 import { kompresFoto } from '@/lib/kompresFoto'
+import { usePengaturanFoto } from '@/lib/fotoPengaturan'
 import { tanggalLokal } from '@/lib/format'
 import { pesanError } from '@/lib/api'
 import { useServerClock } from '@/lib/waktu'
@@ -26,8 +27,9 @@ const MAKS_FOTO = 3
 /**
  * Foto kegiatan yang sudah dikompres di klien (A-12/BR-29).
  *
- * Server menolak foto di atas 1 MB dan PHP membatasi unggahan 2 MB, sedangkan foto
- * kamera ponsel biasa 3–8 MB — jadi kompresi di klien wajib, bukan sekadar hemat kuota.
+ * Foto kamera ponsel biasa 3–12 MB, sedangkan batas unggah server jauh lebih kecil —
+ * jadi setiap foto dikompres ke batas menu Pengaturan Sistem sebelum dikirim. Ukuran
+ * asal tidak dibatasi: berapa pun besarnya tetap bisa diunggah.
  */
 interface FotoSiapKirim {
   berkas: File
@@ -68,6 +70,8 @@ export function IsiJurnalPage() {
   const [catatan, setCatatan] = useState('')
   const [foto, setFoto] = useState<FotoSiapKirim[]>([])
   const [sedangKompres, setSedangKompres] = useState(false)
+  // Batas kompresi dari Pengaturan Sistem; nilai bawaan dipakai bila belum termuat.
+  const setelanFoto = usePengaturanFoto()
   const [baris, setBaris] = useState<Record<number, { status: StatusSiswa; keterangan: string }>>({})
   const [galat, setGalat] = useState<Record<string, string>>({})
 
@@ -179,8 +183,9 @@ export function IsiJurnalPage() {
 
       for (const berkas of masuk) {
         const hasil = await kompresFoto(berkas, {
-          sisiMaks: 1280,
-          targetKb: 400,
+          sisiMaks: setelanFoto.sisiMaks,
+          kualitas: setelanFoto.kualitas,
+          targetKb: setelanFoto.targetKb,
           nama: `jurnal-${Date.now()}-${siap.length + 1}.jpg`,
         })
 
@@ -188,8 +193,12 @@ export function IsiJurnalPage() {
       }
 
       setFoto((sebelum) => [...sebelum, ...siap])
-    } catch {
-      toast.gagal('Foto gagal diproses di peramban. Coba pilih foto lain.')
+    } catch (galat) {
+      toast.gagal(
+        galat instanceof Error && galat.message === 'FORMAT_TIDAK_DIDUKUNG'
+          ? 'Format foto tidak bisa dibaca peramban ini (mis. HEIC). Pilih foto JPG, PNG, atau WEBP.'
+          : 'Foto gagal diproses di peramban. Coba pilih foto lain.',
+      )
     } finally {
       setSedangKompres(false)
     }
@@ -326,7 +335,10 @@ export function IsiJurnalPage() {
         {/* A-12 — maksimal 3 foto */}
         <div>
           <span className="mb-1.5 block text-sm font-semibold text-strong">
-            Foto kegiatan <span className="text-muted">(opsional, maksimal {MAKS_FOTO})</span>
+            Foto kegiatan{' '}
+            <span className="text-muted">
+              (opsional, maksimal {MAKS_FOTO}; ukuran berapa pun dikompres otomatis ke ±{setelanFoto.targetKb} KB)
+            </span>
           </span>
 
           <div className="flex flex-wrap items-center gap-2">

@@ -59,7 +59,7 @@ export function PengaturanSistemPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Pengaturan Sistem"
-        keterangan="Parameter teknis presensi. Nilai ini berlaku tanpa perlu deploy ulang."
+        keterangan="Parameter teknis presensi & kompresi foto. Nilai ini berlaku tanpa perlu deploy ulang."
         aksi={<Button memuat={simpan.isPending} onClick={() => simpan.mutate()}><Save size={17} /> Simpan</Button>}
       />
 
@@ -72,14 +72,17 @@ export function PengaturanSistemPage() {
             nilai={nilai.gps_max_akurasi_m} pesanError={galat.gps_max_akurasi_m}
             petunjuk="Presensi ditolak bila akurasi lebih buruk dari nilai ini (FR-PRS-06)."
             onUbah={(v) => setNilai((s) => ({ ...s, gps_max_akurasi_m: v }))} />
-          <BidangTeks label="Sisi terpanjang foto (piksel)" id="sisi" tipe="number" wajib
+          <BidangTeks label="Sisi terpanjang foto setelah dikompres (piksel)" id="sisi" tipe="number" wajib
             nilai={nilai.foto_max_sisi_px} pesanError={galat.foto_max_sisi_px}
+            petunjuk="Foto asal berapa pun ukurannya diperkecil sampai sisi ini."
             onUbah={(v) => setNilai((s) => ({ ...s, foto_max_sisi_px: v }))} />
-          <BidangTeks label="Kualitas JPEG" id="kualitas" tipe="number" wajib
+          <BidangTeks label="Kualitas JPEG hasil kompres" id="kualitas" tipe="number" wajib
             nilai={nilai.foto_kualitas_jpeg} pesanError={galat.foto_kualitas_jpeg}
+            petunjuk="20–100. Makin kecil makin ringan; diturunkan otomatis bila foto masih terlalu besar."
             onUbah={(v) => setNilai((s) => ({ ...s, foto_kualitas_jpeg: v }))} />
-          <BidangTeks label="Target ukuran foto maksimal (KB)" id="target" tipe="number" wajib
+          <BidangTeks label="Ukuran maksimal foto setelah dikompres (KB)" id="target" tipe="number" wajib
             nilai={nilai.foto_target_maks_kb} pesanError={galat.foto_target_maks_kb}
+            petunjuk="Batas hasil kompresi. Foto yang diunggah guru berapa pun ukurannya dikompres otomatis ke batas ini."
             onUbah={(v) => setNilai((s) => ({ ...s, foto_target_maks_kb: v }))} />
         </div>
       </section>
