@@ -11,6 +11,7 @@ import {
   tentukanStatusSesi,
   urutkanKelas,
 } from './ringkasanKelas'
+import { keteranganGuru } from './guruSesi'
 import type { RingkasanKelasHarianItem } from './types'
 
 interface KartuKelasJurnalProps {
@@ -74,7 +75,7 @@ function KartuKelas({
                     <span className="text-muted"> · </span>
                     {s.mapel}
                   </p>
-                  <p className="truncate text-xs text-muted">{s.guru}</p>
+                  <p className="truncate text-xs text-muted">{keteranganGuru(s)}</p>
                   {s.alasan ? (
                     <p className="text-xs text-warn-text">{s.alasan}</p>
                   ) : s.materi ? (

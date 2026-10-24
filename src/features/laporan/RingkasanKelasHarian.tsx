@@ -5,6 +5,7 @@ import { DataTable } from '@/components/ui/DataTable'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { cn } from '@/lib/cn'
+import { keteranganGuru } from './guruSesi'
 import { sesiBelum, tentukanStatusKelas, urutkanKelas } from './ringkasanKelas'
 import type { RingkasanKelasHarianItem } from './types'
 
@@ -179,7 +180,7 @@ export function RingkasanKelasHarian({ data, periode, libur }: RingkasanKelasHar
                 <span className="font-semibold">{s.label_jam}</span>
                 {' · '}
                 {s.mapel}
-                {s.guru ? <span className="text-muted"> — {s.guru}</span> : null}
+                {s.guru ? <span className="text-muted"> — {keteranganGuru(s)}</span> : null}
                 {s.alasan ? <span className="text-warn-text"> ({s.alasan})</span> : null}
               </li>
             ))}

@@ -30,6 +30,10 @@ export interface SesiKelasHarian {
   guru_id: number
   nip: string | null
   guru: string
+  /** Nama guru piket bila sesi ini diisi pengganti; null bila diisi pengampu. */
+  diisi_oleh?: string | null
+  /** `guru` + keterangan piket dalam satu teks siap tampil. */
+  guru_keterangan?: string
   jurnal_id: number | null
   materi: string | null
   status: 'sudah' | 'belum' | 'berhalangan'
