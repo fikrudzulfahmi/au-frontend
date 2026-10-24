@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AlertTriangle, Camera, CheckCircle2, Clock, Loader2, MapPin, RefreshCw, RotateCcw, Send,
+  AlertTriangle, Camera, CheckCircle2, Clock, FlipHorizontal, Loader2, MapPin, RefreshCw, RotateCcw,
+  Send,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
@@ -37,6 +38,10 @@ export function PresensiPage() {
   const [galatKamera, setGalatKamera] = useState<string | null>(null)
   const [foto, setFoto] = useState<{ berkas: File; url: string; byte: number } | null>(null)
   const [sedangKompres, setSedangKompres] = useState(false)
+  // Foto kamera depan tampil seperti cermin di sebagian ponsel, sehingga hasil foto
+  // terasa terbalik. Tombol ini membuat hasil foto sama persis dengan yang terlihat
+  // di layar; bawaannya mati supaya foto tersimpan apa adanya dari kamera.
+  const [cermin, setCermin] = useState(false)
   // Batas kompresi foto dari Pengaturan Sistem (bukan angka tetap di kode).
   const setelanFoto = usePengaturanFoto()
   const [posisi, setPosisi] = useState<Posisi | null>(null)
@@ -128,6 +133,13 @@ export function PresensiPage() {
 
       const konteks = kanvas.getContext('2d')
       if (konteks === null) throw new Error('Kanvas tidak tersedia.')
+
+      // Cermin diterapkan di sini, bukan hanya di CSS, agar berkas yang diunggah
+      // sama dengan pratinjau — bukan sekadar tampilan yang dibalik.
+      if (cermin) {
+        konteks.translate(kanvas.width, 0)
+        konteks.scale(-1, 1)
+      }
 
       konteks.drawImage(video, 0, 0)
 
@@ -266,7 +278,7 @@ export function PresensiPage() {
                   ref={videoRef}
                   playsInline
                   muted
-                  className={cn('aspect-video w-full object-cover', !siapKamera && 'hidden')}
+                  className={cn('aspect-video w-full object-cover', cermin && '-scale-x-100', !siapKamera && 'hidden')}
                 />
               )}
 
@@ -293,9 +305,18 @@ export function PresensiPage() {
               )}
 
               {foto === null && siapKamera && (
-                <Button memuat={sedangKompres} onClick={() => void ambilFoto()}>
-                  <Camera size={17} /> Ambil foto
-                </Button>
+                <>
+                  <Button memuat={sedangKompres} onClick={() => void ambilFoto()}>
+                    <Camera size={17} /> Ambil foto
+                  </Button>
+                  <Button
+                    varian={cermin ? 'primary' : 'secondary'}
+                    onClick={() => setCermin((lama) => !lama)}
+                    title="Bila hasil foto terasa terbalik, nyalakan cermin agar sama dengan tampilan layar."
+                  >
+                    <FlipHorizontal size={17} /> {cermin ? 'Cermin aktif' : 'Cerminkan'}
+                  </Button>
+                </>
               )}
 
               {foto !== null && (
