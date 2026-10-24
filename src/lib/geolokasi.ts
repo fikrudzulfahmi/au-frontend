@@ -20,6 +20,11 @@ export interface LokasiPresensi {
   longitude: number
   is_default: boolean
   /**
+   * Titik-titik sudut poligon [lat, lng] untuk batas presensi khusus.
+   * Bila berisi minimal 3 titik, zona poligon digunakan sebagai pengganti lingkaran radius.
+   */
+  poligon?: [number, number][] | null
+  /**
    * Opsional: endpoint `/presensi/hari-ini` hanya mengirim lokasi yang sudah aktif
    * (tanpa `is_active`), sedangkan `/pengaturan/lokasi` mengirimkannya.
    */
