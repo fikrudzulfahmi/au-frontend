@@ -253,7 +253,11 @@ export function IsiJurnalPage() {
     )
   }
 
-  if (sesiTerpilih === undefined) {
+  // Saat MENGUBAH jurnal, sesi hari itu bisa saja sudah tidak ada lagi: jadwal
+  // master diubah, semester berganti, atau jurnal diisi piket pada tanggal lampau.
+  // Jurnal lama tetap harus bisa dibuka, jadi patokan tampilan diambil dari detail
+  // jurnal ketika sesi tidak ditemukan.
+  if (sesiTerpilih === undefined && jurnalLama.data === undefined) {
     return (
       <EmptyState
         judul="Sesi tidak ditemukan"
@@ -262,20 +266,36 @@ export function IsiJurnalPage() {
     )
   }
 
-  const terkunci = !sesiTerpilih.boleh_isi && !jurnalId
+  const detail = jurnalLama.data?.data
+  // Satu sumber keterangan sesi: jadwal hari itu bila ada, selain itu data jurnal.
+  const info = {
+    kelas: sesiTerpilih?.kelas ?? detail?.kelas ?? null,
+    mapel: sesiTerpilih?.mapel ?? detail?.mapel ?? null,
+    kodeMapel: sesiTerpilih?.kode_mapel ?? detail?.kode_mapel ?? '-',
+    labelJam: sesiTerpilih?.label_jam ?? detail?.label_jam ?? '-',
+    jamMulai: sesiTerpilih?.jam_mulai ?? null,
+    jamSelesai: sesiTerpilih?.jam_selesai ?? null,
+    bolehIsi: sesiTerpilih?.boleh_isi ?? true,
+    pegawaiId: sesiTerpilih?.pegawai_id,
+    guru: sesiTerpilih?.guru,
+    status: sesiTerpilih?.status,
+    alasan: sesiTerpilih?.alasan ?? null,
+  }
+
+  const terkunci = !info.bolehIsi && !jurnalId
   // Sesi milik guru lain hanya mungkin muncul bagi guru piket hari itu; server
   // yang memutuskan (boleh_isi), di sini hanya diberitahukan agar tidak
   // mengagetkan: jurnal yang diisi tercatat atas nama pengampu sesi.
   const sebagaiPiket =
-    sesiTerpilih.pegawai_id !== undefined &&
+    info.pegawaiId !== undefined &&
     user?.pegawai_id != null &&
-    sesiTerpilih.pegawai_id !== user.pegawai_id
+    info.pegawaiId !== user.pegawai_id
 
   return (
     <div className="space-y-4 pb-24">
       <PageHeader
         judul={jurnalId ? 'Ubah Jurnal' : 'Isi Jurnal'}
-        keterangan={`${sesiTerpilih.kelas ?? '-'} · ${sesiTerpilih.mapel ?? '-'} · ${sesiTerpilih.label_jam}`}
+        keterangan={`${info.kelas ?? '-'} · ${info.mapel ?? '-'} · ${info.labelJam}`}
       />
 
       {sebagaiPiket && (
@@ -283,11 +303,10 @@ export function IsiJurnalPage() {
           <Info size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden />
           <div className="text-sm">
             <p className="font-semibold text-strong">
-              Anda mengisi sebagai guru piket untuk kelas{' '}
-              {sesiTerpilih.kelas ?? 'ini'}
+              Anda mengisi sebagai guru piket untuk kelas {info.kelas ?? 'ini'}
             </p>
             <p className="text-muted">
-              Pengampu: {sesiTerpilih.guru ?? 'guru lain'}. Jurnal ini tercatat sebagai milik
+              Pengampu: {info.guru ?? 'guru lain'}. Jurnal ini tercatat sebagai milik
               pengampu dengan keterangan bahwa Anda yang mengisinya — berlaku juga bila pengampu
               sudah presensi masuk namun tertahan kegiatan lain.
             </p>
@@ -300,11 +319,13 @@ export function IsiJurnalPage() {
         <span className="inline-flex items-center gap-1.5 font-semibold text-strong">
           <CalendarDays size={15} /> {tanggal}
         </span>
+        {info.jamMulai !== null && info.jamSelesai !== null && (
+          <span className="inline-flex items-center gap-1.5 text-muted">
+            <Clock size={15} /> {info.jamMulai}–{info.jamSelesai}
+          </span>
+        )}
         <span className="inline-flex items-center gap-1.5 text-muted">
-          <Clock size={15} /> {sesiTerpilih.jam_mulai}–{sesiTerpilih.jam_selesai}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-muted">
-          <GraduationCap size={15} /> {sesiTerpilih.kode_mapel ?? '-'}
+          <GraduationCap size={15} /> {info.kodeMapel}
         </span>
       </div>
 
@@ -323,7 +344,7 @@ export function IsiJurnalPage() {
                       ? ` (${sesiHariIni.data.data.libur.keterangan})`
                       : ''
                   }. Tidak ada kewajiban mengisi jurnal.`
-                : sesiTerpilih.alasan ?? 'Sesi ini tidak dapat diisi.'}
+                : info.alasan ?? 'Sesi ini tidak dapat diisi.'}
             </p>
           </div>
         </div>
@@ -576,8 +597,8 @@ export function IsiJurnalPage() {
 
       {terkunci && (
         <div className="flex justify-center">
-          <StatusBadge varian={sesiTerpilih.status === 'berhalangan' ? 'izin' : 'menunggu'}>
-            {sesiTerpilih.alasan ?? 'Tidak dapat diisi'}
+          <StatusBadge varian={info.status === 'berhalangan' ? 'izin' : 'menunggu'}>
+            {info.alasan ?? 'Tidak dapat diisi'}
           </StatusBadge>
         </div>
       )}
