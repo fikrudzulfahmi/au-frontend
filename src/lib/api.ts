@@ -155,6 +155,16 @@ export async function post<T>(url: string, body?: unknown): Promise<T> {
 }
 
 export async function put<T>(url: string, body?: unknown): Promise<T> {
+  // PHP hanya menguraikan `multipart/form-data` pada POST. Bila FormData dikirim
+  // lewat PUT, badan permintaan kosong dan validasi server selalu gagal (mis.
+  // "materi wajib diisi") meski formulir terisi. Method spoofing `_method=PUT`
+  // membuat Laravel tetap memprosesnya sebagai PUT.
+  if (typeof FormData !== 'undefined' && body instanceof FormData) {
+    body.append('_method', 'PUT')
+    const { data } = await api.post<T>(url, body)
+    return data
+  }
+
   const { data } = await api.put<T>(url, body)
   return data
 }
