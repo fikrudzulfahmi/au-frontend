@@ -477,7 +477,12 @@ export function PengaturanLokasiPage() {
             <BidangTeks label="Longitude" id="lokasi-lng" wajib nilai={form.nilai.longitude}
               pesanError={galat.longitude}
               onUbah={(v) => setForm((s) => ({ ...s, nilai: { ...s.nilai, longitude: v } }))} />
-            <BidangTeks label="Radius (meter) — dipakai bila zona poligon kosong" id="lokasi-radius" tipe="number" wajib nilai={form.nilai.radius_m}
+            <BidangTeks
+              label={modeZona === 'poligon'
+                ? 'Radius cadangan (meter) — boleh 0 bila poligon dipakai'
+                : 'Radius (meter)'}
+              id="lokasi-radius" tipe="number" wajib={modeZona === 'radius'} nilai={form.nilai.radius_m}
+              petunjuk={modeZona === 'poligon' ? 'Zona sah ditentukan poligon; radius hanya cadangan bila poligon dikosongkan.' : undefined}
               pesanError={galat.radius_m}
               onUbah={(v) => setForm((s) => ({ ...s, nilai: { ...s.nilai, radius_m: v } }))} />
           </div>

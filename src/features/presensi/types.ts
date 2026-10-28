@@ -154,9 +154,18 @@ export interface AntreanPresensi {
   masuk_jarak_m: number | null
   masuk_validasi: string | null
   masuk_alasan_luar_radius: string | null
+  pulang_jam: string | null
+  pulang_lat: number | null
+  pulang_lng: number | null
+  pulang_jarak_m: number | null
   pulang_validasi: string | null
   pulang_alasan_luar_radius: string | null
+  /** Sisi yang masih menunggu keputusan: `masuk` dan/atau `pulang`. */
+  sisi_menunggu?: SisiPresensi[]
 }
+
+/** Sisi presensi yang bisa diputuskan pimpinan. */
+export type SisiPresensi = 'masuk' | 'pulang'
 
 export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'menunggu' | 'cuti' | 'alpa'> = {
   hadir: 'hadir',

@@ -344,7 +344,9 @@ export function PresensiPage() {
               </h2>
               {jarak !== null && (
                 <StatusBadge varian={jarak.diDalamRadius ? 'hadir' : 'alpa'}>
-                  {jarak.diDalamRadius ? 'Di dalam radius' : 'Di luar radius'}
+                  {jarak.diDalamRadius
+                    ? (jarak.lokasi.poligon && jarak.lokasi.poligon.length >= 3 ? 'Di dalam zona poligon' : 'Di dalam radius')
+                    : (jarak.lokasi.poligon && jarak.lokasi.poligon.length >= 3 ? 'Di luar zona poligon' : 'Di luar radius')}
                 </StatusBadge>
               )}
             </div>

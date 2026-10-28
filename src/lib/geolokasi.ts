@@ -52,16 +52,85 @@ export interface JarakLokasi {
   diDalamRadius: boolean
 }
 
-/** Lokasi terdekat dari posisi saat ini, beserta status di dalam radiusnya. */
+/**
+ * Uji titik-dalam-poligon (ray casting, even-odd) — cerminan `App\Support\Poligon`
+ * di server. Dipakai agar indikator klien tidak menyatakan "di luar radius" ketika
+ * lokasi memakai zona poligon; keputusan sah tetap milik server.
+ */
+export function titikDiDalamPoligon(
+  lat: number,
+  lng: number,
+  poligon: [number, number][] | null | undefined,
+): boolean {
+  if (!poligon || poligon.length < 3) return false
+
+  let diDalam = false
+
+  for (let i = 0, j = poligon.length - 1; i < poligon.length; j = i++) {
+    const [latI, lngI] = poligon[i]
+    const [latJ, lngJ] = poligon[j]
+
+    // Titik yang jatuh tepat di garis batas dianggap di dalam (server memakai
+    // toleransi serupa) supaya indikator tidak berkedip saat berdiri di tepi zona.
+    if (diSegmen(lat, lng, latI, lngI, latJ, lngJ)) return true
+
+    const memotongGaris =
+      lngI > lng !== lngJ > lng && lat < ((latJ - latI) * (lng - lngI)) / (lngJ - lngI) + latI
+
+    if (memotongGaris) diDalam = !diDalam
+  }
+
+  return diDalam
+}
+
+/** Toleransi derajat untuk titik yang dianggap menempel pada garis batas (~0,1 mm). */
+const TOLERANSI_BATAS = 1e-9
+
+/** Apakah titik (lat, lng) berada pada segmen (latA, lngA)–(latB, lngB)? */
+function diSegmen(
+  lat: number,
+  lng: number,
+  latA: number,
+  lngA: number,
+  latB: number,
+  lngB: number,
+): boolean {
+  const silang = (lng - lngA) * (latB - latA) - (lat - latA) * (lngB - lngA)
+  if (Math.abs(silang) > TOLERANSI_BATAS) return false
+
+  const dot = (lat - latA) * (latB - latA) + (lng - lngA) * (lngB - lngA)
+  if (dot < -TOLERANSI_BATAS) return false
+
+  const panjang = (latB - latA) ** 2 + (lngB - lngA) ** 2
+  return dot <= panjang + TOLERANSI_BATAS
+}
+
+/** Zona sah sebuah lokasi: poligon bila terisi (≥3 titik), selain itu lingkaran radius. */
+export function diDalamZona(posisi: Posisi, lokasi: LokasiPresensi, jarak_m: number): boolean {
+  if (lokasi.poligon && lokasi.poligon.length >= 3) {
+    return titikDiDalamPoligon(posisi.lat, posisi.lng, lokasi.poligon)
+  }
+
+  // Radius 0 pada lokasi tanpa poligon tidak boleh ada (ditolak server), tetapi
+  // jangan pernah menganggap titik mana pun sah bila datanya rusak.
+  return lokasi.radius_m > 0 && jarak_m <= lokasi.radius_m
+}
+
+/** Lokasi terdekat dari posisi saat ini, beserta status di dalam zonanya. */
 export function terdekatLokasi(posisi: Posisi, daftar: LokasiPresensi[]): JarakLokasi | null {
   if (daftar.length === 0) return null
 
+  // Lokasi yang zonanya benar-benar memuat posisi menang lebih dulu; tanpa itu guru
+  // berdiri di dalam poligon tetapi dinilai memakai radius lokasi lain yang lebih dekat.
   return daftar
     .map((lokasi) => {
       const jarak_m = haversine(posisi.lat, posisi.lng, lokasi.latitude, lokasi.longitude)
-      return { lokasi, jarak_m, diDalamRadius: jarak_m <= lokasi.radius_m }
+      return { lokasi, jarak_m, diDalamRadius: diDalamZona(posisi, lokasi, jarak_m) }
     })
-    .sort((a, b) => a.jarak_m - b.jarak_m)[0]
+    .sort((a, b) => {
+      if (a.diDalamRadius !== b.diDalamRadius) return a.diDalamRadius ? -1 : 1
+      return a.jarak_m - b.jarak_m
+    })[0]
 }
 
 /** Format jarak yang enak dibaca (meter atau kilometer). */

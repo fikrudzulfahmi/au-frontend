@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatJarak, haversine, terdekatLokasi } from './geolokasi'
+import { diDalamZona, formatJarak, haversine, terdekatLokasi, titikDiDalamPoligon } from './geolokasi'
 import type { LokasiPresensi, Posisi } from './geolokasi'
 
 describe('geolokasi', () => {
@@ -45,6 +45,57 @@ describe('geolokasi', () => {
     expect(hasil?.lokasi.id).toBe(1)
     expect(hasil?.diDalamRadius).toBe(true)
     expect(hasil?.jarak_m).toBeLessThan(1)
+  })
+
+  it('menilai titik di dalam poligon meski di luar radius', () => {
+    const poligon: [number, number][] = [
+      [-7.869, 111.469],
+      [-7.871, 111.469],
+      [-7.871, 111.471],
+      [-7.869, 111.471],
+    ]
+
+    expect(titikDiDalamPoligon(-7.87, 111.47, poligon)).toBe(true)
+    expect(titikDiDalamPoligon(-7.86, 111.47, poligon)).toBe(false)
+    expect(titikDiDalamPoligon(-7.87, 111.47, null)).toBe(false)
+
+    // Lokasi beradius 0 yang memakai poligon: titik di dalam kotak tetap sah,
+    // walau jarak ke titik pusat jauh melebihi radius.
+    const lokasi: LokasiPresensi = {
+      id: 3,
+      nama: 'Aula Poligon',
+      latitude: -7.87,
+      longitude: 111.47,
+      radius_m: 0,
+      is_default: false,
+      poligon,
+    }
+    const posisi: Posisi = { lat: -7.8695, lng: 111.4705, akurasi_m: 8 }
+    const jarak = haversine(posisi.lat, posisi.lng, lokasi.latitude, lokasi.longitude)
+
+    expect(diDalamZona(posisi, lokasi, jarak)).toBe(true)
+    expect(terdekatLokasi(posisi, [lokasi])?.diDalamRadius).toBe(true)
+  })
+
+  it('memilih lokasi yang zonanya memuat posisi, bukan sekadar yang terdekat', () => {
+    const posisi: Posisi = { lat: -7.8695, lng: 111.4705, akurasi_m: 8 }
+
+    const dekat: LokasiPresensi = {
+      id: 10, nama: 'Pos Satpam', latitude: -7.8690, longitude: 111.4705,
+      radius_m: 5, is_default: true, poligon: null,
+    }
+    const poligon: LokasiPresensi = {
+      id: 11, nama: 'Aula', latitude: -7.875, longitude: 111.475, radius_m: 0, is_default: false,
+      poligon: [
+        [-7.869, 111.470],
+        [-7.870, 111.470],
+        [-7.870, 111.471],
+        [-7.869, 111.471],
+      ],
+    }
+
+    // Pos satpam lebih dekat tetapi titik berada di luar radiusnya (posisi ~55 m dari pusat).
+    expect(terdekatLokasi(posisi, [dekat, poligon])?.lokasi.id).toBe(11)
   })
 
   it('memformat jarak dengan meter atau kilometer', () => {

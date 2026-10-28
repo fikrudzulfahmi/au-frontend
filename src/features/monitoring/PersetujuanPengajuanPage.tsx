@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, FileText, XCircle } from 'lucide-react'
+import { CheckCircle2, FileText, Trash2, XCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { DataTable } from '@/components/ui/DataTable'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -21,6 +22,7 @@ export function PersetujuanPengajuanPage() {
   const [tab, setTab] = useState<'izin' | 'luar-radius'>('izin')
   const [pilih, setPilih] = useState<PengajuanIzin | PengajuanLuarRadius | null>(null)
   const [catatan, setCatatan] = useState('')
+  const [hapusDiminta, setHapusDiminta] = useState(false)
 
   const izin = useQuery({
     queryKey: ['pengajuan-izin', 'menunggu'],
@@ -51,6 +53,22 @@ export function PersetujuanPengajuanPage() {
       aksi(`/pengajuan-luar-radius/${v.id}/putuskan`, { status: v.status, catatan_penyetuju: catatan || null }, 'patch'),
     onSuccess: () => { toast.sukses('Keputusan tersimpan.'); setPilih(null); setCatatan(''); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
+  })
+
+  const hapus = useMutation({
+    mutationFn: (p: PengajuanIzin | PengajuanLuarRadius) =>
+      master.hapus('jenis' in p ? '/pengajuan-izin' : '/pengajuan-luar-radius', p.id),
+    onSuccess: () => {
+      toast.sukses('Pengajuan dihapus.')
+      setHapusDiminta(false)
+      setPilih(null)
+      setCatatan('')
+      segarkan()
+    },
+    onError: (e) => {
+      toast.gagal(pesanError(e))
+      setHapusDiminta(false)
+    },
   })
 
   return (
@@ -122,10 +140,16 @@ export function PersetujuanPengajuanPage() {
         />
       )}
 
-      <Modal terbuka={pilih !== null} lebar="sm" judul="Tinjau Pengajuan" onTutup={() => setPilih(null)}
+      <Modal terbuka={pilih !== null} lebar="sm" judul="Tinjau Pengajuan"
+        onTutup={() => { setPilih(null); setCatatan('') }}
         footer={
           <>
+            <Button varian="danger" memuat={hapus.isPending}
+              onClick={() => setHapusDiminta(true)}>
+              <Trash2 size={17} /> Hapus
+            </Button>
             <Button varian="secondary" memuat={putuskanIzin.isPending || putuskanLuar.isPending}
+              disabled={catatan.trim() === ''}
               onClick={() => {
                 if (pilih === null) return
                 if ('jenis' in pilih) putuskanIzin.mutate({ id: pilih.id, status: 'ditolak' })
@@ -172,10 +196,21 @@ export function PersetujuanPengajuanPage() {
 
             <BidangTeks label="Catatan penyetuju" id="catatan-pengajuan" nilai={catatan}
               petunjuk="Wajib diisi bila menolak (FR-IZN-04)."
+              pesanError={catatan.trim() === '' ? 'Catatan wajib diisi sebelum menolak.' : undefined}
               onUbah={setCatatan} />
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        terbuka={hapusDiminta}
+        judul="Hapus pengajuan ini?"
+        keterangan="Pengajuan beserta pengajuan luar radius turunannya akan dihapus permanen dan tidak dapat dipulihkan. Pengajuan yang sudah dipakai presensi tidak dapat dihapus."
+        labelKonfirmasi="Hapus"
+        memuat={hapus.isPending}
+        onKonfirmasi={() => pilih && hapus.mutate(pilih)}
+        onTutup={() => setHapusDiminta(false)}
+      />
     </div>
   )
 }
