@@ -57,6 +57,45 @@ export interface RingkasanKelasHarianItem {
   daftar: SesiKelasHarian[]
 }
 
+/** Satu entri `jurnal[]` pada FR-LAP-07; sejajar indeks dengan `baris[]`. */
+export interface JurnalDaftarItem {
+  id: number
+  [kunci: string]: unknown
+}
+
+/** Presensi satu siswa di dalam detail jurnal. */
+export interface PresensiSiswaJurnal {
+  siswa_id: number
+  nis: string | null
+  nama: string | null
+  jenis_kelamin: string | null
+  status: 'H' | 'S' | 'I' | 'A' | 'B' | 'T'
+  label_status: string
+  keterangan: string | null
+}
+
+/** Detail read-only satu jurnal (FR-LAP-07) untuk admin/kepala sekolah/wakasek. */
+export interface DetailJurnal {
+  id: number
+  tanggal: string | null
+  label_jam: string
+  jam_ke_mulai: number
+  jam_ke_selesai: number
+  kelas: string | null
+  mapel: string | null
+  kode_mapel: string | null
+  nip: string | null
+  guru: string | null
+  guru_keterangan: string | null
+  diisi_oleh: string | null
+  materi: string
+  kegiatan: string
+  catatan: string | null
+  ringkasan: Record<'H' | 'S' | 'I' | 'A' | 'B' | 'T', number>
+  presensi_siswa: PresensiSiswaJurnal[]
+  foto: { id: number; urutan: number; url: string }[]
+}
+
 export interface HasilLaporan {
   kode: string
   judul: string
@@ -77,7 +116,7 @@ export interface HasilLaporan {
   pegawai?: unknown
   guru?: unknown
   siswa?: unknown
-  jurnal?: unknown
+  jurnal?: JurnalDaftarItem[]
   detail?: unknown
 }
 
@@ -85,14 +124,25 @@ export interface HasilLaporan {
 export interface BarisLaporan {
   kunci: number
   sel: SelLaporan[]
+  /** Id jurnal pada FR-LAP-07; null untuk laporan lain. */
+  id?: number | null
 }
 
 /**
  * Mengubah matriks `baris` menjadi baris berkunci. `DataTable` hanya menerima
  * `kunciBaris(baris)`, sehingga kunci baris harus menempel pada barisnya.
  */
-export function keBarisLaporan(baris: SelLaporan[][] | undefined): BarisLaporan[] {
-  return (baris ?? []).map((sel, kunci) => ({ kunci, sel }))
+export function keBarisLaporan(
+  baris: SelLaporan[][] | undefined,
+  jurnal?: JurnalDaftarItem[] | undefined,
+): BarisLaporan[] {
+  return (baris ?? []).map((sel, kunci) => ({
+    kunci,
+    sel,
+    // `jurnal[]` dikirim server dengan urutan yang sama seperti `baris[]`, sehingga
+    // id dapat ditempel per indeks tanpa mengubah bentuk 13 kolom laporan.
+    id: jurnal?.[kunci]?.id ?? null,
+  }))
 }
 
 /**

@@ -1,7 +1,19 @@
 import { get } from '@/lib/api'
 import { bersihkanParams } from '@/lib/crud'
 import { unduhBerkasApi } from '@/lib/unduhan'
-import type { HasilLaporan } from './types'
+import type { DetailJurnal, HasilLaporan } from './types'
+
+/**
+ * FR-LAP-07 — detail read-only satu jurnal untuk pembaca laporan.
+ *
+ * Memakai endpoint `/laporan/jurnal/{id}`, bukan `/jurnal/{id}`, karena kepala
+ * sekolah & wakasek tidak punya akses ke endpoint jurnal Fase 4 (matriks peran).
+ */
+export async function ambilDetailJurnal(id: number): Promise<DetailJurnal> {
+  const respons = await get<{ data: DetailJurnal }>(`/laporan/jurnal/${id}`)
+
+  return respons.data
+}
 
 /** Format ekspor yang didukung semua laporan (KP-5.1). */
 export type FormatEkspor = 'pdf' | 'excel'

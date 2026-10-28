@@ -28,6 +28,7 @@ import { penggunaMemantau } from '@/lib/roles'
 import type { JenisFilter, KonfigurasiLaporan } from './config'
 import { keBarisLaporan, teksSel } from './types'
 import type { BarisLaporan, HasilLaporan } from './types'
+import { DetailJurnalDialog } from './DetailJurnalDialog'
 import { RingkasanKelasHarian } from './RingkasanKelasHarian'
 import { useDataLaporan, usePengaturanDokumen } from './useDataLaporan'
 
@@ -417,6 +418,55 @@ interface IsiLaporanProps {
 }
 
 /**
+ * Tabel laporan dengan kolom "Aksi" untuk membuka detail jurnal (FR-LAP-07).
+ *
+ * Dipisah menjadi komponen sendiri karena `IsiLaporan` memakai early return;
+ * keadaan dialog tidak boleh dideklarasikan setelah return agar urutan hook tetap.
+ */
+function TabelBerdetail({
+  baris,
+  kolom,
+}: {
+  baris: BarisLaporan[]
+  kolom: KolomTabel<BarisLaporan>[]
+}) {
+  const [idDetail, setIdDetail] = useState<number | null>(null)
+
+  const kolomAksi: KolomTabel<BarisLaporan>[] = [
+    ...kolom,
+    {
+      kunci: 'aksi',
+      judul: '',
+      className: 'w-20',
+      render: (b) =>
+        typeof b.id === 'number' ? (
+          <Button
+            type="button"
+            varian="secondary"
+            ukuran="sm"
+            onClick={() => setIdDetail(b.id as number)}
+            aria-label={`Lihat detail jurnal baris ${b.kunci + 1}`}
+          >
+            Lihat
+          </Button>
+        ) : null,
+    },
+  ]
+
+  return (
+    <>
+      <DataTable
+        data={baris}
+        kunciBaris={(b) => b.kunci}
+        kolom={kolomAksi}
+        kosong="Tidak ada data pada periode/filter ini."
+      />
+      <DetailJurnalDialog id={idDetail} onTutup={() => setIdDetail(null)} />
+    </>
+  )
+}
+
+/**
  * Cabang tampilan laporan. Ketiganya (memuat, gagal, kosong) sengaja punya
  * tampilan sendiri: halaman yang hanya merender keadaan sukses akan menjadi
  * layar kosong tanpa jejak saat satu permintaan gagal.
@@ -463,7 +513,10 @@ function IsiLaporan({
 
   if (!hasil) return null
 
-  const baris = keBarisLaporan(hasil.baris)
+  // FR-LAP-07 mengirim `jurnal[]` sejajar baris agar admin/kepala sekolah dapat
+  // membuka detail read-only satu jurnal dari tabel laporan.
+  const baris = keBarisLaporan(hasil.baris, hasil.jurnal)
+  const bolehDetail = baris.some((b) => typeof b.id === 'number')
   const kolom: KolomTabel<BarisLaporan>[] = hasil.kolom.map((judul, i) => ({
     kunci: String(i),
     judul,
@@ -521,6 +574,8 @@ function IsiLaporan({
             </p>
           </div>
         </div>
+      ) : bolehDetail ? (
+        <TabelBerdetail baris={baris} kolom={kolom} />
       ) : (
         <DataTable
           data={baris}
