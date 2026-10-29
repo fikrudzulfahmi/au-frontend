@@ -23,6 +23,7 @@ import { Logo } from '@/components/ui/Logo'
 import { get, getToken } from '@/lib/api'
 import { formatTanggalDari } from '@/lib/format'
 import { APP_NAME } from '@/lib/env'
+import { pasangIkonLeaflet } from '@/lib/ikonLeaflet'
 import { cn } from '@/lib/cn'
 import { useSekolah } from '@/features/sekolah/useSekolah'
 import { tampilkanPetaLanding, tampilkanPengumumanLanding } from './logika'
@@ -439,6 +440,7 @@ export function PetaSekolah({ latitude, longitude, nama }: PetaSekolahProps) {
     void (async () => {
       const L = await import('leaflet')
       await import('leaflet/dist/leaflet.css')
+      pasangIkonLeaflet(L)
       if (!containerRef.current) return
       const map = L.map(containerRef.current, { scrollWheelZoom: false }).setView(
         [latitude, longitude],

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { LokasiPresensi, Posisi } from '@/lib/geolokasi'
+import { pasangIkonLeaflet } from '@/lib/ikonLeaflet'
 
 interface PetaPresensiProps {
   daftarLokasi: LokasiPresensi[]
@@ -21,6 +22,7 @@ export function PetaPresensi({ daftarLokasi, posisi }: PetaPresensiProps) {
     void (async () => {
       const L = await import('leaflet')
       await import('leaflet/dist/leaflet.css')
+      pasangIkonLeaflet(L)
 
       if (dibatalkan || !containerRef.current) return
 

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 
+import { pasangIkonLeaflet } from '@/lib/ikonLeaflet'
+
 interface PetaLokasiAbsenProps {
   lat: number
   lng: number
@@ -26,6 +28,7 @@ export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, polig
     void (async () => {
       const L = await import('leaflet')
       await import('leaflet/dist/leaflet.css')
+      pasangIkonLeaflet(L)
       if (!ref.current) return
 
       const map = L.map(ref.current, { scrollWheelZoom: false })
