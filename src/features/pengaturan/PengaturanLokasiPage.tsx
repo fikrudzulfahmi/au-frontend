@@ -237,11 +237,13 @@ export function PengaturanLokasiPage() {
               {l.latitude.toFixed(6)}, {l.longitude.toFixed(6)}
             </p>
             <p className="mt-1 text-sm text-strong">
-              Radius <span className="tnum font-bold">{l.radius_m} m</span>
-              {Array.isArray(l.poligon) && l.poligon.length >= 3 && (
-                <span className="ml-2 inline-flex items-center rounded bg-info-soft px-1.5 py-0.5 text-xs font-semibold text-link">
-                  Poligon ({l.poligon.length} titik)
-                </span>
+              {Array.isArray(l.poligon) && l.poligon.length >= 3 ? (
+                <>
+                  Zona <span className="font-bold">poligon</span> ({l.poligon.length} titik)
+                  {l.radius_m > 0 && <span className="text-xs text-muted"> · radius cadangan {l.radius_m} m</span>}
+                </>
+              ) : (
+                <>Radius <span className="tnum font-bold">{l.radius_m} m</span></>
               )}
             </p>
             {!l.is_active && <p className="mt-1 text-xs text-danger">Nonaktif</p>}
@@ -381,18 +383,15 @@ export function PengaturanLokasiPage() {
                 onTambahTitik={tanganiTambahTitik}
               />
 
-              {/* Lingkaran radius (tetap tampil sebagai acuan bila poligon belum aktif) */}
-              <Circle
-                center={pusat}
-                radius={Number(form.nilai.radius_m) || 0}
-                pathOptions={{
-                  color: '#1e2a8a',
-                  weight: modeZona === 'poligon' ? 1 : 2,
-                  dashArray: modeZona === 'poligon' ? '4 4' : undefined,
-                  fillOpacity: modeZona === 'poligon' ? 0.03 : 0.08,
-                  interactive: false,
-                }}
-              />
+              {/* Lingkaran radius hanya digambar pada mode radius: di mode poligon
+                  lingkaran itu membuat areal sah terlihat lebih sempit dari sebenarnya. */}
+              {modeZona === 'radius' && (
+                <Circle
+                  center={pusat}
+                  radius={Number(form.nilai.radius_m) || 0}
+                  pathOptions={{ color: '#1e2a8a', weight: 2, fillOpacity: 0.08, interactive: false }}
+                />
+              )}
 
               {/* Titik koordinat pusat */}
               <CircleMarker

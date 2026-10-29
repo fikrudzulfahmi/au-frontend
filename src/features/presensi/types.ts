@@ -52,6 +52,8 @@ export interface StatusHariIni {
     latitude: number
     longitude: number
     is_default: boolean
+    /** Zona areal sekolah ([[lat, lng], …]); null bila lokasi hanya memakai radius. */
+    poligon: Array<[number, number]> | null
   }>
 }
 
@@ -121,6 +123,11 @@ export interface BarisMonitoring {
   lokasi_lat: number | null
   lokasi_lng: number | null
   lokasi_radius_m: number | null
+  lokasi_poligon?: Array<[number, number]> | null
+  lokasi_pulang_lat?: number | null
+  lokasi_pulang_lng?: number | null
+  lokasi_pulang_radius_m?: number | null
+  lokasi_pulang_poligon?: Array<[number, number]> | null
   masuk_status: string | null
   pulang_status: string | null
   masuk_validasi: string | null

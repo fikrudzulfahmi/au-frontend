@@ -105,19 +105,60 @@ function diSegmen(
   return dot <= panjang + TOLERANSI_BATAS
 }
 
-/** Zona sah sebuah lokasi: poligon bila terisi (≥3 titik), selain itu lingkaran radius. */
-export function diDalamZona(posisi: Posisi, lokasi: LokasiPresensi, jarak_m: number): boolean {
+/**
+ * Jarak terdekat (meter) dari titik ke tepi poligon — proyeksi datar, cukup akurat
+ * untuk areal sekolah. Dipakai untuk kelonggaran galat GPS seperti di server.
+ */
+export function jarakKeTepiPoligon(lat: number, lng: number, poligon: [number, number][]): number {
+  const meterLat = 110540
+  const meterLng = 111320 * Math.cos((lat * Math.PI) / 180)
+  let terdekat = Number.POSITIVE_INFINITY
+
+  for (let i = 0, j = poligon.length - 1; i < poligon.length; j = i++) {
+    const ax = (poligon[j][1] - lng) * meterLng
+    const ay = (poligon[j][0] - lat) * meterLat
+    const bx = (poligon[i][1] - lng) * meterLng
+    const by = (poligon[i][0] - lat) * meterLat
+    const dx = bx - ax
+    const dy = by - ay
+    const panjangSq = dx * dx + dy * dy
+    const t = panjangSq <= 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / panjangSq))
+    const jarak = Math.hypot(ax + t * dx, ay + t * dy)
+    if (jarak < terdekat) terdekat = jarak
+  }
+
+  return terdekat
+}
+
+/**
+ * Zona sah sebuah lokasi: poligon bila terisi (≥3 titik), selain itu lingkaran radius.
+ *
+ * `toleransiMeter` = kelonggaran galat GPS di tepi zona (cerminan aturan server), supaya
+ * guru yang berdiri di batas pagar tidak melihat tuduhan "di luar radius" padahal server
+ * menerima presensinya.
+ */
+export function diDalamZona(
+  posisi: Posisi,
+  lokasi: LokasiPresensi,
+  jarak_m: number,
+  toleransiMeter = 0,
+): boolean {
   if (lokasi.poligon && lokasi.poligon.length >= 3) {
-    return titikDiDalamPoligon(posisi.lat, posisi.lng, lokasi.poligon)
+    if (titikDiDalamPoligon(posisi.lat, posisi.lng, lokasi.poligon)) return true
+    return toleransiMeter > 0 && jarakKeTepiPoligon(posisi.lat, posisi.lng, lokasi.poligon) <= toleransiMeter
   }
 
   // Radius 0 pada lokasi tanpa poligon tidak boleh ada (ditolak server), tetapi
   // jangan pernah menganggap titik mana pun sah bila datanya rusak.
-  return lokasi.radius_m > 0 && jarak_m <= lokasi.radius_m
+  return lokasi.radius_m > 0 && jarak_m <= lokasi.radius_m + toleransiMeter
 }
 
 /** Lokasi terdekat dari posisi saat ini, beserta status di dalam zonanya. */
-export function terdekatLokasi(posisi: Posisi, daftar: LokasiPresensi[]): JarakLokasi | null {
+export function terdekatLokasi(
+  posisi: Posisi,
+  daftar: LokasiPresensi[],
+  toleransiMeter = 0,
+): JarakLokasi | null {
   if (daftar.length === 0) return null
 
   // Lokasi yang zonanya benar-benar memuat posisi menang lebih dulu; tanpa itu guru
@@ -125,7 +166,7 @@ export function terdekatLokasi(posisi: Posisi, daftar: LokasiPresensi[]): JarakL
   return daftar
     .map((lokasi) => {
       const jarak_m = haversine(posisi.lat, posisi.lng, lokasi.latitude, lokasi.longitude)
-      return { lokasi, jarak_m, diDalamRadius: diDalamZona(posisi, lokasi, jarak_m) }
+      return { lokasi, jarak_m, diDalamRadius: diDalamZona(posisi, lokasi, jarak_m, toleransiMeter) }
     })
     .sort((a, b) => {
       if (a.diDalamRadius !== b.diDalamRadius) return a.diDalamRadius ? -1 : 1

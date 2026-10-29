@@ -6,11 +6,17 @@ interface PetaLokasiAbsenProps {
   lokasiLat: number | null
   lokasiLng: number | null
   radiusM: number | null
+  /** Zona areal sekolah; bila ≥3 titik, areal inilah yang digambar, bukan lingkaran radius. */
+  poligon?: Array<[number, number]> | null
   nama: string
 }
 
-/** Peta lokasi presensi: lingkaran radius lokasi (jika ada) + titik posisi pegawai saat presensi. */
-export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, nama }: PetaLokasiAbsenProps) {
+/**
+ * Peta lokasi presensi: zona sah lokasi (poligon atau lingkaran radius) + titik posisi
+ * pegawai saat presensi. Menggambar lingkaran radius pada lokasi berpoligon membuat
+ * titik yang sah tampak di luar zona, jadi bentuk zona mengikuti data lokasi.
+ */
+export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, poligon, nama }: PetaLokasiAbsenProps) {
   const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -28,10 +34,20 @@ export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, nama 
 
       const titik: [number, number][] = []
 
+      const punyaPoligon = Array.isArray(poligon) && poligon.length >= 3
+
+      if (punyaPoligon) {
+        const batas = poligon as [number, number][]
+        L.polygon(batas, { color: '#1E2A8A', weight: 2, fillOpacity: 0.08 })
+          .addTo(map)
+          .bindPopup(`${nama} (zona poligon)`)
+        batas.forEach((titikPoligon) => titik.push(titikPoligon))
+      }
+
       if (lokasiLat !== null && lokasiLng !== null) {
         const pusat: [number, number] = [lokasiLat, lokasiLng]
         titik.push(pusat)
-        if (radiusM !== null && radiusM > 0) {
+        if (!punyaPoligon && radiusM !== null && radiusM > 0) {
           L.circle(pusat, { radius: radiusM, color: '#1E2A8A', weight: 1, fillOpacity: 0.08 }).addTo(map)
         }
         L.marker(pusat).addTo(map).bindPopup(`${nama} (lokasi)`)
@@ -47,7 +63,7 @@ export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, nama 
       bersih = () => map.remove()
     })()
     return () => bersih?.()
-  }, [lat, lng, lokasiLat, lokasiLng, radiusM, nama])
+  }, [lat, lng, lokasiLat, lokasiLng, radiusM, poligon, nama])
 
   return (
     <div

@@ -188,7 +188,10 @@ export function PresensiPage() {
     onError: (e) => toast.gagal(pesanError(e)),
   })
 
-  const jarak = posisi !== null && data !== undefined ? terdekatLokasi(posisi, data.lokasi) : null
+  // Kelonggaran tepi zona mengikuti akurasi GPS (maks 25 m), sama dengan aturan server:
+  // tanpa itu guru yang berdiri di batas pagar melihat "di luar radius" padahal sah.
+  const toleransiZona = posisi !== null ? Math.min(posisi.akurasi_m || 15, 25) : 0
+  const jarak = posisi !== null && data !== undefined ? terdekatLokasi(posisi, data.lokasi, toleransiZona) : null
   const diLuarRadius = jarak !== null && !jarak.diDalamRadius
 
   return (

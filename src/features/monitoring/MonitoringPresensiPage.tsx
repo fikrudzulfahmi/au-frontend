@@ -279,6 +279,7 @@ function DetailPresensi({
               lokasiLat={baris.lokasi_lat ?? null}
               lokasiLng={baris.lokasi_lng ?? null}
               radiusM={baris.lokasi_radius_m ?? null}
+              poligon={baris.lokasi_poligon ?? null}
               nama={baris.lokasi ?? 'Presensi'}
             />
           )}
@@ -286,7 +287,15 @@ function DetailPresensi({
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div><dt className="text-xs font-semibold text-muted">Masuk</dt><dd className="tnum font-bold text-strong">{baris.masuk_jam ?? '—'} {baris.masuk_status ? `(${baris.masuk_status})` : ''}</dd></div>
             <div><dt className="text-xs font-semibold text-muted">Pulang</dt><dd className="tnum font-bold text-strong">{baris.pulang_jam ?? '—'} {baris.pulang_status ? `(${baris.pulang_status})` : ''}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">Jarak</dt><dd className="tnum font-bold text-strong">{formatJarak(baris.jarak_m)}</dd></div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Jarak</dt>
+              <dd className="tnum font-bold text-strong">
+                {formatJarak(baris.jarak_m)}
+                {Array.isArray(baris.lokasi_poligon) && baris.lokasi_poligon.length >= 3 && (
+                  <span className="ml-1 text-xs font-semibold text-link">(di dalam zona poligon)</span>
+                )}
+              </dd>
+            </div>
             <div><dt className="text-xs font-semibold text-muted">Lokasi</dt><dd className="font-bold text-strong">{baris.lokasi ?? 'Luar semua radius'}</dd></div>
           </dl>
 

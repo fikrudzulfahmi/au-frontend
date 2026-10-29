@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { diDalamZona, formatJarak, haversine, terdekatLokasi, titikDiDalamPoligon } from './geolokasi'
+import {
+  diDalamZona,
+  formatJarak,
+  haversine,
+  jarakKeTepiPoligon,
+  terdekatLokasi,
+  titikDiDalamPoligon,
+} from './geolokasi'
 import type { LokasiPresensi, Posisi } from './geolokasi'
 
 describe('geolokasi', () => {
@@ -96,6 +103,30 @@ describe('geolokasi', () => {
 
     // Pos satpam lebih dekat tetapi titik berada di luar radiusnya (posisi ~55 m dari pusat).
     expect(terdekatLokasi(posisi, [dekat, poligon])?.lokasi.id).toBe(11)
+  })
+
+  it('memberi kelonggaran galat GPS di tepi poligon seperti aturan server', () => {
+    const poligon: [number, number][] = [
+      [-7.8654, 111.464],
+      [-7.8644, 111.464],
+      [-7.8644, 111.466],
+      [-7.8654, 111.466],
+    ]
+
+    // Tepat ~10 m di luar sisi utara.
+    const luar10m: Posisi = { lat: -7.86431, lng: 111.465, akurasi_m: 15 }
+    const lokasi: LokasiPresensi = {
+      id: 1, nama: 'Sekolah', latitude: -7.8649, longitude: 111.465,
+      radius_m: 0, is_default: true, poligon,
+    }
+
+    expect(jarakKeTepiPoligon(luar10m.lat, luar10m.lng, poligon)).toBeGreaterThan(9)
+    expect(jarakKeTepiPoligon(luar10m.lat, luar10m.lng, poligon)).toBeLessThan(11)
+
+    expect(diDalamZona(luar10m, lokasi, 120, 0)).toBe(false)
+    expect(diDalamZona(luar10m, lokasi, 120, 15)).toBe(true)
+    // Jauh di luar tetap di luar meski ada toleransi.
+    expect(diDalamZona({ lat: -7.863, lng: 111.465, akurasi_m: 15 }, lokasi, 300, 15)).toBe(false)
   })
 
   it('memformat jarak dengan meter atau kilometer', () => {
