@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { get } from '@/lib/api'
+import { useAuth } from '@/features/auth/AuthContext'
+import { adalahPegawai } from '@/lib/roles'
 import { ambilStatusHariIni } from '@/features/presensi/api'
 import type { MonitoringHarian, StatusHariIni } from '@/features/presensi/types'
 
@@ -9,11 +11,17 @@ export type { StatusHariIni }
 /**
  * Status presensi hari ini milik pengguna. Bentuk mengikuti endpoint aktual
  * `/presensi/hari-ini` (StatusHariIni); tidak ada lagi data contoh "Fase 0".
+ * Hanya dipanggil bila akun terhubung dengan data pegawai (adalahPegawai).
+ * Akun admin non-pegawai tidak memiliki presensi pribadi sehingga pemanggilan
+ * akan menghasilkan 422 ("Akun ini tidak terhubung ke data pegawai").
  */
 export function usePresensiHariIni() {
+  const { user } = useAuth()
+
   return useQuery({
     queryKey: ['presensi', 'hari-ini'],
     queryFn: async () => (await ambilStatusHariIni()).data,
+    enabled: adalahPegawai(user),
     staleTime: 15_000,
   })
 }
