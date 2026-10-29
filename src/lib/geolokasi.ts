@@ -181,6 +181,24 @@ export function formatJarak(meter: number | null | undefined): string {
   return `${(meter / 1000).toFixed(2)} km`
 }
 
+/**
+ * Tautan Google Maps untuk satu koordinat presensi.
+ *
+ * Pimpinan memverifikasi tempat presensi guru dengan membuka Google Maps: peta
+ * bawaan (Leaflet/OSM) cukup untuk melihat posisi terhadap zona, tetapi Google
+ * Maps dipakai untuk mengenali alamat sebenarnya. Tautan ini dibuka di tab baru —
+ * bukan peta Google yang ditanam — jadi tidak butuh API key maupun biaya per muat.
+ */
+export function tautanGoogleMaps(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+): string | null {
+  if (lat === null || lat === undefined || lng === null || lng === undefined) return null
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+
+  return `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(6)},${lng.toFixed(6)}`
+}
+
 export class GeolokasiError extends Error {
   constructor(
     pesan: string,

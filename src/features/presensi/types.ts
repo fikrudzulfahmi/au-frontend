@@ -120,6 +120,9 @@ export interface BarisMonitoring {
   pulang_jam: string | null
   masuk_lat: number | null
   masuk_lng: number | null
+  /** Jarak & akurasi sisi datang (presensi luar radius). */
+  masuk_jarak_m?: number | null
+  masuk_akurasi_m?: number | null
   lokasi_lat: number | null
   lokasi_lng: number | null
   lokasi_radius_m: number | null
@@ -128,6 +131,13 @@ export interface BarisMonitoring {
   lokasi_pulang_lng?: number | null
   lokasi_pulang_radius_m?: number | null
   lokasi_pulang_poligon?: Array<[number, number]> | null
+  /** Sisi pulang punya koordinat, lokasi, dan foto sendiri (bukan salinan sisi masuk). */
+  pulang_lat?: number | null
+  pulang_lng?: number | null
+  pulang_jarak_m?: number | null
+  pulang_akurasi_m?: number | null
+  lokasi_pulang?: string | null
+  pulang_alasan_luar_radius?: string | null
   masuk_status: string | null
   pulang_status: string | null
   masuk_validasi: string | null
@@ -139,6 +149,8 @@ export interface BarisMonitoring {
   pengajuan_label: string | null
   alasan_luar_radius: string | null
   ada_foto: boolean
+  ada_foto_masuk?: boolean
+  ada_foto_pulang?: boolean
 }
 
 export interface MonitoringHarian {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Clock, MapPin, Wrench, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, ExternalLink, MapPin, Wrench, XCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { DataTable } from '@/components/ui/DataTable'
@@ -11,12 +11,13 @@ import { BidangTeks } from '@/components/ui/Bidang'
 import { useToast } from '@/components/ui/Toast'
 import { get, pesanError, urlFotoBerpelindung } from '@/lib/api'
 import { aksi } from '@/lib/crud'
-import { formatJarak } from '@/lib/geolokasi'
+import { formatJarak, tautanGoogleMaps } from '@/lib/geolokasi'
 import { formatTanggalDari } from '@/lib/format'
 import { ROLE, punyaPeran } from '@/lib/roles'
 import { useAuth } from '@/features/auth/AuthContext'
 import type { BarisMonitoring, KategoriMonitoring, MonitoringHarian } from '@/features/presensi/types'
 import { PetaLokasiAbsen } from './PetaLokasiAbsen'
+import { labelStatusSisi, labelValidasi, ringkasanSisi, type RingkasanSisi } from './sisiPresensi'
 import { VARIAN_KATEGORI } from '@/features/presensi/types'
 
 /** FR-PRS-10/11/13 — monitoring presensi harian, persetujuan luar radius, dan koreksi. */
@@ -221,7 +222,7 @@ export function MonitoringPresensiPage() {
   )
 }
 
-/** DETAIL: foto, koordinat, dan tombol keputusan untuk presensi luar radius. */
+/** DETAIL: foto + lokasi presensi DATANG dan PULANG, plus tombol keputusan luar radius. */
 function DetailPresensi({
   baris, onTutup, bolehPutuskan, catatan, onCatatan, onPutuskan, memuat,
 }: {
@@ -233,18 +234,11 @@ function DetailPresensi({
   onPutuskan: (keputusan: 'disetujui' | 'ditolak', sisi: 'masuk' | 'pulang') => void
   memuat: boolean
 }) {
-  const foto = useQuery({
-    queryKey: ['monitoring', 'foto', baris?.presensi_id],
-    queryFn: () => urlFotoBerpelindung(`/presensi/${baris?.presensi_id}/foto/masuk`),
-    enabled: (baris?.presensi_id ?? null) !== null && baris?.ada_foto === true,
-    staleTime: 5 * 60 * 1000,
-  })
-
   const menungguMasuk = baris?.masuk_validasi === 'menunggu'
   const menungguPulang = baris?.pulang_validasi === 'menunggu'
 
   return (
-    <Modal terbuka={baris !== null} judul={baris?.nama ?? ''}
+    <Modal terbuka={baris !== null} lebar="lg" judul={baris?.nama ?? ''}
       keterangan={baris ? `${baris.nip} · ${baris.label_status}` : ''} onTutup={onTutup}
       footer={
         bolehPutuskan && (menungguMasuk || menungguPulang) ? (
@@ -264,46 +258,12 @@ function DetailPresensi({
       }>
       {baris && (
         <div className="space-y-4">
-          {baris.ada_foto && baris.presensi_id !== null ? (
-            foto.data === undefined
-              ? <p className="text-sm text-muted">Memuat foto…</p>
-              : <img src={foto.data} alt={`Foto presensi ${baris.nama}`} className="mx-auto max-h-[320px] w-full object-contain" />
-          ) : (
-            <p className="rounded-control bg-app-soft px-3 py-2 text-sm text-muted">Tidak ada foto presensi hari ini.</p>
-          )}
-
-          {baris.masuk_lat !== null && baris.masuk_lng !== null && (
-            <PetaLokasiAbsen
-              lat={baris.masuk_lat}
-              lng={baris.masuk_lng}
-              lokasiLat={baris.lokasi_lat ?? null}
-              lokasiLng={baris.lokasi_lng ?? null}
-              radiusM={baris.lokasi_radius_m ?? null}
-              poligon={baris.lokasi_poligon ?? null}
-              nama={baris.lokasi ?? 'Presensi'}
-            />
-          )}
-
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            <div><dt className="text-xs font-semibold text-muted">Masuk</dt><dd className="tnum font-bold text-strong">{baris.masuk_jam ?? '—'} {baris.masuk_status ? `(${baris.masuk_status})` : ''}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">Pulang</dt><dd className="tnum font-bold text-strong">{baris.pulang_jam ?? '—'} {baris.pulang_status ? `(${baris.pulang_status})` : ''}</dd></div>
-            <div>
-              <dt className="text-xs font-semibold text-muted">Jarak</dt>
-              <dd className="tnum font-bold text-strong">
-                {formatJarak(baris.jarak_m)}
-                {Array.isArray(baris.lokasi_poligon) && baris.lokasi_poligon.length >= 3 && (
-                  <span className="ml-1 text-xs font-semibold text-link">(di dalam zona poligon)</span>
-                )}
-              </dd>
-            </div>
-            <div><dt className="text-xs font-semibold text-muted">Lokasi</dt><dd className="font-bold text-strong">{baris.lokasi ?? 'Luar semua radius'}</dd></div>
-          </dl>
-
-          {baris.alasan_luar_radius && (
-            <p className="rounded-control bg-warn-bg px-3 py-2 text-sm text-strong">
-              <strong>Alasan pegawai:</strong> {baris.alasan_luar_radius}
-            </p>
-          )}
+          {/* Kedua sisi berdiri sendiri: guru bisa presensi datang di sekolah lalu
+              presensi pulang dari tempat lain, jadi foto dan koordinatnya bisa berbeda. */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <KartuSisi data={ringkasanSisi(baris, 'masuk')} presensiId={baris.presensi_id} nama={baris.nama} />
+            <KartuSisi data={ringkasanSisi(baris, 'pulang')} presensiId={baris.presensi_id} nama={baris.nama} />
+          </div>
 
           {(menungguMasuk || menungguPulang) && bolehPutuskan && (
             <div className="space-y-3 rounded-control border border-line p-3">
@@ -323,3 +283,110 @@ function DetailPresensi({
     </Modal>
   )
 }
+
+/** Satu sisi presensi: foto, peta zona + titik, angka, dan tautan Google Maps. */
+function KartuSisi({ data, presensiId, nama }: {
+  data: RingkasanSisi
+  presensiId: number | null
+  nama: string
+}) {
+  const foto = useQuery({
+    queryKey: ['monitoring', 'foto', presensiId, data.sisi],
+    queryFn: () => urlFotoBerpelindung(`/presensi/${presensiId}/foto/${data.sisi}`),
+    enabled: presensiId !== null && data.adaFoto,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
+
+  const validasi = labelValidasi(data.validasi)
+  const tautanMaps = tautanGoogleMaps(data.lat, data.lng)
+  const adaTitik = data.lat !== null && data.lng !== null
+  const dalamPoligon = Array.isArray(data.poligon) && data.poligon.length >= 3
+
+  return (
+    <section className="flex flex-col gap-3 rounded-control border border-line p-3">
+      <header className="flex items-start justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-bold text-strong">{data.judul}</h3>
+          <p className="tnum text-xs text-muted">
+            {data.jam
+              ? `Pukul ${data.jam} · ${labelStatusSisi(data.status)}`
+              : 'Belum ada presensi'}
+          </p>
+        </div>
+        <StatusBadge varian={validasi.varian}>{validasi.teks}</StatusBadge>
+      </header>
+
+      {data.adaFoto && presensiId !== null ? (
+        foto.isError ? (
+          <p className="rounded-control bg-app-soft px-3 py-2 text-xs text-muted">
+            Foto tidak dapat dimuat (mungkin sudah dihapus sesuai masa retensi).
+          </p>
+        ) : foto.data === undefined ? (
+          <p className="text-sm text-muted">Memuat foto…</p>
+        ) : (
+          <img src={foto.data} alt={`Foto presensi ${data.sisi} ${nama}`}
+            className="mx-auto max-h-[240px] w-full rounded-control object-contain" />
+        )
+      ) : (
+        <p className="rounded-control bg-app-soft px-3 py-2 text-xs text-muted">
+          {data.ada ? 'Presensi ini tidak menyertakan foto.' : `Belum ada foto presensi ${data.sisi}.`}
+        </p>
+      )}
+
+      {adaTitik && (
+        <PetaLokasiAbsen
+          lat={data.lat as number}
+          lng={data.lng as number}
+          lokasiLat={data.lokasiLat}
+          lokasiLng={data.lokasiLng}
+          radiusM={data.radiusM}
+          poligon={data.poligon}
+          nama={data.lokasiNama ?? 'Presensi'}
+          labelTitik={`Posisi presensi ${data.sisi}`}
+        />
+      )}
+
+      <dl className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <dt className="text-xs font-semibold text-muted">Jarak ke zona</dt>
+          <dd className="tnum font-bold text-strong">
+            {formatJarak(data.jarakM)}
+            {dalamPoligon && <span className="ml-1 text-xs font-semibold text-link">(zona poligon)</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold text-muted">Lokasi</dt>
+          <dd className="font-bold text-strong">
+            {data.lokasiNama ?? (adaTitik ? 'Luar semua radius' : '—')}
+          </dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-xs font-semibold text-muted">Koordinat</dt>
+          <dd className="tnum font-bold text-strong">
+            {adaTitik
+              ? `${(data.lat as number).toFixed(6)}, ${(data.lng as number).toFixed(6)}`
+              : '—'}
+            {data.akurasiM !== null && (
+              <span className="ml-1 text-xs font-semibold text-muted">±{Math.round(data.akurasiM)} m</span>
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      {tautanMaps !== null && (
+        <a href={tautanMaps} target="_blank" rel="noreferrer noopener"
+          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-control border border-line px-3 text-sm font-semibold text-link hover:bg-app-soft">
+          <ExternalLink size={15} /> Lihat lokasi di Google Maps
+        </a>
+      )}
+
+      {data.alasan && (
+        <p className="rounded-control bg-warn-bg px-3 py-2 text-xs text-strong">
+          <strong>Alasan pegawai:</strong> {data.alasan}
+        </p>
+      )}
+    </section>
+  )
+}
+

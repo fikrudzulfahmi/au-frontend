@@ -9,6 +9,8 @@ interface PetaLokasiAbsenProps {
   /** Zona areal sekolah; bila ≥3 titik, areal inilah yang digambar, bukan lingkaran radius. */
   poligon?: Array<[number, number]> | null
   nama: string
+  /** Keterangan popup titik posisi presensi: "Posisi presensi datang"/"... pulang". */
+  labelTitik?: string
 }
 
 /**
@@ -16,7 +18,7 @@ interface PetaLokasiAbsenProps {
  * pegawai saat presensi. Menggambar lingkaran radius pada lokasi berpoligon membuat
  * titik yang sah tampak di luar zona, jadi bentuk zona mengikuti data lokasi.
  */
-export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, poligon, nama }: PetaLokasiAbsenProps) {
+export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, poligon, nama, labelTitik }: PetaLokasiAbsenProps) {
   const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -57,13 +59,13 @@ export function PetaLokasiAbsen({ lat, lng, lokasiLat, lokasiLng, radiusM, polig
       titik.push(pos)
       L.circleMarker(pos, { radius: 8, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 1 })
         .addTo(map)
-        .bindPopup('Posisi presensi')
+        .bindPopup(labelTitik ?? 'Posisi presensi')
 
       map.fitBounds(L.latLngBounds(titik), { padding: [30, 30], maxZoom: 17 })
       bersih = () => map.remove()
     })()
     return () => bersih?.()
-  }, [lat, lng, lokasiLat, lokasiLng, radiusM, poligon, nama])
+  }, [lat, lng, lokasiLat, lokasiLng, radiusM, poligon, nama, labelTitik])
 
   return (
     <div

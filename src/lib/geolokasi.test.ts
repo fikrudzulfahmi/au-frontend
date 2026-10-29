@@ -4,6 +4,7 @@ import {
   formatJarak,
   haversine,
   jarakKeTepiPoligon,
+  tautanGoogleMaps,
   terdekatLokasi,
   titikDiDalamPoligon,
 } from './geolokasi'
@@ -134,5 +135,16 @@ describe('geolokasi', () => {
     expect(formatJarak(undefined)).toBe('—')
     expect(formatJarak(45.2)).toBe('45 m')
     expect(formatJarak(1500)).toBe('1.50 km')
+  })
+
+  it('membentuk tautan Google Maps dari koordinat presensi', () => {
+    expect(tautanGoogleMaps(-7.8654, 111.465)).toBe(
+      'https://www.google.com/maps/search/?api=1&query=-7.865400,111.465000',
+    )
+    // Tanpa koordinat tidak ada tautan — jangan kirim tautan ke 0,0 (Teluk Guinea).
+    expect(tautanGoogleMaps(null, 111.465)).toBeNull()
+    expect(tautanGoogleMaps(-7.8654, null)).toBeNull()
+    expect(tautanGoogleMaps(undefined, undefined)).toBeNull()
+    expect(tautanGoogleMaps(Number.NaN, 111.465)).toBeNull()
   })
 })
