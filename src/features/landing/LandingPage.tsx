@@ -123,11 +123,25 @@ export function LandingPage() {
       {/* FR-LND-01 Navbar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
-          <div className="flex items-center gap-3">
-            <Logo ukuran="md" />
-            <span className="hidden h-6 w-px bg-line sm:block" />
-            <span className="hidden max-w-[240px] truncate text-sm font-semibold text-muted sm:block">
-              {namaSekolah}
+          <div className="flex min-w-0 items-center gap-3">
+            {/*
+              Identitas sekolah didahulukan pada halaman publik ini: logo sekolah
+              (dari Info Sekolah) diikuti namanya, dengan SIPANDU sebagai label
+              produk di bawahnya. Latar putih diberi bingkai tipis karena berkas
+              logo sekolah berlatar putih, bukan transparan.
+            */}
+            {sekolah?.logo_kiri_url ? (
+              <img
+                src={sekolah.logo_kiri_url}
+                alt={`Logo ${namaSekolah}`}
+                className="h-11 w-11 shrink-0 rounded-xl bg-white object-contain p-0.5 ring-1 ring-line"
+              />
+            ) : (
+              <Logo ukuran="md" />
+            )}
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-sm font-extrabold text-strong">{namaSekolah}</span>
+              <span className="text-[11px] font-bold tracking-wide text-primary">SIPANDU</span>
             </span>
           </div>
 
@@ -176,6 +190,25 @@ export function LandingPage() {
       <section className="bg-gradient-to-b from-app-soft to-surface">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-12 md:grid-cols-2 md:py-16">
           <div>
+            {/* Identitas sekolah: logo resmi + nama + NPSN, sebelum pesan produk. */}
+            <div className="mb-5 flex items-center gap-4">
+              {sekolah?.logo_kiri_url && (
+                <img
+                  src={sekolah.logo_kiri_url}
+                  alt={`Logo ${namaSekolah}`}
+                  className="h-20 w-20 shrink-0 rounded-2xl bg-white object-contain p-1 ring-1 ring-line sm:h-24 sm:w-24"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="text-lg font-extrabold leading-tight text-strong sm:text-xl">
+                  {namaSekolah}
+                </p>
+                {sekolah?.npsn && (
+                  <p className="mt-0.5 text-xs font-semibold text-muted">NPSN {sekolah.npsn}</p>
+                )}
+              </div>
+            </div>
+
             <span className="inline-flex items-center rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary">
               {sekolah?.tagline ?? 'Presensi & Jurnal Digital'}
             </span>
