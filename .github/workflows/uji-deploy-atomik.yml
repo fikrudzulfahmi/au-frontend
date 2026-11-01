@@ -229,64 +229,39 @@ jobs:
           RELEASE_ID: ${{ github.run_id }}
           DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
           REMOTE="$USER_SSH@$HOST"
 
-          tar czf /tmp/rilis.tgz -C dist .
-          ssh $OPS "$REMOTE" "mkdir -p '$RELEASES_DIR/$RELEASE_ID'"
-          scp $OPS /tmp/rilis.tgz "$REMOTE:$RELEASES_DIR/$RELEASE_ID/rilis.tgz"
-          ssh $OPS "$REMOTE" "cd '$RELEASES_DIR/$RELEASE_ID' && tar xzf rilis.tgz && rm -f rilis.tgz"
-          echo "Rilis terunggah: $RELEASES_DIR/$RELEASE_ID"
+          gagal() { echo "::error::$1"; exit 1; }
 
-          ssh $OPS "$REMOTE" \
-            "LIVE_DIR='$LIVE_DIR' RELEASES_DIR='$RELEASES_DIR' RELEASE_ID='$RELEASE_ID' DOMAIN='${DOMAIN:-}' bash -s" <<'SKRIP_JARAK_JAUH'
-          set -euo pipefail
-          RILIS="$RELEASES_DIR/$RELEASE_ID"
-          CADANGAN="$RELEASES_DIR/cadangan-index.html"
+          tar czf /tmp/rilis.tgz -C dist . || gagal "gagal membuat paket rilis"
+          echo "paket rilis: $(du -h /tmp/rilis.tgz | cut -f1)"
 
-          test -f "$RILIS/index.html" || { echo "::error::index.html tidak ada di rilis"; exit 1; }
-          test -d "$RILIS/assets"     || { echo "::error::assets tidak ada di rilis"; exit 1; }
-          test -d "$LIVE_DIR"         || { echo "::error::docroot tidak ada: $LIVE_DIR"; exit 1; }
-
-          mkdir -p "$LIVE_DIR/assets"
-          cp -a "$RILIS/assets/." "$LIVE_DIR/assets/"
-          [ -d "$RILIS/icons" ] && { mkdir -p "$LIVE_DIR/icons"; cp -a "$RILIS/icons/." "$LIVE_DIR/icons/"; }
-
-          for f in sw.js registerSW.js manifest.webmanifest; do
-            if [ -f "$RILIS/$f" ]; then install -m 644 "$RILIS/$f" "$LIVE_DIR/$f.baru"; mv -f "$LIVE_DIR/$f.baru" "$LIVE_DIR/$f"; fi
-          done
-
-          [ -f "$LIVE_DIR/index.html" ] && cp -a "$LIVE_DIR/index.html" "$CADANGAN"
-
-          install -m 644 "$RILIS/index.html" "$LIVE_DIR/index.html.baru"
-          mv -f "$LIVE_DIR/index.html.baru" "$LIVE_DIR/index.html"
-          echo "index.html DITUKAR secara atomik."
-
-          if [ -n "${DOMAIN:-}" ]; then
-            kode="000"
-            for i in 1 2 3 4 5; do
-              kode=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "https://$DOMAIN/" || echo 000)
-              [ "$kode" = "200" ] && break
-              sleep 3
-            done
-            if [ "$kode" != "200" ]; then
-              echo "::error::Situs menjawab $kode setelah swap — rollback."
-              [ -f "$CADANGAN" ] && { install -m 644 "$CADANGAN" "$LIVE_DIR/index.html.kembali"; mv -f "$LIVE_DIR/index.html.kembali" "$LIVE_DIR/index.html"; echo "Rollback selesai."; }
-              exit 1
-            fi
-            echo "Kesehatan lolos (HTTP $kode)."
+          # Direktori rilis (di luar docroot, tidak dapat diakses dari web).
+          if ! keluar=$(ssh $OPS "$REMOTE" "mkdir -p '$RELEASES_DIR/$RELEASE_ID' && echo SIAP" 2>&1); then
+            gagal "ssh mkdir gagal: $keluar"
           fi
+          echo "direktori rilis: $keluar"
 
-          n=0
-          for d in $(ls -1dt "$RELEASES_DIR"/*/ 2>/dev/null); do n=$((n+1)); [ "$n" -gt 5 ] && rm -rf "$d"; done
+          # Unggah paket + skrip swap.
+          if ! keluar=$(scp $OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$RELEASES_DIR/$RELEASE_ID/" 2>&1); then
+            gagal "scp gagal: $keluar"
+          fi
+          echo "berkas terunggah"
 
-          [ -d "$LIVE_DIR/assets" ] && { chmod 755 "$LIVE_DIR/assets"; find "$LIVE_DIR/assets" -type f -exec chmod 644 {} + 2>/dev/null || true; }
-          [ -d "$LIVE_DIR/icons" ] && { chmod 755 "$LIVE_DIR/icons"; find "$LIVE_DIR/icons" -type f -exec chmod 644 {} + 2>/dev/null || true; }
-          for f in index.html sw.js registerSW.js manifest.webmanifest; do [ -f "$LIVE_DIR/$f" ] && chmod 644 "$LIVE_DIR/$f"; done
+          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$RELEASES_DIR/$RELEASE_ID' && tar xzf rilis.tgz && rm -f rilis.tgz && ls -1 | head -8" 2>&1); then
+            gagal "ekstrak gagal: $keluar"
+          fi
+          echo "isi rilis:"
+          echo "$keluar"
 
-          echo "Rilis $RELEASE_ID AKTIF."
-          SKRIP_JARAK_JAUH
+          # Tukar rilis (skrip ada di repo: deploy/deploy-swap.sh).
+          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$RELEASES_DIR/$RELEASE_ID' && LIVE_DIR='$LIVE_DIR' RELEASES_DIR='$RELEASES_DIR' RELEASE_ID='$RELEASE_ID' DOMAIN='${DOMAIN:-}' bash deploy-swap.sh" 2>&1); then
+            echo "::error::Swap gagal: $(echo "$keluar" | tail -20 | tr '\n' ' | ')"
+            exit 1
+          fi
+          echo "$keluar"
 
           rm -f "$HOME/.ssh/deploy_key" /tmp/rilis.tgz
 
