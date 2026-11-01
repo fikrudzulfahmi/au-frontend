@@ -118,8 +118,22 @@ jobs:
             set -euo pipefail
             # Jangan pernah mencetak isi variabel rahasia (tidak ada `set -x`).
 
-            RILIS="$RELEASES_DIR/$RELEASE_ID/dist"
+            DASAR="$RELEASES_DIR/$RELEASE_ID"
             CADANGAN="$RELEASES_DIR/cadangan-index.html"
+
+            # `appleboy/scp-action` dengan `strip_components: 1` membuang prefix
+            # `dist/`, sehingga ISI folder mendarat langsung di target. Bila suatu
+            # saat strip_components tidak dipakai, hasilnya ada di dalam `dist/`.
+            # Keduanya dideteksi agar tidak gagal hanya karena perbedaan itu.
+            if [ -f "$DASAR/dist/index.html" ]; then
+              RILIS="$DASAR/dist"
+            elif [ -f "$DASAR/index.html" ]; then
+              RILIS="$DASAR"
+            else
+              echo "::error::Hasil unggahan tidak ditemukan pada $DASAR"
+              ls -la "$DASAR" 2>/dev/null || echo "(direktori tidak ada)"
+              exit 1
+            fi
 
             echo "Rilis  : $RILIS"
             echo "Live   : $LIVE_DIR"
