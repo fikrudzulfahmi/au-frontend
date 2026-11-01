@@ -244,26 +244,32 @@ jobs:
           tar czf /tmp/rilis.tgz -C dist . || gagal "gagal membuat paket rilis"
           echo "paket rilis: $(du -h /tmp/rilis.tgz | cut -f1)"
 
-          # Direktori rilis (di luar docroot, tidak dapat diakses dari web).
-          if ! keluar=$(ssh $OPS "$REMOTE" "mkdir -p '$RELEASES_DIR/$RELEASE_ID' && echo SIAP" 2>&1); then
+          # Semua jalur dibuat ABSOLUT di server. Bila memakai jalur relatif lalu `cd`
+          # ke dalam folder rilis, skrip akan membentuk "$RELEASES_DIR/$RELEASE_ID"
+          # relatif terhadap folder itu sendiri — sehingga menunjuk ke dirinya sendiri
+          # dan gagal (persis kesalahan pada run #9).
+          if ! keluar=$(ssh $OPS "$REMOTE" "mkdir -p '$RELEASES_DIR/$RELEASE_ID' && cd '$RELEASES_DIR/$RELEASE_ID' && pwd" 2>&1); then
             gagal "ssh mkdir gagal: $keluar"
           fi
-          echo "direktori rilis: $keluar"
+          DASAR=$(printf '%s\n' "$keluar" | tail -1)
+          INDUK=$(dirname "$DASAR")
+          echo "folder rilis (absolut): $DASAR"
+          echo "induk rilis  (absolut): $INDUK"
 
-          # Unggah paket + skrip swap.
-          if ! keluar=$(scp $SCP_OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$RELEASES_DIR/$RELEASE_ID/" 2>&1); then
+          # Unggah paket + skrip swap ke jalur absolut.
+          if ! keluar=$(scp $SCP_OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$DASAR/" 2>&1); then
             gagal "scp gagal: $keluar"
           fi
           echo "berkas terunggah"
 
-          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$RELEASES_DIR/$RELEASE_ID' && tar xzf rilis.tgz && rm -f rilis.tgz && ls -1 | head -8" 2>&1); then
+          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$DASAR' && tar xzf rilis.tgz && rm -f rilis.tgz && ls -1 | head -8" 2>&1); then
             gagal "ekstrak gagal: $keluar"
           fi
           echo "isi rilis:"
           echo "$keluar"
 
-          # Tukar rilis (skrip ada di repo: deploy/deploy-swap.sh).
-          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$RELEASES_DIR/$RELEASE_ID' && LIVE_DIR='$LIVE_DIR' RELEASES_DIR='$RELEASES_DIR' RELEASE_ID='$RELEASE_ID' DOMAIN='${DOMAIN:-}' bash deploy-swap.sh" 2>&1); then
+          # Tukar rilis. RELEASES_DIR diberikan dalam bentuk absolut.
+          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$DASAR' && LIVE_DIR='$LIVE_DIR' RELEASES_DIR='$INDUK' RELEASE_ID='$RELEASE_ID' DOMAIN='${DOMAIN:-}' bash deploy-swap.sh" 2>&1); then
             echo "::error::Swap gagal: $(echo "$keluar" | tail -20 | tr '\n' ' | ')"
             exit 1
           fi
