@@ -1,5 +1,22 @@
-# Deploy Frontend (Vite/React) ke sipandu.smkiau.sch.id.
-# Build `dist/` di runner lalu unggah ke docroot cPanel.
+# Deploy Frontend (SPA) ke sipandu.smkiau.sch.id — RILIS ATOMIK.
+#
+# Menggantikan penyalinan `dist` yang menimpa docroot (`overwrite: true`). Cara lama punya
+# jendela ketika `index.html` baru sudah ada tetapi bundel JS-nya belum terunggah, sehingga
+# pengunjung saat itu menerima halaman yang menunjuk berkas tidak ada ("gagal terhubung ke
+# API"). Karena service worker mem-precache `index.html`, keadaan rusak itu bisa terkunci di
+# peramban pengguna.
+#
+# Cara sekarang:
+#   1. Build diunggah ke folder rilis per-run DI LUAR docroot (tidak dapat diakses web).
+#   2. Aset disalin lebih dulu — nama berkas Vite ber-hash, jadi tidak menimpa versi lama.
+#   3. index.html ditukar PALING AKHIR dengan `install` + `mv` (atomik satu filesystem).
+#   4. Bila situs tidak sehat setelah swap, index.html lama dipulihkan otomatis.
+#   5. Rilis lama disimpan maksimal 5 untuk rollback manual.
+#
+# Kunci host di-pin lewat `deploy/known_hosts` (kunci publik host BUKAN rahasia); nilainya
+# diambil dari kunci yang benar-benar disajikan kepada runner, bukan dari ssh-keyscan di
+# jaringan lain. Logika tukar rilis ada di `deploy/deploy-swap.sh`.
+
 name: Deploy Frontend (SPA)
 
 on:
@@ -7,13 +24,22 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Prinsip hak paling kecil.
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-spa
+  group: deploy-spa-atomik
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,16 +58,225 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
 
-      - name: Deploy dist ke cPanel
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          # 'dist' (direktori, bukan 'dist/*') supaya public/.htaccess ikut ter-upload.
-          source: 'dist'
-          target: ${{ secrets.DEPLOY_PATH_SPA }}
-          strip_components: 1
-          overwrite: true
+      - name: Siapkan kunci dan periksa sambungan
+        id: sambung
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          PORT: ${{ secrets.SSH_PORT }}
+          USER_SSH: ${{ secrets.SSH_USER }}
+          KUNCI: ${{ secrets.SSH_KEY }}
+          FRASA: ${{ secrets.SSH_PASSPHRASE }}
+          SIDIK: ${{ secrets.SSH_FINGERPRINT }}
+          LIVE_DIR: ${{ secrets.DEPLOY_PATH_SPA }}
+        run: |
+          set -uo pipefail
+          ringkas() { echo "$*" >> "$GITHUB_STEP_SUMMARY"; }
+
+          kosong=""
+          [ -z "${HOST:-}" ]     && kosong="$kosong SSH_HOST"
+          [ -z "${PORT:-}" ]     && kosong="$kosong SSH_PORT"
+          [ -z "${USER_SSH:-}" ] && kosong="$kosong SSH_USER"
+          [ -z "${KUNCI:-}" ]    && kosong="$kosong SSH_KEY"
+          [ -z "${LIVE_DIR:-}" ] && kosong="$kosong DEPLOY_PATH_SPA"
+          if [ -n "$kosong" ]; then
+            echo "::error::Secret berikut kosong:$kosong"
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$KUNCI" > "$HOME/.ssh/deploy_key" && chmod 600 "$HOME/.ssh/deploy_key"
+          # Lepas frasa sandi hanya bila kunci memang terenkripsi (jangan sentuh bila tidak).
+          if ! ssh-keygen -y -f "$HOME/.ssh/deploy_key" -P '' >/dev/null 2>&1; then
+            if [ -n "${FRASA:-}" ]; then
+              if ssh-keygen -p -P "$FRASA" -N '' -f "$HOME/.ssh/deploy_key" >/dev/null 2>&1; then
+                ringkas "Kunci berfrasa sandi: berhasil dilepas."
+              else
+                echo "::error::Kunci terenkripsi tetapi SSH_PASSPHRASE tidak cocok."
+                exit 1
+              fi
+            else
+              echo "::error::Kunci privat terenkripsi tetapi SSH_PASSPHRASE kosong."
+              exit 1
+            fi
+          fi
+          ringkas "Kunci privat terbaca."
+
+          # --- DNS: pastikan host yang dipakai memang mengarah ke server yang dituju.
+          alamat=$(getent hosts "$HOST" | awk '{print $1}' | paste -sd, - || true)
+          echo "DNS $HOST -> ${alamat:-TIDAK TERESOLVE}"
+          ringkas "DNS \`$HOST\` → \`${alamat:-tidak teresolve}\`"
+
+          # --- Kunci host: JANGAN percaya ssh-keyscan.
+          # Terbukti di lapangan: kunci hasil `ssh-keyscan` bisa berbeda dengan kunci yang
+          # benar-benar disajikan saat menyambung ("Offending ED25519 key"), kemungkinan
+          # karena satu nama host dilayani lebih dari satu server.
+          # Jadi: sambung sekali dengan penerimaan sementara, catat kunci YANG DISAJIKAN,
+          # lalu VERIFIKASI kunci itu terhadap sidik jari acuan dari secret. Setelah cocok,
+          # kunci itu dijadikan known_hosts dan sambungan sebenarnya memakai pinning ketat.
+          SEMENTARA="/tmp/kh_sementara"
+          : > "$SEMENTARA"
+          ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" \
+              -o StrictHostKeyChecking=no -o UserKnownHostsFile="$SEMENTARA" \
+              -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 \
+              "$USER_SSH@$HOST" 'true' >/dev/null 2>&1 || true
+
+          if [ ! -s "$SEMENTARA" ]; then
+            # Kunci bisa tidak tercatat bila koneksi gagal sebelum pertukaran kunci;
+            # pakai ssh-keyscan sebagai cadangan, lalu tetap diverifikasi di bawah.
+            ssh-keyscan -T 20 -p "$PORT" "$HOST" 2>/dev/null > "$SEMENTARA" || true
+          fi
+          if [ ! -s "$SEMENTARA" ]; then
+            echo "::error::Tidak ada kunci host yang dapat dibaca dari $HOST:$PORT"
+            exit 1
+          fi
+
+          ssh-keygen -lf "$SEMENTARA" | tee /tmp/sidik_saji
+          # Selalu tampilkan kunci yang disajikan agar perubahan kunci host segera terlihat.
+          echo "::notice::Kunci host yang disajikan server: $(tr '\n' ' ' < /tmp/sidik_saji)"
+          ringkas "Kunci host yang disajikan server:"
+          ringkas "\`\`\`&#10;$(sed 's/$/<br>/' /tmp/sidik_saji)&#10;\`\`\`"
+
+          # Kunci yang disajikan dicetak base64 supaya dapat dituangkan ke
+          # `deploy/known_hosts` bila server berganti kunci.
+          kunci64=$(base64 -w0 "$SEMENTARA" 2>/dev/null || base64 < "$SEMENTARA" | tr -d '\n')
+          echo "::notice::KUNCI64=$kunci64"
+
+          # Sumber kepercayaan UTAMA: berkas `deploy/known_hosts` di repo. Isinya kunci
+          # yang benar-benar disajikan kepada runner, sehingga tidak bergantung pada hasil
+          # ssh-keyscan dari jaringan lain. Kunci publik host bukan rahasia.
+          ACUAN_REPO="deploy/known_hosts"
+
+          if [ -f "$ACUAN_REPO" ] && [ -s "$ACUAN_REPO" ]; then
+            cp "$ACUAN_REPO" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
+            ringkas "Acuan kunci: berkas repo \`$ACUAN_REPO\`"
+            if ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" \
+                   -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+                   -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 \
+                   "$USER_SSH@$HOST" 'true' >/dev/null 2>&1; then
+              ringkas "Kunci host COCOK dengan berkas repo."
+            else
+              echo "::error::Kunci host TIDAK cocok dengan $ACUAN_REPO. Perbarui berkas itu memakai nilai KUNCI64 pada anotasi ini (decode base64)."
+              exit 1
+            fi
+          elif [ -n "${SIDIK:-}" ]; then
+            acuan=$(printf '%s\n' "$SIDIK" | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | head -1 || true)
+            if [ -z "$acuan" ]; then
+              echo "::error::SSH_FINGERPRINT tidak memuat nilai berbentuk SHA256:..."
+              exit 1
+            fi
+            if grep -qF "$acuan" /tmp/sidik_saji; then
+              ringkas "Acuan kunci: secret (sidik jari \`$acuan\`) — COCOK."
+              cp "$SEMENTARA" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
+            else
+              saji=$(head -1 /tmp/sidik_saji)
+              echo "::error::Sidik jari TIDAK cocok. Acuan: $acuan | Disajikan: $saji"
+              exit 1
+            fi
+          else
+            echo "::error::Tidak ada acuan kunci: berkas $ACUAN_REPO tidak ada dan SSH_FINGERPRINT kosong."
+            exit 1
+          fi
+
+          cp "$SEMENTARA" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
+
+          OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
+          REMOTE="$USER_SSH@$HOST"
+
+          echo "--- uji sambungan ---"
+          if keluar=$(ssh $OPS "$REMOTE" 'echo TERSAMBUNG; whoami; pwd' 2>&1); then
+            echo "$keluar"
+            ringkas "\`\`\`&#10;$(echo "$keluar" | sed 's/$/<br>/')&#10;\`\`\`"
+          else
+            echo "::error::SSH gagal: $(echo "$keluar" | tail -5 | tr '\n' ' | ')"
+            exit 1
+          fi
+
+          # --- Apakah docroot yang dituju benar-benar ada dan berisi situs kita?
+          if keluar=$(ssh $OPS "$REMOTE" "test -d '$LIVE_DIR' && echo DOCROOT_ADA && ls -1 '$LIVE_DIR' | head -10" 2>&1); then
+            echo "$keluar"
+            ringkas "Docroot ada. Isi awal: \`$(echo "$keluar" | tail -n +2 | paste -sd' ' -)\`"
+          else
+            echo "::error::Docroot tidak dapat dibaca: $LIVE_DIR — $(echo "$keluar" | tail -3 | tr '\n' ' ')"
+            exit 1
+          fi
+
+          echo "SAMBUNGAN SIAP"
+          echo "::notice::SAMBUNGAN SIAP host=$HOST port=$PORT user=$USER_SSH dns=${alamat:-?} docroot=$LIVE_DIR"
+
+      - name: Unggah dan tukar rilis
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          PORT: ${{ secrets.SSH_PORT }}
+          USER_SSH: ${{ secrets.SSH_USER }}
+          LIVE_DIR: ${{ secrets.DEPLOY_PATH_SPA }}
+          RELEASES_DIR: ${{ secrets.DEPLOY_RELEASES_PATH || 'sipandu-releases' }}
+          RELEASE_ID: ${{ github.run_id }}
+          DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
+        run: |
+          set -uo pipefail
+          # PENTING: port dieja berbeda untuk ssh dan scp.
+          #   ssh  -> `-p <port>`
+          #   scp  -> `-P <port>` (kapital; `-p` pada scp berarti "pertahankan waktu berkas",
+          #           sehingga port akan dibaca sebagai nama berkas sumber dan gagal).
+          OPS_UMUM="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
+          OPS="$OPS_UMUM -p $PORT"
+          SCP_OPS="$OPS_UMUM -P $PORT"
+          REMOTE="$USER_SSH@$HOST"
+
+          gagal() { echo "::error::$1"; exit 1; }
+
+          tar czf /tmp/rilis.tgz -C dist . || gagal "gagal membuat paket rilis"
+          echo "paket rilis: $(du -h /tmp/rilis.tgz | cut -f1)"
+
+          # Semua jalur dibuat ABSOLUT di server. Bila memakai jalur relatif lalu `cd`
+          # ke dalam folder rilis, skrip akan membentuk "$RELEASES_DIR/$RELEASE_ID"
+          # relatif terhadap folder itu sendiri — sehingga menunjuk ke dirinya sendiri
+          # dan gagal (persis kesalahan pada run #9).
+          # Kedua jalur (rilis DAN docroot) dijadikan ABSOLUT sekaligus. Bila salah satu
+          # masih relatif, ia akan dihitung dari dalam folder rilis dan tidak ditemukan
+          # (kesalahan pada run #10: "docroot tidak ditemukan").
+          if ! keluar=$(ssh $OPS "$REMOTE" "mkdir -p '$RELEASES_DIR/$RELEASE_ID'; D=\$(cd '$RELEASES_DIR/$RELEASE_ID' && pwd); L=\$(cd '$LIVE_DIR' && pwd); printf '%s|%s' \"\$D\" \"\$L\"" 2>&1); then
+            gagal "ssh mkdir gagal: $keluar"
+          fi
+          DASAR=$(printf '%s' "$keluar" | awk -F'|' '{print $1}')
+          LIVE_ABS=$(printf '%s' "$keluar" | awk -F'|' '{print $2}')
+          if [ -z "$DASAR" ] || [ -z "$LIVE_ABS" ]; then
+            gagal "gagal menentukan jalur absolut (keluaran: $keluar)"
+          fi
+          INDUK=$(dirname "$DASAR")
+          echo "folder rilis (absolut): $DASAR"
+          echo "induk rilis  (absolut): $INDUK"
+          echo "docroot      (absolut): $LIVE_ABS"
+
+          # Unggah paket + skrip swap ke jalur absolut.
+          if ! keluar=$(scp $SCP_OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$DASAR/" 2>&1); then
+            gagal "scp gagal: $keluar"
+          fi
+          echo "berkas terunggah"
+
+          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$DASAR' && tar xzf rilis.tgz && rm -f rilis.tgz && ls -1 | head -8" 2>&1); then
+            gagal "ekstrak gagal: $keluar"
+          fi
+          echo "isi rilis:"
+          echo "$keluar"
+
+          # Tukar rilis. RELEASES_DIR diberikan dalam bentuk absolut.
+          if ! keluar=$(ssh $OPS "$REMOTE" "cd '$DASAR' && LIVE_DIR='$LIVE_ABS' RELEASES_DIR='$INDUK' RELEASE_ID='$RELEASE_ID' DOMAIN='${DOMAIN:-}' bash deploy-swap.sh" 2>&1); then
+            echo "::error::Swap gagal: $(echo "$keluar" | tail -20 | tr '\n' ' | ')"
+            exit 1
+          fi
+          echo "$keluar"
+
+          rm -f "$HOME/.ssh/deploy_key" /tmp/rilis.tgz
+
+      - name: Verifikasi situs
+        env:
+          DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOMAIN}" ]; then echo "::warning::DEPLOY_DOMAIN kosong"; exit 0; fi
+          for jalur in / /masuk /dashboard /tv; do
+            kode=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "https://${DOMAIN}${jalur}" || echo 000)
+            echo "${jalur} -> ${kode}"
+            [ "$kode" = "200" ] || { echo "::error::${jalur} menjawab ${kode}"; exit 1; }
+          done
