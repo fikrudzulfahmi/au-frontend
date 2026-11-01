@@ -5,6 +5,7 @@ import {
   BookOpen,
   CalendarCheck,
   Download,
+  ExternalLink,
   Facebook,
   FileBarChart2,
   Fingerprint,
@@ -25,7 +26,7 @@ import { formatTanggalDari } from '@/lib/format'
 import { APP_NAME } from '@/lib/env'
 import { cn } from '@/lib/cn'
 import { useSekolah } from '@/features/sekolah/useSekolah'
-import { tampilkanPetaLanding, tampilkanPengumumanLanding } from './logika'
+import { tampilkanPetaLanding, tampilkanPengumumanLanding, tautanGoogleMaps } from './logika'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -398,11 +399,23 @@ export function LandingPage() {
                 </button>
               </div>
             ) : tampilkanPeta && sekolah?.koordinat ? (
-              <PetaSekolah
-                latitude={sekolah.koordinat.latitude}
-                longitude={sekolah.koordinat.longitude}
-                nama={namaSekolah}
-              />
+              <div className="relative">
+                <PetaSekolah
+                  latitude={sekolah.koordinat.latitude}
+                  longitude={sekolah.koordinat.longitude}
+                  nama={namaSekolah}
+                />
+                {/* Pintasan ke aplikasi Google Maps pada titik yang sama. */}
+                <a
+                  href={tautanGoogleMaps(sekolah.koordinat.latitude, sekolah.koordinat.longitude)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-link shadow-sm ring-1 ring-line hover:bg-app-soft"
+                >
+                  <ExternalLink size={14} aria-hidden="true" />
+                  Buka di Google Maps
+                </a>
+              </div>
             ) : (
               <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-2 bg-app-soft text-center">
                 <MapPin size={28} className="text-muted" />

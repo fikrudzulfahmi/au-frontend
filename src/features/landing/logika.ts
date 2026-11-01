@@ -19,6 +19,18 @@ export function tampilkanPengumumanLanding(
   return landingAktif(cfg) && cfg?.tampilkan_pengumuman === true && jumlah > 0
 }
 
+/**
+ * Link universal Google Maps untuk satu titik.
+ *
+ * Memakai bentuk `search/?api=1&query=` yang resmi didukung lintas perangkat: di
+ * Android/iOS langsung membuka APLIKASI Google Maps pada pin tersebut, di desktop
+ * membuka situsnya. Bentuk ini dipilih supaya tidak perlu menyimpan link "Share"
+ * dari Google (yang berupa pengalihan dan bisa berubah).
+ */
+export function tautanGoogleMaps(latitude: number, longitude: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+}
+
 /** FR-LND-07 — peta hanya tampil bila diizinkan dan koordinat sekolah tersedia. */
 export function tampilkanPetaLanding(
   cfg: PengaturanLanding | undefined | null,
