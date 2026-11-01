@@ -14,6 +14,10 @@
 name: Uji Deploy Atomik
 
 on:
+  # Pemicu khusus branch uji: mendorong branch `uji-atomik` menjalankan pemeriksaan
+  # baca-saja ini tanpa menyentuh `main`. Hapus blok ini setelah mekanisme terbukti.
+  push:
+    branches: [uji-atomik]
   workflow_dispatch:
     inputs:
       mode:
@@ -165,6 +169,7 @@ jobs:
           fi
 
           echo "SAMBUNGAN SIAP"
+          echo "::notice::SAMBUNGAN SIAP host=$HOST port=$PORT user=$USER_SSH dns=${alamat:-?} docroot=$LIVE_DIR"
 
       - name: Unggah dan tukar rilis
         if: inputs.mode == 'penuh'
