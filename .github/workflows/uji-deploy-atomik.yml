@@ -216,7 +216,10 @@ jobs:
           echo "::notice::SAMBUNGAN SIAP host=$HOST port=$PORT user=$USER_SSH dns=${alamat:-?} docroot=$LIVE_DIR"
 
       - name: Unggah dan tukar rilis
-        if: inputs.mode == 'penuh'
+        # Push di branch uji menjalankan mode penuh; workflow_dispatch mengikuti input.
+        # Catatan: `inputs` kosong pada pemicu push, sehingga default input TIDAK berlaku
+        # di sana — karena itu kondisinya menyebut event_name secara eksplisit.
+        if: inputs.mode == 'penuh' || github.event_name == 'push'
         env:
           HOST: ${{ secrets.SSH_HOST }}
           PORT: ${{ secrets.SSH_PORT }}
@@ -288,7 +291,7 @@ jobs:
           rm -f "$HOME/.ssh/deploy_key" /tmp/rilis.tgz
 
       - name: Verifikasi situs
-        if: inputs.mode == 'penuh'
+        if: inputs.mode == 'penuh' || github.event_name == 'push'
         env:
           DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
         run: |
