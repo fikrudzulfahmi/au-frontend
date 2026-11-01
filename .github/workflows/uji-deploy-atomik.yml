@@ -143,6 +143,8 @@ jobs:
           fi
 
           ssh-keygen -lf "$SEMENTARA" | tee /tmp/sidik_saji
+          # Selalu tampilkan kunci yang disajikan agar perubahan kunci host segera terlihat.
+          echo "::notice::Kunci host yang disajikan server: $(tr '\n' ' ' < /tmp/sidik_saji)"
           ringkas "Kunci host yang disajikan server:"
           ringkas "\`\`\`&#10;$(sed 's/$/<br>/' /tmp/sidik_saji)&#10;\`\`\`"
 
