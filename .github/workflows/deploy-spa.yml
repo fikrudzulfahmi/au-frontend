@@ -29,10 +29,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-spa-atomik
+  group: deploy-spa
   cancel-in-progress: false
-
-  contents: read
 
 jobs:
   build-and-deploy:
