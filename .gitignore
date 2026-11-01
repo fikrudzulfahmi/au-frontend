@@ -30,3 +30,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Cadangan repo lokal (bukan bagian kode).
+backup/

@@ -1,6 +1,0 @@
-project=/d/ApplicationWeb/sipandu/au-frontend
-label=test-pertama
-waktu=2026-10-13T20:20:09+07:00
-commit=-
-branch=-
-status_awal:
