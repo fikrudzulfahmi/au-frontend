@@ -43,21 +43,44 @@ interface PublikSekolahResponse {
 }
 
 /**
- * FR-SCH-02 / FR-LND-09 — data info sekolah diambil dari API, bukan di-hardcode
- * (KP-0.6). Bila gagal, dikembalikan `null` agar UI memakai teks placeholder.
+ * Memastikan respons memang berisi profil sekolah.
+ *
+ * Respons yang bukan profil tetap bisa berstatus 200 — mis. halaman tantangan anti-bot
+ * hosting yang mengembalikan HTML. Tanpa pemeriksaan ini, axios menganggapnya sukses,
+ * tidak ada percobaan ulang, dan UI menampilkan "Peta belum tersedia" seolah koordinat
+ * memang belum diisi. Melempar galat membuat React Query mencoba ulang dan UI dapat
+ * menampilkan keadaan "gagal memuat" yang jujur.
+ */
+export function pastikanProfilSekolah(data: unknown): ProfilSekolah {
+  const profil = data as ProfilSekolah | null | undefined
+  if (!profil || typeof profil !== 'object' || typeof profil.nama_sekolah !== 'string') {
+    throw new Error('Respons info sekolah tidak dikenali')
+  }
+  return profil
+}
+
+/**
+ * FR-SCH-02 / FR-LND-09 — data info sekolah diambil dari API, bukan di-hardcode (KP-0.6).
+ *
+ * PENTING: kegagalan TIDAK boleh ditelan menjadi `null`. Sebelumnya `catch { return null }`
+ * membuat gangguan sesaat terlihat seperti "berhasil, datanya kosong": React Query
+ * menganggapnya sukses (tidak mencoba ulang) lalu menyimpannya 5 menit. Akibatnya bagian
+ * peta menampilkan "Peta belum tersedia" padahal koordinat sekolah sudah diisi — muncul
+ * sekilas, lalu "hilang" setelah halaman dimuat ulang.
+ *
+ * Sekarang galat dibiarkan naik agar React Query mencoba ulang, dan UI dapat membedakan
+ * "gagal memuat" dari "memang belum diisi".
  */
 export function useSekolah() {
   return useQuery({
     queryKey: ['publik', 'sekolah'],
     queryFn: async () => {
-      try {
-        const res = await get<PublikSekolahResponse>('/publik/sekolah')
-        return res.data
-      } catch {
-        return null
-      }
+      const res = await get<PublikSekolahResponse>('/publik/sekolah')
+      return pastikanProfilSekolah(res?.data)
     },
     staleTime: 5 * 60 * 1000,
+    retry: 3,
+    retryDelay: (percobaan) => Math.min(1000 * 2 ** percobaan, 8000),
   })
 }
 

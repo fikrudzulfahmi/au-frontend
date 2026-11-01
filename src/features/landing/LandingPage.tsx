@@ -88,7 +88,8 @@ interface PengumumanLanding {
 
 /** FR-LND — Landing page publik (5.21). Tanpa data pegawai/siswa/kehadiran (BR-34). */
 export function LandingPage() {
-  const { data: sekolah } = useSekolah()
+  const { data: sekolah, isPending: sekolahMemuat, isError: sekolahGagal, refetch: muatUlangSekolah } =
+    useSekolah()
   const [promptPasang, setPromptPasang] = useState<BeforeInstallPromptEvent | null>(null)
   const [sudahMasuk] = useState(() => Boolean(getToken()))
 
@@ -374,7 +375,29 @@ export function LandingPage() {
           </div>
 
           <div className="card overflow-hidden">
-            {tampilkanPeta && sekolah?.koordinat ? (
+            {/* Empat keadaan dibedakan dengan sengaja. Sebelumnya kegagalan memuat data
+                sekolah ikut menampilkan "Peta belum tersedia", sehingga terlihat seolah
+                koordinat belum diisi padahal hanya gangguan sesaat. */}
+            {sekolahMemuat ? (
+              <div className="flex h-full min-h-[240px] items-center justify-center bg-app-soft">
+                <p className="text-sm text-muted">Memuat peta…</p>
+              </div>
+            ) : sekolahGagal ? (
+              <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-2 bg-app-soft px-4 text-center">
+                <MapPin size={28} className="text-muted" />
+                <p className="text-sm font-semibold text-strong">Gagal memuat info sekolah</p>
+                <p className="max-w-xs text-xs text-muted">
+                  Data sekolah belum dapat diambil dari server, jadi peta tidak ditampilkan.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void muatUlangSekolah()}
+                  className="mt-1 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-link"
+                >
+                  Coba lagi
+                </button>
+              </div>
+            ) : tampilkanPeta && sekolah?.koordinat ? (
               <PetaSekolah
                 latitude={sekolah.koordinat.latitude}
                 longitude={sekolah.koordinat.longitude}
@@ -385,7 +408,9 @@ export function LandingPage() {
                 <MapPin size={28} className="text-muted" />
                 <p className="text-sm font-semibold text-strong">Peta belum tersedia</p>
                 <p className="max-w-xs text-xs text-muted">
-                  Titik koordinat sekolah belum diisi pada pengaturan Info Sekolah.
+                  {sekolah?.landing.tampilkan_peta === false
+                    ? 'Peta disembunyikan pada pengaturan Info Sekolah.'
+                    : 'Titik koordinat sekolah belum diisi pada pengaturan Info Sekolah.'}
                 </p>
               </div>
             )}
