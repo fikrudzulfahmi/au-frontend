@@ -23,7 +23,7 @@ on:
       mode:
         description: 'uji = periksa sambungan saja; penuh = unggah dan tukar rilis'
         required: true
-        default: 'uji'
+        default: 'penuh'
         type: choice
         options: ['uji', 'penuh']
 
