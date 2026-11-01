@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -23,7 +23,6 @@ import { Logo } from '@/components/ui/Logo'
 import { get, getToken } from '@/lib/api'
 import { formatTanggalDari } from '@/lib/format'
 import { APP_NAME } from '@/lib/env'
-import { pasangIkonLeaflet } from '@/lib/ikonLeaflet'
 import { cn } from '@/lib/cn'
 import { useSekolah } from '@/features/sekolah/useSekolah'
 import { tampilkanPetaLanding, tampilkanPengumumanLanding } from './logika'
@@ -464,30 +463,28 @@ interface PetaSekolahProps {
   nama: string
 }
 
-/** FR-LND-07 — peta Leaflet/OpenStreetMap (hanya bila koordinat sekolah tersedia). */
+/**
+ * Peta lokasi sekolah memakai Google Maps.
+ *
+ * Memakai penyematan `output=embed` sehingga TIDAK memerlukan API key — tidak ada kunci
+ * rahasia yang perlu disimpan di bundel klien, dan tidak ada kuota Google Cloud yang bisa
+ * habis. Alamat Google yang diizinkan memuat iframe sudah dibuka pada header CSP di
+ * `public/.htaccess` (`frame-src`); tanpa itu peramban memblokir peta.
+ */
 export function PetaSekolah({ latitude, longitude, nama }: PetaSekolahProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const src =
+    'https://maps.google.com/maps' +
+    `?q=${latitude},${longitude}` +
+    '&z=16&hl=id&t=m&output=embed'
 
-  useEffect(() => {
-    let bersih: (() => void) | undefined
-    void (async () => {
-      const L = await import('leaflet')
-      await import('leaflet/dist/leaflet.css')
-      pasangIkonLeaflet(L)
-      if (!containerRef.current) return
-      const map = L.map(containerRef.current, { scrollWheelZoom: false }).setView(
-        [latitude, longitude],
-        15,
-      )
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19,
-      }).addTo(map)
-      L.marker([latitude, longitude]).addTo(map).bindPopup(nama)
-      bersih = () => map.remove()
-    })()
-    return () => bersih?.()
-  }, [latitude, longitude, nama])
-
-  return <div ref={containerRef} className="h-full min-h-[240px] w-full" aria-label={`Peta lokasi ${nama}`} />
+  return (
+    <iframe
+      title={`Peta lokasi ${nama}`}
+      src={src}
+      className="h-full min-h-[240px] w-full border-0"
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      allowFullScreen
+    />
+  )
 }

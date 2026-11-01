@@ -62,6 +62,18 @@ for f in sw.js registerSW.js manifest.webmanifest; do
   fi
 done
 
+# --- 2b. `.htaccess` (routing SPA + header keamanan) juga diperbarui, karena berkas ini
+#         berasal dari repo (`public/.htaccess`) dan merupakan sumber kebenarannya —
+#         mis. `frame-src` untuk peta Google. Cadangan dibuat lebih dulu.
+if [ -f "$SUMBER/.htaccess" ]; then
+  if [ -f "$LIVE_DIR/.htaccess" ]; then
+    cp -a "$LIVE_DIR/.htaccess" "$RELEASES_DIR/cadangan-htaccess"
+  fi
+  install -m 644 "$SUMBER/.htaccess" "$LIVE_DIR/.htaccess.baru"
+  mv -f "$LIVE_DIR/.htaccess.baru" "$LIVE_DIR/.htaccess"
+  echo ".htaccess ditukar (cadangan: $RELEASES_DIR/cadangan-htaccess)"
+fi
+
 # --- 3. Cadangkan index lama, lalu TITIK ATOMIK.
 if [ -f "$LIVE_DIR/index.html" ]; then
   cp -a "$LIVE_DIR/index.html" "$CADANGAN"
@@ -106,7 +118,7 @@ if [ -d "$LIVE_DIR/icons" ]; then
   chmod 755 "$LIVE_DIR/icons" 2>/dev/null || true
   find "$LIVE_DIR/icons" -type f -exec chmod 644 {} + 2>/dev/null || true
 fi
-for f in index.html sw.js registerSW.js manifest.webmanifest; do
+for f in index.html sw.js registerSW.js manifest.webmanifest .htaccess; do
   [ -f "$LIVE_DIR/$f" ] && chmod 644 "$LIVE_DIR/$f"
 done
 
