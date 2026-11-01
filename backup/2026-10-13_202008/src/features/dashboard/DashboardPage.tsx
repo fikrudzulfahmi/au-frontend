@@ -1,0 +1,348 @@
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import {
+  Bell,
+  BookOpen,
+  CalendarDays,
+  Clock,
+  Fingerprint,
+  Inbox,
+  PenLine,
+  UserRound,
+  UserX,
+  Users,
+} from 'lucide-react'
+
+import ilustrasiGrup from '@/assets/ilustrasi/guru-ilustrasi.webp'
+import { LayananGrid } from '@/components/ui/LayananGrid'
+import { Logo } from '@/components/ui/Logo'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { PresensiKinerjaCard } from '@/components/ui/PresensiKinerjaCard'
+import type { PresensiKinerjaData } from '@/components/ui/PresensiKinerjaCard'
+import { StatCard } from '@/components/ui/StatCard'
+import { StatusBadge } from '@/components/ui/StatusBadge'
+import { DESKTOP_BREAKPOINT } from '@/lib/env'
+import { formatJamSingkat, menitDariJam } from '@/lib/format'
+import { layananPeran } from '@/lib/menu'
+import { adminTanpaPegawai, lencanaPeran, punyaPeran, ROLE } from '@/lib/roles'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { useServerClock } from '@/lib/waktu'
+import { useSekolah } from '@/features/sekolah/useSekolah'
+import { useAuth } from '@/features/auth/AuthContext'
+import { ambilSesiHariIni } from '@/features/mengajar/jurnal/api'
+import {
+  AntreanPersetujuan,
+  JurnalBelumTerisi,
+  PanelPengumuman,
+  PengajuanTerakhir,
+  RingkasanBulanIni,
+} from './BagianDashboard'
+import { usePresensiHariIni, useRingkasanHariIni } from './useDashboard'
+import type { StatusHariIni } from '@/features/presensi/types'
+
+/** FR-DSH-01/02 — beranda sesuai peran. */
+export function DashboardPage() {
+  const desktop = useMediaQuery(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
+  return desktop ? <BerandaDesktop /> : <BerandaMobile />
+}
+
+/* ------------------------------ MOBILE ------------------------------ */
+
+function BerandaMobile() {
+  const { user } = useAuth()
+  const { data: sekolah } = useSekolah()
+  const { sekarang } = useServerClock()
+  const { data: presensi } = usePresensiHariIni()
+
+  return (
+    <div className="-mx-4 -mt-4 pb-4">
+      {/* FR-UI-05 — area kepala beranda */}
+      <div className="relative overflow-hidden bg-app px-5 pb-14 pt-5">
+        <div className="flex items-center justify-between">
+          <Logo ukuran="md" />
+          <Link
+            to="/pengumuman"
+            aria-label="Pengumuman"
+            className="touch-target flex items-center justify-center rounded-full bg-surface/80 text-muted"
+          >
+            <Bell size={18} />
+          </Link>
+        </div>
+
+        <div className="relative mt-4 pr-24">
+          <h1 className="text-[26px] font-extrabold uppercase leading-[1.1] text-strong">
+            {user?.nama ?? 'Pengguna'}
+          </h1>
+          <p className="mt-1 text-sm font-semibold text-muted">
+            {user?.label_jabatan?.trim() ||
+              user?.jabatan?.trim() ||
+              (user?.jenis_pegawai === 'guru' ? 'Guru' : 'Pegawai')}
+          </p>
+          {user?.nip && (
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
+              <UserRound size={13} /> NIP {user.nip}
+            </span>
+          )}
+        </div>
+
+        {/* FR-UI-16 — ilustrasi guru mengintip dari tepi kartu */}
+        <img
+          src={ilustrasiGrup}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-2 bottom-0 h-40 w-auto"
+        />
+      </div>
+
+      <div className="-mt-10 space-y-4 px-4">
+        <PresensiKinerjaCard tanggal={sekarang} data={dataKartu(presensi, lencanaPeran(user), sekarang)} />
+
+        <LayananGrid items={layananPeran(user)} />
+
+        <PanelPengumuman />
+
+        <KartuJadwal />
+
+        <RingkasanBulanIni />
+
+        <PengajuanTerakhir />
+
+        <p className="px-1 pb-2 text-center text-[11px] text-muted">
+          {sekolah?.nama_sekolah ?? ''}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------ DESKTOP ------------------------------ */
+
+function BerandaDesktop() {
+  const { user } = useAuth()
+  const { sekarang } = useServerClock()
+  const { data: presensi } = usePresensiHariIni()
+  const { data: ringkasan } = useRingkasanHariIni()
+  const pimpinanView = punyaPeran(user, ROLE.admin, ROLE.kepalaSekolah, ROLE.wakasekKurikulum)
+
+  // FR-DSH-02 — beranda pimpinan: rekap presensi + tugas persetujuan (tanpa kartu pegawai).
+  if (pimpinanView) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          judul={`Selamat datang, ${user?.nama ?? 'Pengguna'}`}
+          keterangan="Rekap presensi dan tugas persetujuan hari ini."
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Hadir hari ini" nilai={ringkasan?.hadir ?? 0} icon={Users} warna="success" />
+          <StatCard label="Terlambat" nilai={ringkasan?.terlambat ?? 0} icon={Clock} warna="warn" />
+          <StatCard label="Belum presensi" nilai={ringkasan?.belum ?? 0} icon={UserX} warna="danger" />
+          <StatCard label="Izin / dinas" nilai={(ringkasan?.izin ?? 0) + (ringkasan?.dinas ?? 0)} icon={Inbox} warna="info" />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <AntreanPersetujuan />
+          <JurnalBelumTerisi />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        judul={`Selamat datang, ${user?.nama ?? 'Pengguna'}`}
+        keterangan="Ringkasan presensi dan kegiatan hari ini."
+      />
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          <PresensiKinerjaCard
+            tanggal={sekarang}
+            data={dataKartu(presensi, lencanaPeran(user), sekarang)}
+            aksi={<TautanPresensi />}
+          />
+          <KartuJadwal />
+          {/* FR-DSH-01 — ringkasan bulan ini dan status pengajuan terakhir. */}
+          <RingkasanBulanIni />
+          <PengajuanTerakhir />
+        </div>
+
+        <div className="space-y-6">
+          <LayananGrid items={layananPeran(user)} />
+          <PanelPengumuman />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TautanPresensi() {
+  const { user } = useAuth()
+  if (adminTanpaPegawai(user) || !user?.pegawai_id) return null
+  return (
+    <Link
+      to="/presensi"
+      className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-bold text-white hover:bg-primary/90"
+    >
+      <Fingerprint size={18} /> Presensi Sekarang
+    </Link>
+  )
+}
+
+/* ------------------------------ BAGIAN BERSAMA ------------------------------ */
+
+function dataKartu(
+  status: StatusHariIni | undefined,
+  lencana: string,
+  sekarang: Date,
+): PresensiKinerjaData {
+  const presensi = status?.presensi ?? null
+  const jamDatang = presensi?.masuk.jam ?? null
+  const jamPulang = presensi?.pulang.jam ?? null
+
+  // A-20 — Y = durasi jam kerja hari ini; X = menit berjalan sejak jam datang.
+  const menitKerjaTarget = Math.max(0, menitDariJam(status?.jam_pulang) - menitDariJam(status?.jam_masuk))
+  const akhir = jamPulang ?? formatJamSingkat(sekarang)
+  const menitKerja = jamDatang ? Math.max(0, menitDariJam(akhir) - menitDariJam(jamDatang)) : 0
+
+  let lencanaFinal = lencana
+  let varian: PresensiKinerjaData['lencanaVarian'] = 'netral'
+
+  if (status?.hari_libur) {
+    lencanaFinal = 'LIBUR'
+    varian = 'peringatan'
+  } else if (status?.pengajuan) {
+    lencanaFinal = (status.pengajuan.label_jenis ?? status.pengajuan.jenis).toUpperCase()
+    varian = 'peringatan'
+  } else if (!jamDatang) {
+    lencanaFinal = 'BELUM PRESENSI'
+    varian = 'bahaya'
+  } else if (presensi?.masuk.status === 'terlambat') {
+    lencanaFinal = 'TERLAMBAT'
+    varian = 'peringatan'
+  } else {
+    lencanaFinal = lencana || 'HARI KERJA'
+    varian = 'sukses'
+  }
+
+  return {
+    jamDatang,
+    jamPulang,
+    menitKerja,
+    menitKerjaTarget,
+    lencana: lencanaFinal,
+    lencanaVarian: varian,
+  }
+}
+
+/** FR-JRN-01 — jadwal hari ini beserta status jurnal tiap sesi (alur guru, 5.13). */
+function KartuJadwal() {
+  const { user } = useAuth()
+  const guru = punyaPeran(user, ROLE.guru)
+
+  const sesi = useQuery({
+    queryKey: ['jurnal', 'sesi-hari-ini', 'beranda'],
+    queryFn: () => ambilSesiHariIni(),
+    enabled: guru,
+  })
+
+  if (!guru) return null
+
+  const data = sesi.data?.data
+  const daftar = data?.sesi ?? []
+
+  const gaya: Record<string, { varian: 'hadir' | 'menunggu' | 'izin'; label: string }> = {
+    sudah: { varian: 'hadir', label: 'Sudah' },
+    belum: { varian: 'menunggu', label: 'Belum' },
+    berhalangan: { varian: 'izin', label: 'Berhalangan' },
+  }
+
+  return (
+    <section className="card p-5" aria-label="Jadwal hari ini">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold text-strong">Jadwal Hari Ini</h2>
+        <Link
+          to="/mengajar/jurnal/riwayat"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-link"
+        >
+          <BookOpen size={14} /> Jurnal saya
+        </Link>
+      </div>
+
+      {sesi.isLoading && <p className="mt-3 text-sm text-muted">Memuat jadwal…</p>}
+
+      {/* Kegagalan permintaan disajikan apa adanya, bukan sebagai "tidak ada jadwal". */}
+      {sesi.isError && (
+        <p className="mt-3 text-sm text-danger">Jadwal hari ini tidak dapat dimuat.</p>
+      )}
+
+      {data && daftar.length === 0 && (
+        <div className="mt-3 flex items-start gap-3 rounded-control bg-app-soft p-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pastel-blue text-primary">
+            <CalendarDays size={17} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-strong">Tidak ada sesi mengajar hari ini</p>
+            <p className="text-xs text-muted">Sesi dari jadwal akan muncul di sini pada harinya.</p>
+          </div>
+        </div>
+      )}
+
+      {data && daftar.length > 0 && (
+        <>
+          <p className="mt-2 text-xs font-semibold text-muted">
+            {data.ringkasan.sudah} sudah · {data.ringkasan.belum} belum
+            {data.ringkasan.berhalangan > 0 ? ` · ${data.ringkasan.berhalangan} berhalangan` : ''}
+          </p>
+
+          <ul className="mt-3 divide-y divide-line">
+            {daftar.map((s) => {
+              const tanda = gaya[s.status] ?? gaya.belum
+
+              return (
+                <li key={`${s.plotting_mapel_id}-${s.jam_ke_mulai}`} className="py-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-strong">
+                        {s.mapel ?? '-'} · {s.kelas ?? '-'}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {s.label_jam} · {s.jam_mulai}–{s.jam_selesai}
+                      </p>
+                    </div>
+
+                    <StatusBadge varian={tanda.varian}>{tanda.label}</StatusBadge>
+                  </div>
+
+                  {/* Gerbang isi diambil dari server (BR-19 / KP-4.6). */}
+                  {s.boleh_isi && (
+                    <Link
+                      to={`/mengajar/jurnal/isi/${s.plotting_mapel_id}-${s.jam_ke_mulai}?tanggal=${data.tanggal}`}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-link"
+                    >
+                      <PenLine size={13} /> Isi Jurnal
+                    </Link>
+                  )}
+
+                  {!s.boleh_isi && s.status === 'sudah' && s.jurnal_id !== null && (
+                    <Link
+                      to={`/mengajar/jurnal/isi/${s.plotting_mapel_id}-${s.jam_ke_mulai}?tanggal=${data.tanggal}&jurnal=${s.jurnal_id}`}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-muted"
+                    >
+                      <PenLine size={13} /> Ubah jurnal
+                    </Link>
+                  )}
+
+                  {!s.boleh_isi && s.alasan !== null && (
+                    <p className="mt-1 text-xs text-muted">{s.alasan}</p>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
+    </section>
+  )
+}

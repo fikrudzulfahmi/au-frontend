@@ -1,0 +1,47 @@
+# Deploy Frontend (Vite/React) ke sipandu.smkiau.sch.id.
+# Build `dist/` di runner lalu unggah ke docroot cPanel.
+name: Deploy Frontend (SPA)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-spa
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
+
+      - name: Deploy dist ke cPanel
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          # 'dist' (direktori, bukan 'dist/*') supaya public/.htaccess ikut ter-upload.
+          source: 'dist'
+          target: ${{ secrets.DEPLOY_PATH_SPA }}
+          strip_components: 1
+          overwrite: true

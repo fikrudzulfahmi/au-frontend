@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+
+/* ============================================================================
+   SIPANDU — Token desain (FR-UI-02, tabel token 5.22)
+   Satu sistem desain dipakai di landing, aplikasi, dan layar TV.
+   ========================================================================== */
+@theme {
+  /* Warna dasar */
+  --color-app: #cfe3f1;
+  --color-app-soft: #e4eff8;
+  --color-surface: #ffffff;
+  --color-strong: #0f2d3f;
+  --color-muted: #6b8296;
+  --color-line: #e3ecf3;
+
+  /* Aksen */
+  --color-primary: #1e2a8a;
+  --color-primary-soft: #e6e9f8;
+  --color-link: #2646b0;
+  --color-success: #2ba84a;
+  --color-success-soft: #e2f4e6;
+  --color-danger: #d93a3a;
+  --color-danger-soft: #fbe6e6;
+  --color-warn-bg: #fdebd3;
+  --color-warn-text: #e8801b;
+  --color-info: #2646b0;
+  --color-info-soft: #e4eafd;
+  --color-purple: #7a4fbf;
+  --color-purple-soft: #efe7fa;
+  --color-teal: #12968f;
+  --color-teal-soft: #dff3f2;
+  --color-gray: #6b8296;
+  --color-gray-soft: #eef3f7;
+  --color-pending: #d8a200;
+  --color-pending-soft: #fdf5d8;
+
+  /* Pastel ikon layanan */
+  --color-pastel-green: #d3ead6;
+  --color-pastel-blue: #9fd0f7;
+  --color-pastel-orange: #f8a56a;
+  --color-pastel-yellow: #fcdf84;
+
+  /* Radius */
+  --radius-card: 28px;
+  --radius-control: 16px;
+
+  /* Bayangan */
+  --shadow-card: 0 8px 24px rgba(15, 45, 63, 0.08);
+  --shadow-fab: 0 10px 22px rgba(30, 42, 138, 0.35);
+  --shadow-pop: 0 12px 32px rgba(15, 45, 63, 0.14);
+
+  /* Tipografi */
+  --font-sans:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-app);
+    color: var(--color-strong);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Angka jam selalu rata kolom */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* FR-UI-06: kartu putih membulat besar */
+  .card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* FR-UI-09: target sentuh >= 44px */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-muted) transparent;
+  }
+
+  /* FR-TV-13: scroll otomatis daftar panjang di layar TV */
+  .tv-marquee {
+    display: inline-block;
+    white-space: nowrap;
+    animation: tv-marquee 40s linear infinite;
+  }
+}
+
+@keyframes tv-marquee {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sipandu-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: sipandu-fade-up 0.35s ease-out both;
+}
+
+/* FR-UI-03: hormati prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
