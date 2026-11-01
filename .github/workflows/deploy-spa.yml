@@ -32,7 +32,6 @@ concurrency:
   group: deploy-spa-atomik
   cancel-in-progress: false
 
-permissions:
   contents: read
 
 jobs:
