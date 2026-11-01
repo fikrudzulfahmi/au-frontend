@@ -38,20 +38,39 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Periksa prasyarat keamanan
+      - name: Siapkan sidik jari host
         # Dijalankan SEBELUM apa pun diunggah. Tanpa sidik jari host key, SSH
         # menerima kunci host apa saja (rawan penyadapan di tengah jalan), jadi
         # deploy dihentikan tanpa menyentuh server.
+        #
+        # Secret boleh berisi satu sidik jari, atau tempelan keluaran `ssh-keyscan`
+        # utuh (tiga baris: RSA, ECDSA, ED25519). Action hanya menerima SATU nilai,
+        # jadi di sini dipilih satu — diutamakan ED25519 karena itu yang paling
+        # diutamakan klien SSH. Tanpa normalisasi, menempel tiga baris membuat
+        # pencocokan kunci host gagal dan deploy berhenti di langkah scp.
+        id: sidik
         env:
-          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+          MENTAH: ${{ secrets.SSH_FINGERPRINT }}
         run: |
-          if [ -z "${SSH_FINGERPRINT}" ]; then
+          set -euo pipefail
+          if [ -z "${MENTAH}" ]; then
             echo "::error::Secret SSH_FINGERPRINT belum diisi."
-            echo "Ambil sidik jari host server, lalu simpan sebagai secret SSH_FINGERPRINT:"
+            echo "Ambil sidik jari host server:"
             echo "  ssh-keyscan -p <SSH_PORT> <SSH_HOST> 2>/dev/null | ssh-keygen -lf -"
-            echo "Tanpa ini deploy dihentikan agar kunci host palsu tidak diterima."
             exit 1
           fi
+          nilai=$(printf '%s\n' "$MENTAH" | grep -i 'ED25519' | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | head -1 || true)
+          if [ -z "$nilai" ]; then
+            nilai=$(printf '%s\n' "$MENTAH" | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | tail -1 || true)
+          fi
+          if [ -z "$nilai" ]; then
+            echo "::error::SSH_FINGERPRINT tidak memuat nilai berbentuk SHA256:..."
+            exit 1
+          fi
+          jumlah=$(printf '%s\n' "$MENTAH" | grep -coE 'SHA256:[A-Za-z0-9+/=]+' || true)
+          echo "Sidik jari ditemukan di secret: $jumlah"
+          echo "Yang dipakai: $nilai"
+          echo "nilai=$nilai" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -90,7 +109,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          fingerprint: ${{ steps.sidik.outputs.nilai }}
           # 'dist' (direktori, bukan 'dist/*') supaya dotfile seperti .htaccess ikut.
           source: 'dist'
           target: ${{ secrets.DEPLOY_RELEASES_PATH || 'sipandu-releases' }}/${{ github.run_id }}
@@ -111,7 +130,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          fingerprint: ${{ steps.sidik.outputs.nilai }}
           command_timeout: 10m
           envs: LIVE_DIR,RELEASES_DIR,RELEASE_ID,DOMAIN
           script: |
