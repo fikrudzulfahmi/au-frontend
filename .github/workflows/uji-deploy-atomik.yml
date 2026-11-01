@@ -118,16 +118,33 @@ jobs:
           echo "DNS $HOST -> ${alamat:-TIDAK TERESOLVE}"
           ringkas "DNS \`$HOST\` → \`${alamat:-tidak teresolve}\`"
 
-          # --- Kunci host: ambil semua tipe lalu verifikasi terhadap sidik jari acuan.
-          ssh-keyscan -T 20 -p "$PORT" "$HOST" 2>/tmp/galat_scan > /tmp/kh || true
-          if [ ! -s /tmp/kh ]; then
-            echo "::error::ssh-keyscan gagal menghubungi $HOST:$PORT. Isi galat:"
-            cat /tmp/galat_scan || true
+          # --- Kunci host: JANGAN percaya ssh-keyscan.
+          # Terbukti di lapangan: kunci hasil `ssh-keyscan` bisa berbeda dengan kunci yang
+          # benar-benar disajikan saat menyambung ("Offending ED25519 key"), kemungkinan
+          # karena satu nama host dilayani lebih dari satu server.
+          # Jadi: sambung sekali dengan penerimaan sementara, catat kunci YANG DISAJIKAN,
+          # lalu VERIFIKASI kunci itu terhadap sidik jari acuan dari secret. Setelah cocok,
+          # kunci itu dijadikan known_hosts dan sambungan sebenarnya memakai pinning ketat.
+          SEMENTARA="/tmp/kh_sementara"
+          : > "$SEMENTARA"
+          ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" \
+              -o StrictHostKeyChecking=no -o UserKnownHostsFile="$SEMENTARA" \
+              -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 \
+              "$USER_SSH@$HOST" 'true' >/dev/null 2>&1 || true
+
+          if [ ! -s "$SEMENTARA" ]; then
+            # Kunci bisa tidak tercatat bila koneksi gagal sebelum pertukaran kunci;
+            # pakai ssh-keyscan sebagai cadangan, lalu tetap diverifikasi di bawah.
+            ssh-keyscan -T 20 -p "$PORT" "$HOST" 2>/dev/null > "$SEMENTARA" || true
+          fi
+          if [ ! -s "$SEMENTARA" ]; then
+            echo "::error::Tidak ada kunci host yang dapat dibaca dari $HOST:$PORT"
             exit 1
           fi
-          ssh-keygen -lf /tmp/kh | tee /tmp/sidik_scan
-          ringkas "Kunci host ditemukan: $(wc -l < /tmp/kh) baris"
-          ringkas "\`\`\`&#10;$(cat /tmp/sidik_scan | sed 's/$/<br>/')&#10;\`\`\`"
+
+          ssh-keygen -lf "$SEMENTARA" | tee /tmp/sidik_saji
+          ringkas "Kunci host yang disajikan server:"
+          ringkas "\`\`\`&#10;$(sed 's/$/<br>/' /tmp/sidik_saji)&#10;\`\`\`"
 
           if [ -n "${SIDIK:-}" ]; then
             acuan=$(printf '%s\n' "$SIDIK" | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | head -1 || true)
@@ -135,17 +152,18 @@ jobs:
               echo "::error::SSH_FINGERPRINT tidak memuat nilai berbentuk SHA256:..."
               exit 1
             fi
-            if grep -qF "$acuan" /tmp/sidik_scan; then
-              ringkas "Sidik jari acuan \`$acuan\` COCOK."
+            if grep -qF "$acuan" /tmp/sidik_saji; then
+              ringkas "Sidik jari acuan \`$acuan\` COCOK dengan kunci yang disajikan."
             else
-              echo "::error::Sidik jari acuan $acuan TIDAK ada pada kunci host server."
+              saji=$(head -1 /tmp/sidik_saji)
+              echo "::error::Sidik jari TIDAK cocok. Acuan: $acuan | Disajikan: $saji"
               exit 1
             fi
           else
-            ringkas "SSH_FINGERPRINT kosong — pencocokan kunci host dilewati (tidak aman)."
+            ringkas "SSH_FINGERPRINT kosong — tanpa verifikasi kunci (tidak aman)."
           fi
 
-          cp /tmp/kh "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
+          cp "$SEMENTARA" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
 
           OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
           REMOTE="$USER_SSH@$HOST"
