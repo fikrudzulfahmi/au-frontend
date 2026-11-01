@@ -1,20 +1,24 @@
 # Deploy Frontend (SPA) ke sipandu.smkiau.sch.id — RILIS ATOMIK.
 #
-# Masalah yang diperbaiki: versi lama menyalin `dist` menimpa docroot dengan
-# `overwrite: true`. Selama proses itu berjalan, `index.html` baru bisa sudah ada
-# sementara bundel JS-nya belum selesai terunggah, sehingga pengunjung pada jendela
-# tersebut mendapat halaman yang menunjuk berkas tidak ada ("gagal terhubung ke API").
+# Latar masalah: versi lama menyalin `dist` menimpa docroot dengan `overwrite: true`.
+# Selama proses itu `index.html` baru bisa sudah ada sementara bundel JS-nya belum
+# selesai terunggah, sehingga pengunjung pada jendela tersebut menerima halaman yang
+# menunjuk berkas tidak ada ("frontend gagal terhubung ke API"). Karena service worker
+# mem-precache `index.html`, keadaan rusak itu bisa terkunci di peramban pengguna.
 #
-# Cara baru:
-#   1. Hasil build diunggah ke folder rilis bertanggal DI LUAR docroot (tidak dapat
-#      diakses dari web, jadi build lama tidak pernah bisa diunduh publik).
-#   2. Aset disalin lebih dulu — nama berkas Vite mengandung hash, sehingga salinan
-#      baru tidak pernah menimpa berkas yang masih dipakai versi lama.
-#   3. `index.html` ditukar PALING AKHIR dengan `mv` dalam satu filesystem
-#      (atomik). Setelah langkah ini pembaca melihat versi baru secara utuh.
+# Cara sekarang:
+#   1. Build diunggah ke folder rilis per-run DI LUAR docroot (tidak dapat diakses web).
+#   2. Aset disalin lebih dulu — nama berkas Vite ber-hash, jadi tidak pernah menimpa
+#      berkas yang masih dipakai versi lama.
+#   3. `index.html` ditukar PALING AKHIR dengan `mv` pada filesystem yang sama (atomik).
 #   4. Bila pemeriksaan kesehatan gagal, `index.html` lama dikembalikan otomatis.
 #
-# Rilis lama disimpan sampai 5 buah untuk rollback manual yang cepat.
+# CATATAN SSH: sengaja memakai klien SSH asli, bukan action pihak ketiga.
+# Pencocokan kunci host pada `drone-scp` hanya menerima SATU sidik jari, sedangkan tipe
+# kunci yang dinegosiasikan klien Go-nya bisa berbeda — hasilnya "host key fingerprint
+# mismatch". Di sini seluruh kunci hasil `ssh-keyscan` dipakai sebagai known_hosts
+# (tipe apa pun yang dinegosiasikan tetap cocok), DAN sidik jarinya diverifikasi terhadap
+# secret sehingga kunci host palsu tetap ditolak.
 
 name: Deploy Frontend (SPA)
 
@@ -23,7 +27,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Cegah dua deploy berjalan bersamaan dan saling menimpa.
 concurrency:
   group: deploy-spa
   cancel-in-progress: false
@@ -38,16 +41,12 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Siapkan sidik jari host
-        # Dijalankan SEBELUM apa pun diunggah. Tanpa sidik jari host key, SSH
-        # menerima kunci host apa saja (rawan penyadapan di tengah jalan), jadi
-        # deploy dihentikan tanpa menyentuh server.
-        #
-        # Secret boleh berisi satu sidik jari, atau tempelan keluaran `ssh-keyscan`
-        # utuh (tiga baris: RSA, ECDSA, ED25519). Action hanya menerima SATU nilai,
-        # jadi di sini dipilih satu — diutamakan ED25519 karena itu yang paling
-        # diutamakan klien SSH. Tanpa normalisasi, menempel tiga baris membuat
-        # pencocokan kunci host gagal dan deploy berhenti di langkah scp.
+      - name: Periksa sidik jari host (wajib)
+        # Dijalankan SEBELUM apa pun diunggah. Tanpa sidik jari, SSH bisa menerima
+        # kunci host mana saja (rawan penyadapan di tengah jalan).
+        # Secret boleh berisi satu nilai, atau tempelan `ssh-keyscan` utuh (tiga baris);
+        # yang dipakai cukup satu untuk DIPERIKSA, sedangkan penyambungan memakai
+        # seluruh kunci hasil scan.
         id: sidik
         env:
           MENTAH: ${{ secrets.SSH_FINGERPRINT }}
@@ -55,21 +54,15 @@ jobs:
           set -euo pipefail
           if [ -z "${MENTAH}" ]; then
             echo "::error::Secret SSH_FINGERPRINT belum diisi."
-            echo "Ambil sidik jari host server:"
-            echo "  ssh-keyscan -p <SSH_PORT> <SSH_HOST> 2>/dev/null | ssh-keygen -lf -"
+            echo "Ambil: ssh-keyscan -p <SSH_PORT> <SSH_HOST> 2>/dev/null | ssh-keygen -lf -"
             exit 1
           fi
-          nilai=$(printf '%s\n' "$MENTAH" | grep -i 'ED25519' | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | head -1 || true)
-          if [ -z "$nilai" ]; then
-            nilai=$(printf '%s\n' "$MENTAH" | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | tail -1 || true)
-          fi
+          nilai=$(printf '%s\n' "$MENTAH" | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | head -1 || true)
           if [ -z "$nilai" ]; then
             echo "::error::SSH_FINGERPRINT tidak memuat nilai berbentuk SHA256:..."
             exit 1
           fi
-          jumlah=$(printf '%s\n' "$MENTAH" | grep -coE 'SHA256:[A-Za-z0-9+/=]+' || true)
-          echo "Sidik jari ditemukan di secret: $jumlah"
-          echo "Yang dipakai: $nilai"
+          echo "Sidik jari acuan: $nilai"
           echo "nilai=$nilai" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
@@ -94,144 +87,145 @@ jobs:
           set -euo pipefail
           test -f dist/index.html
           test -d dist/assets
-          # .htaccess SPA harus ikut ter-build (rewrite deep link).
-          test -f dist/.htaccess
+          test -f dist/.htaccess   # rewrite SPA untuk deep link
           # Setiap berkas yang dirujuk index.html harus benar-benar ada.
           for rujukan in $(grep -oE '/assets/[A-Za-z0-9._-]+\.(js|css)' dist/index.html | sort -u); do
-            test -f "dist${rujukan}" || { echo "::error::Berkas ${rujukan} dirujuk index.html tetapi tidak ada di dist"; exit 1; }
+            test -f "dist${rujukan}" || { echo "::error::Berkas ${rujukan} dirujuk index.html tetapi tidak ada"; exit 1; }
           done
+          echo "Hasil build lengkap."
 
-      - name: Unggah rilis ke folder terpisah (di luar docroot)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          fingerprint: ${{ steps.sidik.outputs.nilai }}
-          # 'dist' (direktori, bukan 'dist/*') supaya dotfile seperti .htaccess ikut.
-          source: 'dist'
-          target: ${{ secrets.DEPLOY_RELEASES_PATH || 'sipandu-releases' }}/${{ github.run_id }}
-          strip_components: 1
-          overwrite: true
-          command_timeout: 10m
-
-      - name: Tukar rilis secara atomik (dengan rollback otomatis)
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Unggah rilis dan tukar secara atomik
         env:
+          HOST: ${{ secrets.SSH_HOST }}
+          PORT: ${{ secrets.SSH_PORT }}
+          USER_SSH: ${{ secrets.SSH_USER }}
+          KUNCI: ${{ secrets.SSH_KEY }}
+          FRASA: ${{ secrets.SSH_PASSPHRASE }}
+          SIDIK: ${{ steps.sidik.outputs.nilai }}
           LIVE_DIR: ${{ secrets.DEPLOY_PATH_SPA }}
           RELEASES_DIR: ${{ secrets.DEPLOY_RELEASES_PATH || 'sipandu-releases' }}
           RELEASE_ID: ${{ github.run_id }}
           DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          fingerprint: ${{ steps.sidik.outputs.nilai }}
-          command_timeout: 10m
-          envs: LIVE_DIR,RELEASES_DIR,RELEASE_ID,DOMAIN
-          script: |
-            set -euo pipefail
-            # Jangan pernah mencetak isi variabel rahasia (tidak ada `set -x`).
+        run: |
+          set -euo pipefail
+          : "${HOST:?SSH_HOST kosong}" ; : "${PORT:?SSH_PORT kosong}" ; : "${USER_SSH:?SSH_USER kosong}"
+          : "${KUNCI:?SSH_KEY kosong}" ; : "${LIVE_DIR:?DEPLOY_PATH_SPA kosong}"
 
-            DASAR="$RELEASES_DIR/$RELEASE_ID"
-            CADANGAN="$RELEASES_DIR/cadangan-index.html"
+          mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$KUNCI" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+          # Bila kunci dilindungi frasa sandi, buat salinan tanpa frasa (hanya di runner).
+          if [ -n "${FRASA:-}" ]; then
+            ssh-keygen -p -P "$FRASA" -N '' -f "$HOME/.ssh/deploy_key" >/dev/null
+          fi
 
-            # `appleboy/scp-action` dengan `strip_components: 1` membuang prefix
-            # `dist/`, sehingga ISI folder mendarat langsung di target. Bila suatu
-            # saat strip_components tidak dipakai, hasilnya ada di dalam `dist/`.
-            # Keduanya dideteksi agar tidak gagal hanya karena perbedaan itu.
-            if [ -f "$DASAR/dist/index.html" ]; then
-              RILIS="$DASAR/dist"
-            elif [ -f "$DASAR/index.html" ]; then
-              RILIS="$DASAR"
-            else
-              echo "::error::Hasil unggahan tidak ditemukan pada $DASAR"
-              ls -la "$DASAR" 2>/dev/null || echo "(direktori tidak ada)"
+          # --- Kunci host: ambil semua tipe, lalu VERIFIKASI terhadap sidik jari acuan.
+          ssh-keyscan -T 15 -p "$PORT" "$HOST" 2>/dev/null > /tmp/scan_known_hosts || true
+          if [ ! -s /tmp/scan_known_hosts ]; then
+            echo "::error::Tidak dapat mengambil kunci host dari $HOST:$PORT"; exit 1
+          fi
+          ssh-keygen -lf /tmp/scan_known_hosts | tee /tmp/daftar_sidik
+          if ! grep -qF "$SIDIK" /tmp/daftar_sidik; then
+            echo "::error::Sidik jari host TIDAK cocok dengan secret — kemungkinan penyadapan atau server berganti kunci. Deploy dihentikan."
+            exit 1
+          fi
+          cp /tmp/scan_known_hosts "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
+
+          OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20"
+          REMOTE="$USER_SSH@$HOST"
+
+          echo "Menguji sambungan…"
+          ssh $OPS "$REMOTE" 'echo tersambung' >/dev/null
+
+          # --- Kemas dan unggah ke folder rilis (di luar docroot).
+          tar czf /tmp/rilis.tgz -C dist .
+          echo "Paket rilis: $(du -h /tmp/rilis.tgz | cut -f1)"
+          ssh $OPS "$REMOTE" "mkdir -p '$RELEASES_DIR/$RELEASE_ID'"
+          scp $OPS /tmp/rilis.tgz "$REMOTE:$RELEASES_DIR/$RELEASE_ID/rilis.tgz"
+          ssh $OPS "$REMOTE" "cd '$RELEASES_DIR/$RELEASE_ID' && tar xzf rilis.tgz && rm -f rilis.tgz && ls -1 | head -8"
+
+          # --- Tukar rilis (atomik) + rollback otomatis bila kesehatan gagal.
+          ssh $OPS "$REMOTE" \
+            "LIVE_DIR='$LIVE_DIR' RELEASES_DIR='$RELEASES_DIR' RELEASE_ID='$RELEASE_ID' DOMAIN='${DOMAIN:-}' bash -s" <<'SKRIP_JARAK_JAUH'
+          set -euo pipefail
+          # Tidak memakai `set -x`: jangan pernah mencetak nilai rahasia.
+
+          RILIS="$RELEASES_DIR/$RELEASE_ID"
+          CADANGAN="$RELEASES_DIR/cadangan-index.html"
+
+          test -f "$RILIS/index.html" || { echo "::error::index.html tidak ada di rilis"; ls -la "$RILIS"; exit 1; }
+          test -d "$RILIS/assets"     || { echo "::error::folder assets tidak ada di rilis"; exit 1; }
+          test -d "$LIVE_DIR"         || { echo "::error::docroot tidak ditemukan: $LIVE_DIR"; exit 1; }
+
+          echo "Rilis : $RILIS"
+          echo "Live  : $LIVE_DIR"
+
+          # 1. Aset lebih dulu (nama ber-hash, tidak menimpa berkas versi lama).
+          mkdir -p "$LIVE_DIR/assets"
+          cp -a "$RILIS/assets/." "$LIVE_DIR/assets/"
+          if [ -d "$RILIS/icons" ]; then
+            mkdir -p "$LIVE_DIR/icons"
+            cp -a "$RILIS/icons/." "$LIVE_DIR/icons/"
+          fi
+
+          # 2. Service worker & manifest sebelum index.html.
+          for f in sw.js registerSW.js manifest.webmanifest; do
+            if [ -f "$RILIS/$f" ]; then
+              install -m 644 "$RILIS/$f" "$LIVE_DIR/$f.baru"
+              mv -f "$LIVE_DIR/$f.baru" "$LIVE_DIR/$f"
+            fi
+          done
+
+          # 3. Cadangkan index lama untuk rollback.
+          if [ -f "$LIVE_DIR/index.html" ]; then cp -a "$LIVE_DIR/index.html" "$CADANGAN"; fi
+
+          # 4. TITIK ATOMIK.
+          install -m 644 "$RILIS/index.html" "$LIVE_DIR/index.html.baru"
+          mv -f "$LIVE_DIR/index.html.baru" "$LIVE_DIR/index.html"
+          echo "index.html ditukar secara atomik."
+
+          # 5. Pemeriksaan kesehatan; batalkan bila gagal.
+          if [ -n "${DOMAIN:-}" ]; then
+            kode="000"
+            for i in 1 2 3 4 5; do
+              kode=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "https://$DOMAIN/" || echo 000)
+              [ "$kode" = "200" ] && break
+              sleep 3
+            done
+            if [ "$kode" != "200" ]; then
+              echo "::error::Situs menjawab $kode setelah swap — mengembalikan versi sebelumnya."
+              if [ -f "$CADANGAN" ]; then
+                install -m 644 "$CADANGAN" "$LIVE_DIR/index.html.kembali"
+                mv -f "$LIVE_DIR/index.html.kembali" "$LIVE_DIR/index.html"
+                echo "Rollback selesai."
+              fi
               exit 1
             fi
+            echo "Kesehatan lolos (HTTP $kode)."
+          fi
 
-            echo "Rilis  : $RILIS"
-            echo "Live   : $LIVE_DIR"
+          # 6. Sisakan 5 rilis terakhir.
+          n=0
+          for d in $(ls -1dt "$RELEASES_DIR"/*/ 2>/dev/null); do
+            n=$((n + 1))
+            if [ "$n" -gt 5 ]; then rm -rf "$d"; fi
+          done
 
-            test -f "$RILIS/index.html" || { echo "::error::index.html tidak ditemukan pada rilis"; exit 1; }
-            test -d "$RILIS/assets"     || { echo "::error::folder assets tidak ditemukan pada rilis"; exit 1; }
-            test -d "$LIVE_DIR"         || { echo "::error::docroot tidak ditemukan: $LIVE_DIR"; exit 1; }
+          # 7. Izin: HANYA berkas yang baru dipasang (jangan sentuh milik server).
+          if [ -d "$LIVE_DIR/assets" ]; then
+            chmod 755 "$LIVE_DIR/assets"; find "$LIVE_DIR/assets" -type f -exec chmod 644 {} + 2>/dev/null || true
+          fi
+          if [ -d "$LIVE_DIR/icons" ]; then
+            chmod 755 "$LIVE_DIR/icons"; find "$LIVE_DIR/icons" -type f -exec chmod 644 {} + 2>/dev/null || true
+          fi
+          for f in index.html sw.js registerSW.js manifest.webmanifest; do
+            [ -f "$LIVE_DIR/$f" ] && chmod 644 "$LIVE_DIR/$f"
+          done
 
-            # ---- 1. Aset lebih dulu. Nama ber-hash => salinan tidak menimpa berkas versi lama.
-            mkdir -p "$LIVE_DIR/assets"
-            cp -a "$RILIS/assets/." "$LIVE_DIR/assets/"
-            if [ -d "$RILIS/icons" ]; then
-              mkdir -p "$LIVE_DIR/icons"
-              cp -a "$RILIS/icons/." "$LIVE_DIR/icons/"
-            fi
+          echo "Deploy selesai: rilis $RELEASE_ID aktif."
+          SKRIP_JARAK_JAUH
 
-            # ---- 2. Berkas pendukung service worker & manifest.
-            #      Ditukar sebelum index.html supaya manifest precache baru
-            #      sudah menunjuk aset yang benar-benar ada.
-            for f in sw.js registerSW.js manifest.webmanifest; do
-              if [ -f "$RILIS/$f" ]; then
-                install -m 644 "$RILIS/$f" "$LIVE_DIR/$f.baru"
-                mv -f "$LIVE_DIR/$f.baru" "$LIVE_DIR/$f"
-              fi
-            done
-
-            # ---- 3. Simpan index lama untuk rollback.
-            if [ -f "$LIVE_DIR/index.html" ]; then
-              cp -a "$LIVE_DIR/index.html" "$CADANGAN"
-            fi
-
-            # ---- 4. TITIK ATOMIK: tukar index.html sekaligus.
-            install -m 644 "$RILIS/index.html" "$LIVE_DIR/index.html.baru"
-            mv -f "$LIVE_DIR/index.html.baru" "$LIVE_DIR/index.html"
-            echo "index.html ditukar secara atomik."
-
-            # ---- 5. Pemeriksaan kesehatan; batalkan bila gagal.
-            if [ -n "${DOMAIN:-}" ]; then
-              kode="000"
-              for percobaan in 1 2 3 4 5; do
-                kode=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "https://$DOMAIN/" || echo 000)
-                [ "$kode" = "200" ] && break
-                sleep 3
-              done
-              if [ "$kode" != "200" ]; then
-                echo "::error::Situs menjawab $kode setelah swap — mengembalikan versi sebelumnya."
-                if [ -f "$CADANGAN" ]; then
-                  install -m 644 "$CADANGAN" "$LIVE_DIR/index.html.kembali"
-                  mv -f "$LIVE_DIR/index.html.kembali" "$LIVE_DIR/index.html"
-                  echo "Rollback selesai."
-                fi
-                exit 1
-              fi
-              echo "Pemeriksaan kesehatan lolos (HTTP $kode)."
-            fi
-
-            # ---- 6. Sisakan 5 rilis terakhir, sisanya dibuang (cegah disk penuh).
-            jumlah=0
-            for d in $(ls -1dt "$RELEASES_DIR"/*/ 2>/dev/null); do
-              jumlah=$((jumlah + 1))
-              if [ "$jumlah" -gt 5 ]; then rm -rf "$d"; fi
-            done
-
-            # ---- 7. Izin berkas: HANYA yang baru dipasang.
-            #      Sengaja tidak menyapu seluruh docroot — berkas milik server
-            #      (.htaccess, .well-known, konfigurasi PHP) tidak boleh ikut diubah.
-            if [ -d "$LIVE_DIR/assets" ]; then
-              chmod 755 "$LIVE_DIR/assets" 2>/dev/null || true
-              find "$LIVE_DIR/assets" -type f -exec chmod 644 {} + 2>/dev/null || true
-            fi
-            if [ -d "$LIVE_DIR/icons" ]; then
-              chmod 755 "$LIVE_DIR/icons" 2>/dev/null || true
-              find "$LIVE_DIR/icons" -type f -exec chmod 644 {} + 2>/dev/null || true
-            fi
-            for f in index.html sw.js registerSW.js manifest.webmanifest; do
-              if [ -f "$LIVE_DIR/$f" ]; then chmod 644 "$LIVE_DIR/$f" 2>/dev/null || true; fi
-            done
-
-            echo "Deploy selesai: rilis $RELEASE_ID aktif."
+          rm -f "$HOME/.ssh/deploy_key" /tmp/rilis.tgz
 
       - name: Verifikasi dari runner
         env:
@@ -247,7 +241,6 @@ jobs:
             echo "${jalur} -> ${kode}"
             [ "$kode" = "200" ] || { echo "::error::${jalur} menjawab ${kode}, seharusnya 200"; exit 1; }
           done
-          # Bundel yang dilayani harus benar-benar ada.
           bundel=$(curl -s -m 15 "https://${DOMAIN}/" | grep -oE '/assets/[A-Za-z0-9._-]+\.js' | head -1)
           test -n "$bundel"
           kode=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "https://${DOMAIN}${bundel}")
