@@ -148,21 +148,45 @@ jobs:
           ringkas "Kunci host yang disajikan server:"
           ringkas "\`\`\`&#10;$(sed 's/$/<br>/' /tmp/sidik_saji)&#10;\`\`\`"
 
-          if [ -n "${SIDIK:-}" ]; then
+          # Kunci yang disajikan dicetak base64 supaya dapat dituangkan ke
+          # `deploy/known_hosts` bila server berganti kunci.
+          kunci64=$(base64 -w0 "$SEMENTARA" 2>/dev/null || base64 < "$SEMENTARA" | tr -d '\n')
+          echo "::notice::KUNCI64=$kunci64"
+
+          # Sumber kepercayaan UTAMA: berkas `deploy/known_hosts` di repo. Isinya kunci
+          # yang benar-benar disajikan kepada runner, sehingga tidak bergantung pada hasil
+          # ssh-keyscan dari jaringan lain. Kunci publik host bukan rahasia.
+          ACUAN_REPO="deploy/known_hosts"
+
+          if [ -f "$ACUAN_REPO" ] && [ -s "$ACUAN_REPO" ]; then
+            cp "$ACUAN_REPO" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
+            ringkas "Acuan kunci: berkas repo \`$ACUAN_REPO\`"
+            if ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" \
+                   -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+                   -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 \
+                   "$USER_SSH@$HOST" 'true' >/dev/null 2>&1; then
+              ringkas "Kunci host COCOK dengan berkas repo."
+            else
+              echo "::error::Kunci host TIDAK cocok dengan $ACUAN_REPO. Perbarui berkas itu memakai nilai KUNCI64 pada anotasi ini (decode base64)."
+              exit 1
+            fi
+          elif [ -n "${SIDIK:-}" ]; then
             acuan=$(printf '%s\n' "$SIDIK" | grep -oE 'SHA256:[A-Za-z0-9+/=]+' | head -1 || true)
             if [ -z "$acuan" ]; then
               echo "::error::SSH_FINGERPRINT tidak memuat nilai berbentuk SHA256:..."
               exit 1
             fi
             if grep -qF "$acuan" /tmp/sidik_saji; then
-              ringkas "Sidik jari acuan \`$acuan\` COCOK dengan kunci yang disajikan."
+              ringkas "Acuan kunci: secret (sidik jari \`$acuan\`) — COCOK."
+              cp "$SEMENTARA" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
             else
               saji=$(head -1 /tmp/sidik_saji)
               echo "::error::Sidik jari TIDAK cocok. Acuan: $acuan | Disajikan: $saji"
               exit 1
             fi
           else
-            ringkas "SSH_FINGERPRINT kosong — tanpa verifikasi kunci (tidak aman)."
+            echo "::error::Tidak ada acuan kunci: berkas $ACUAN_REPO tidak ada dan SSH_FINGERPRINT kosong."
+            exit 1
           fi
 
           cp "$SEMENTARA" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
