@@ -1,0 +1,2 @@
+# Skrip shell harus berakhir LF agar tidak gagal di runner Linux.
+*.sh text eol=lf

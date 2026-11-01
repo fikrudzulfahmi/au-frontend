@@ -230,7 +230,13 @@ jobs:
           DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
         run: |
           set -uo pipefail
-          OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
+          # PENTING: port dieja berbeda untuk ssh dan scp.
+          #   ssh  -> `-p <port>`
+          #   scp  -> `-P <port>` (kapital; `-p` pada scp berarti "pertahankan waktu berkas",
+          #           sehingga port akan dibaca sebagai nama berkas sumber dan gagal).
+          OPS_UMUM="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
+          OPS="$OPS_UMUM -p $PORT"
+          SCP_OPS="$OPS_UMUM -P $PORT"
           REMOTE="$USER_SSH@$HOST"
 
           gagal() { echo "::error::$1"; exit 1; }
@@ -245,7 +251,7 @@ jobs:
           echo "direktori rilis: $keluar"
 
           # Unggah paket + skrip swap.
-          if ! keluar=$(scp $OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$RELEASES_DIR/$RELEASE_ID/" 2>&1); then
+          if ! keluar=$(scp $SCP_OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$RELEASES_DIR/$RELEASE_ID/" 2>&1); then
             gagal "scp gagal: $keluar"
           fi
           echo "berkas terunggah"
