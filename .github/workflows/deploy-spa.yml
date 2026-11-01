@@ -1,5 +1,21 @@
-# Deploy Frontend (Vite/React) ke sipandu.smkiau.sch.id.
-# Build `dist/` di runner lalu unggah ke docroot cPanel.
+# Deploy Frontend (SPA) ke sipandu.smkiau.sch.id — RILIS ATOMIK.
+#
+# Masalah yang diperbaiki: versi lama menyalin `dist` menimpa docroot dengan
+# `overwrite: true`. Selama proses itu berjalan, `index.html` baru bisa sudah ada
+# sementara bundel JS-nya belum selesai terunggah, sehingga pengunjung pada jendela
+# tersebut mendapat halaman yang menunjuk berkas tidak ada ("gagal terhubung ke API").
+#
+# Cara baru:
+#   1. Hasil build diunggah ke folder rilis bertanggal DI LUAR docroot (tidak dapat
+#      diakses dari web, jadi build lama tidak pernah bisa diunduh publik).
+#   2. Aset disalin lebih dulu — nama berkas Vite mengandung hash, sehingga salinan
+#      baru tidak pernah menimpa berkas yang masih dipakai versi lama.
+#   3. `index.html` ditukar PALING AKHIR dengan `mv` dalam satu filesystem
+#      (atomik). Setelah langkah ini pembaca melihat versi baru secara utuh.
+#   4. Bila pemeriksaan kesehatan gagal, `index.html` lama dikembalikan otomatis.
+#
+# Rilis lama disimpan sampai 5 buah untuk rollback manual yang cepat.
+
 name: Deploy Frontend (SPA)
 
 on:
@@ -7,14 +23,36 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Cegah dua deploy berjalan bersamaan dan saling menimpa.
 concurrency:
   group: deploy-spa
   cancel-in-progress: false
 
+# Prinsip hak paling kecil: workflow ini hanya perlu membaca repo.
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
+      - name: Periksa prasyarat keamanan
+        # Dijalankan SEBELUM apa pun diunggah. Tanpa sidik jari host key, SSH
+        # menerima kunci host apa saja (rawan penyadapan di tengah jalan), jadi
+        # deploy dihentikan tanpa menyentuh server.
+        env:
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+        run: |
+          if [ -z "${SSH_FINGERPRINT}" ]; then
+            echo "::error::Secret SSH_FINGERPRINT belum diisi."
+            echo "Ambil sidik jari host server, lalu simpan sebagai secret SSH_FINGERPRINT:"
+            echo "  ssh-keyscan -p <SSH_PORT> <SSH_HOST> 2>/dev/null | ssh-keygen -lf -"
+            echo "Tanpa ini deploy dihentikan agar kunci host palsu tidak diterima."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -32,7 +70,19 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
 
-      - name: Deploy dist ke cPanel
+      - name: Pastikan hasil build lengkap
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -d dist/assets
+          # .htaccess SPA harus ikut ter-build (rewrite deep link).
+          test -f dist/.htaccess
+          # Setiap berkas yang dirujuk index.html harus benar-benar ada.
+          for rujukan in $(grep -oE '/assets/[A-Za-z0-9._-]+\.(js|css)' dist/index.html | sort -u); do
+            test -f "dist${rujukan}" || { echo "::error::Berkas ${rujukan} dirujuk index.html tetapi tidak ada di dist"; exit 1; }
+          done
+
+      - name: Unggah rilis ke folder terpisah (di luar docroot)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -40,8 +90,122 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          # 'dist' (direktori, bukan 'dist/*') supaya public/.htaccess ikut ter-upload.
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          # 'dist' (direktori, bukan 'dist/*') supaya dotfile seperti .htaccess ikut.
           source: 'dist'
-          target: ${{ secrets.DEPLOY_PATH_SPA }}
+          target: ${{ secrets.DEPLOY_RELEASES_PATH || 'sipandu-releases' }}/${{ github.run_id }}
           strip_components: 1
           overwrite: true
+          command_timeout: 10m
+
+      - name: Tukar rilis secara atomik (dengan rollback otomatis)
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          LIVE_DIR: ${{ secrets.DEPLOY_PATH_SPA }}
+          RELEASES_DIR: ${{ secrets.DEPLOY_RELEASES_PATH || 'sipandu-releases' }}
+          RELEASE_ID: ${{ github.run_id }}
+          DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          command_timeout: 10m
+          envs: LIVE_DIR,RELEASES_DIR,RELEASE_ID,DOMAIN
+          script: |
+            set -euo pipefail
+            # Jangan pernah mencetak isi variabel rahasia (tidak ada `set -x`).
+
+            RILIS="$RELEASES_DIR/$RELEASE_ID/dist"
+            CADANGAN="$RELEASES_DIR/cadangan-index.html"
+
+            echo "Rilis  : $RILIS"
+            echo "Live   : $LIVE_DIR"
+
+            test -f "$RILIS/index.html" || { echo "::error::index.html tidak ditemukan pada rilis"; exit 1; }
+            test -d "$RILIS/assets"     || { echo "::error::folder assets tidak ditemukan pada rilis"; exit 1; }
+            test -d "$LIVE_DIR"         || { echo "::error::docroot tidak ditemukan: $LIVE_DIR"; exit 1; }
+
+            # ---- 1. Aset lebih dulu. Nama ber-hash => salinan tidak menimpa berkas versi lama.
+            mkdir -p "$LIVE_DIR/assets"
+            cp -a "$RILIS/assets/." "$LIVE_DIR/assets/"
+            if [ -d "$RILIS/icons" ]; then
+              mkdir -p "$LIVE_DIR/icons"
+              cp -a "$RILIS/icons/." "$LIVE_DIR/icons/"
+            fi
+
+            # ---- 2. Berkas pendukung service worker & manifest.
+            #      Ditukar sebelum index.html supaya manifest precache baru
+            #      sudah menunjuk aset yang benar-benar ada.
+            for f in sw.js registerSW.js manifest.webmanifest; do
+              if [ -f "$RILIS/$f" ]; then
+                install -m 644 "$RILIS/$f" "$LIVE_DIR/$f.baru"
+                mv -f "$LIVE_DIR/$f.baru" "$LIVE_DIR/$f"
+              fi
+            done
+
+            # ---- 3. Simpan index lama untuk rollback.
+            if [ -f "$LIVE_DIR/index.html" ]; then
+              cp -a "$LIVE_DIR/index.html" "$CADANGAN"
+            fi
+
+            # ---- 4. TITIK ATOMIK: tukar index.html sekaligus.
+            install -m 644 "$RILIS/index.html" "$LIVE_DIR/index.html.baru"
+            mv -f "$LIVE_DIR/index.html.baru" "$LIVE_DIR/index.html"
+            echo "index.html ditukar secara atomik."
+
+            # ---- 5. Pemeriksaan kesehatan; batalkan bila gagal.
+            if [ -n "${DOMAIN:-}" ]; then
+              kode="000"
+              for percobaan in 1 2 3 4 5; do
+                kode=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "https://$DOMAIN/" || echo 000)
+                [ "$kode" = "200" ] && break
+                sleep 3
+              done
+              if [ "$kode" != "200" ]; then
+                echo "::error::Situs menjawab $kode setelah swap — mengembalikan versi sebelumnya."
+                if [ -f "$CADANGAN" ]; then
+                  install -m 644 "$CADANGAN" "$LIVE_DIR/index.html.kembali"
+                  mv -f "$LIVE_DIR/index.html.kembali" "$LIVE_DIR/index.html"
+                  echo "Rollback selesai."
+                fi
+                exit 1
+              fi
+              echo "Pemeriksaan kesehatan lolos (HTTP $kode)."
+            fi
+
+            # ---- 6. Sisakan 5 rilis terakhir, sisanya dibuang (cegah disk penuh).
+            jumlah=0
+            for d in $(ls -1dt "$RELEASES_DIR"/*/ 2>/dev/null); do
+              jumlah=$((jumlah + 1))
+              if [ "$jumlah" -gt 5 ]; then rm -rf "$d"; fi
+            done
+
+            # ---- 7. Izin berkas: terbaca publik, tidak dapat ditulis.
+            find "$LIVE_DIR" -type d -exec chmod 755 {} + 2>/dev/null || true
+            find "$LIVE_DIR" -type f -exec chmod 644 {} + 2>/dev/null || true
+
+            echo "Deploy selesai: rilis $RELEASE_ID aktif."
+
+      - name: Verifikasi dari runner
+        env:
+          DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOMAIN}" ]; then
+            echo "::warning::Secret DEPLOY_DOMAIN belum diisi — verifikasi pasca-deploy dilewati."
+            exit 0
+          fi
+          for jalur in / /masuk /dashboard /tv; do
+            kode=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "https://${DOMAIN}${jalur}" || echo 000)
+            echo "${jalur} -> ${kode}"
+            [ "$kode" = "200" ] || { echo "::error::${jalur} menjawab ${kode}, seharusnya 200"; exit 1; }
+          done
+          # Bundel yang dilayani harus benar-benar ada.
+          bundel=$(curl -s -m 15 "https://${DOMAIN}/" | grep -oE '/assets/[A-Za-z0-9._-]+\.js' | head -1)
+          test -n "$bundel"
+          kode=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "https://${DOMAIN}${bundel}")
+          echo "${bundel} -> ${kode}"
+          [ "$kode" = "200" ] || { echo "::error::Bundel ${bundel} tidak dapat diunduh"; exit 1; }
