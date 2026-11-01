@@ -160,7 +160,7 @@ export function PlottingMapelPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Plotting Mapel"
-        keterangan="Satu mapel pada satu kelas hanya boleh diampu satu guru per semester (BR-03)."
+        keterangan="Satu mapel pada satu kelas hanya boleh diampu satu guru per semester."
         aksi={
           bolehKelola && (
             <>
@@ -335,7 +335,7 @@ export function PlottingMapelPage() {
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <BidangPilihan label="Guru Pengampu" id="pm-guru" wajib opsi={opsiGuru} nilai={form.nilai.pegawai_id}
-            pesanError={galat.pegawai_id} kosongLabel="— Pilih guru —" petunjuk="Hanya pegawai berjenis guru (FR-PLM-03)."
+            pesanError={galat.pegawai_id} kosongLabel="— Pilih guru —" petunjuk="Hanya pegawai berjenis guru."
             onUbah={(v) => setForm((f) => ({ ...f, nilai: { ...f.nilai, pegawai_id: v } }))} />
           <BidangTeks label="JP per Minggu" id="pm-jp" tipe="number" wajib nilai={form.nilai.jp_per_minggu}
             pesanError={galat.jp_per_minggu}

@@ -106,7 +106,7 @@ export function KelasPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Kelas"
-        keterangan="Kelas dibuat per tahun pelajaran. Satu guru hanya boleh menjadi wali satu kelas per tahun (BR-02)."
+        keterangan="Kelas dibuat per tahun pelajaran. Satu guru hanya boleh menjadi wali satu kelas per tahun."
         aksi={
           bolehKelola && (
             <>

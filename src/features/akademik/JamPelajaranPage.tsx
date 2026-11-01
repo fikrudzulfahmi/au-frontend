@@ -107,7 +107,7 @@ export function JamPelajaranPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Jam Pelajaran"
-        keterangan="Satu hari hanya boleh masuk satu pola jam dalam satu semester (BR-05)."
+        keterangan="Satu hari hanya boleh masuk satu pola jam dalam satu semester."
         aksi={
           bolehKelola && (
             <Button onClick={() => { setGalatPola({}); setPola({ buka: true, nilai: KOSONG_POLA }) }}>
@@ -218,7 +218,7 @@ export function JamPelajaranPage() {
       ))}
 
       <Modal terbuka={pola.buka} lebar="sm" judul={pola.id ? 'Ubah Pola Jam' : 'Tambah Pola Jam'}
-        keterangan="Hari yang sudah dipakai pola lain pada semester ini akan ditolak (BR-05)."
+        keterangan="Hari yang sudah dipakai pola lain pada semester ini akan ditolak."
         onTutup={() => setPola({ buka: false, nilai: KOSONG_POLA })}
         footer={
           <>

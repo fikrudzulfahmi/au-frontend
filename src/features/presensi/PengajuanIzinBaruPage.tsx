@@ -92,7 +92,7 @@ export function PengajuanIzinBaruPage() {
               <strong>Presensi dari luar radius</strong>
               <span className="mt-0.5 block text-xs text-muted">
                 Bila disetujui, sistem otomatis menyetujui presensi luar radius untuk setiap hari kerja pada
-                rentang tanggal tersebut, sehingga presensi Anda langsung sah (FR-IZN-02, BR-17).
+                rentang tanggal tersebut, sehingga presensi Anda langsung sah.
               </span>
             </span>
           </label>

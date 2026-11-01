@@ -152,7 +152,7 @@ export function PengajuanPage() {
       )}
 
       <p className="px-1 text-xs text-muted">
-        Pengajuan luar radius yang disetujui membuat presensi Anda pada tanggal itu langsung sah (BR-17 Jalur A).
+        Pengajuan luar radius yang disetujui membuat presensi Anda pada tanggal itu langsung sah (Jalur A).
         Jenis {OPSI_JENIS_IZIN.map((o) => o.label).join(', ')}.
       </p>
 

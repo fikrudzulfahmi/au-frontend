@@ -95,7 +95,7 @@ export function PersetujuanLuarRadiusPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Persetujuan Presensi Luar Radius"
-        keterangan="Presensi yang dikirim dari luar zona dan menunggu keputusan Anda (BR-17 Jalur B). Baris Masuk dan Pulang diputuskan terpisah."
+        keterangan="Presensi yang dikirim dari luar zona dan menunggu keputusan Anda (Jalur B). Baris Masuk dan Pulang diputuskan terpisah."
       />
 
       <div className="flex flex-wrap items-end gap-2">

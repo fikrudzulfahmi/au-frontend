@@ -152,7 +152,7 @@ export function PengaturanJamKerjaPage() {
 
       <p className="px-1 text-xs text-muted">
         Contoh standar sekolah: guru Senin–Kamis 07.00–15.00 dan Jumat 07.00–11.30. Keterlambatan dihitung
-        tanpa toleransi, dan menit dibulatkan ke atas (BR-15).
+        tanpa toleransi, dan menit dibulatkan ke atas.
       </p>
     </div>
   )

@@ -350,7 +350,7 @@ export function PlottingKelasPage() {
             <BidangTeks label="Tanggal" id="mutasi-tanggal" tipe="date" wajib nilai={mutasi.tanggal}
               onUbah={(v) => setMutasi((s) => (s ? { ...s, tanggal: v } : s))} />
             <BidangTeks label="Alasan" id="mutasi-alasan" wajib nilai={mutasi.alasan}
-              petunjuk="Wajib diisi (FR-PLK-05)."
+              petunjuk="Wajib diisi."
               onUbah={(v) => setMutasi((s) => (s ? { ...s, alasan: v } : s))} />
             <p className="rounded-control bg-app-soft px-3 py-2 text-xs text-muted">
               Data presensi yang sudah tercatat tetap melekat pada kelas lamanya.

@@ -65,7 +65,7 @@ export function HariLiburPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Hari Libur"
-        keterangan="Dipakai untuk menghitung hari kerja dan alpa pada laporan (BR-24)."
+        keterangan="Dipakai untuk menghitung hari kerja dan alpa pada laporan."
         aksi={
           bolehKelola && (
             <Button onClick={() => { setGalat({}); setForm({ terbuka: true, nilai: { ...KOSONG, tahun_pelajaran_id: tahunFilter || String(tahun.data?.data[0]?.id ?? '') } }) }}>

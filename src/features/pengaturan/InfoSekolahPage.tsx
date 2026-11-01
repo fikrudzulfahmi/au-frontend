@@ -377,7 +377,7 @@ export function InfoSekolahPage() {
             <Megaphone size={18} /> Pengaturan Landing Page
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Halaman publik tanpa login. Landing tidak pernah menampilkan data pegawai, siswa, atau kehadiran (BR-34).
+            Halaman publik tanpa login. Landing tidak pernah menampilkan data pegawai, siswa, atau kehadiran.
           </p>
 
           <div className="mt-4 space-y-4">

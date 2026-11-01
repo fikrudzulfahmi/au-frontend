@@ -311,7 +311,7 @@ export function PengaturanTvPage() {
               { nilai: 'ya', label: 'Ya' },
               { nilai: 'tidak', label: 'Tidak' },
             ]}
-            petunjuk="BR-33 — alasan izin disembunyikan secara bawaan."
+            petunjuk=" — alasan izin disembunyikan secara bawaan."
             pesanError={galatBidang.tv_tampilkan_alasan_izin}
           />
 
@@ -361,7 +361,7 @@ export function PengaturanTvPage() {
       <ConfirmDialog
         terbuka={konfirmasiUlang}
         judul="Buat ulang kode TV?"
-        keterangan="PERINGATAN: membuat ulang kode akan MENCABUT SEMUA sesi TV yang sedang aktif. Setiap layar TV harus memasukkan kode baru (BR-35)."
+        keterangan="PERINGATAN: membuat ulang kode akan MENCABUT SEMUA sesi TV yang sedang aktif. Setiap layar TV harus memasukkan kode baru."
         labelKonfirmasi="Ya, buat ulang kode"
         memuat={buatUlang.isPending}
         onKonfirmasi={() => buatUlang.mutate()}
@@ -381,7 +381,7 @@ export function PengaturanTvPage() {
       <Modal
         terbuka={pratinjauTerbuka}
         judul="Pratinjau Rekap Layar TV"
-        keterangan="Angka diambil dari layanan yang sama dengan layar TV (BR-37)."
+        keterangan="Angka diambil dari layanan yang sama dengan layar TV."
         lebar="lg"
         onTutup={() => setPratinjauTerbuka(false)}
       >

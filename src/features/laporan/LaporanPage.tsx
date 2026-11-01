@@ -258,7 +258,7 @@ export function LaporanPage({ konfigurasi }: { konfigurasi: KonfigurasiLaporan }
               kosongLabel="Semester aktif"
               opsi={data.daftarSemester.map((s) => ({ nilai: s.id, label: s.label }))}
               onUbah={setSemesterId}
-              petunjuk="Kosong = semester aktif (FR-LAP-11)."
+              petunjuk="Kosong = semester aktif."
             />
           )}
 
@@ -390,7 +390,7 @@ export function LaporanPage({ konfigurasi }: { konfigurasi: KonfigurasiLaporan }
             </div>
             <p className="mt-1 text-xs text-muted">
               Dipakai pada PDF/Excel yang diekspor sekarang; kop & tata letaknya mengikuti
-              pengaturan dokumen terkini (KP-5.2).
+              pengaturan dokumen terkini.
             </p>
           </div>
         )}
@@ -538,9 +538,7 @@ function IsiLaporan({
     <div className="space-y-4">
       <div className="card flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-xs text-muted">
         <span className="font-semibold text-strong">{hasil.judul}</span>
-        <span>
-          Kode {hasil.kode} · Periode: {hasil.periode || keteranganPeriode}
-        </span>
+        <span>Periode: {hasil.periode || keteranganPeriode}</span>
       </div>
 
       {(hasil.ringkasan ?? []).length > 0 && (

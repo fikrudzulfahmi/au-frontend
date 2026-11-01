@@ -57,7 +57,7 @@ export function HubLaporanPage() {
       <p className="flex items-start gap-2 text-xs text-muted">
         <Info size={14} className="mt-0.5 shrink-0" />
         Perubahan kop surat, penandatangan, atau tanggal penetapan langsung tercermin pada laporan
-        berikutnya karena dokumen membaca pengaturan saat dicetak (KP-5.2).
+        berikutnya karena dokumen membaca pengaturan saat dicetak.
       </p>
     </div>
   )
@@ -77,9 +77,7 @@ function KartuLaporan({ konfigurasi }: { konfigurasi: KonfigurasiLaporan }) {
         <span className="mt-0.5 block text-xs leading-relaxed text-muted">
           {konfigurasi.keterangan}
         </span>
-        <span className="mt-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
-          {konfigurasi.kode}
-        </span>
+        {/* Kode kebutuhan internal (mis. FR-LAP-01) sengaja tidak ditampilkan. */}
       </span>
       <ChevronRight size={18} className="mt-1 shrink-0 text-muted" />
     </Link>

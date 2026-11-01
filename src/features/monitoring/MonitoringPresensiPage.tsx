@@ -209,7 +209,7 @@ export function MonitoringPresensiPage() {
         }>
         <div className="space-y-4">
           <p className="rounded-control bg-app-soft px-3 py-2 text-xs text-muted">
-            Koreksi wajib beralasan dan akan ditandai sebagai data yang dikoreksi admin, tercatat di audit log (FR-PRS-13).
+            Koreksi wajib beralasan dan akan ditandai sebagai data yang dikoreksi admin, tercatat di audit log.
           </p>
           <BidangTeks label="Jam pulang" id="koreksi-pulang" tipe="time" nilai={koreksi.pulang_waktu}
             onUbah={(v) => setKoreksi((s) => ({ ...s, pulang_waktu: v }))} />
@@ -271,7 +271,7 @@ function DetailPresensi({
                 <Clock size={15} /> Menunggu keputusan Anda
               </p>
               <p className="text-xs text-muted">
-                Status hadir/terlambat tetap dihitung dari waktu presensi dikirim, bukan waktu keputusan (BR-18).
+                Status hadir/terlambat tetap dihitung dari waktu presensi dikirim, bukan waktu keputusan.
               </p>
               <BidangTeks label="Catatan penyetuju" id="catatan-presetujuan" nilai={catatan}
                 petunjuk="Wajib diisi bila menolak."

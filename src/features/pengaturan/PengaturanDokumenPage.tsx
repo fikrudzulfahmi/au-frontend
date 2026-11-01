@@ -110,7 +110,7 @@ export function PengaturanDokumenPage({ tabAwal = 'kop' }: { tabAwal?: Tab }) {
     <div className="space-y-4">
       <PageHeader
         judul="Kop Surat & Tanda Tangan"
-        keterangan="Dipakai konsisten pada semua laporan PDF dan dokumen cetak (FR-KOP-06). Perubahan langsung berlaku pada dokumen berikutnya."
+        keterangan="Dipakai konsisten pada semua laporan PDF dan dokumen cetak. Perubahan langsung berlaku pada dokumen berikutnya."
       />
 
       <div className="flex gap-1 rounded-control bg-surface p-1 shadow-card" role="tablist">
@@ -229,7 +229,7 @@ function BagianKop({ kop }: { kop: KopPengaturan }) {
     <section className="card space-y-4 p-5">
       <div>
         <h2 className="flex items-center gap-2 text-base font-bold text-strong">
-          <ScrollText size={18} /> Baris Teks Kop (FR-KOP-02)
+          <ScrollText size={18} /> Baris Teks Kop 
         </h2>
         <p className="mt-1 text-xs text-muted">
           Baris 1–3 tampil paling atas dokumen (mis. nama pemerintah provinsi, dinas pendidikan,
@@ -405,7 +405,7 @@ function BagianPenandatangan({ daftar }: { daftar: Penandatangan[] }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-base font-bold text-strong">
-            <FileSignature size={18} /> Penandatangan (FR-KOP-03)
+            <FileSignature size={18} /> Penandatangan 
           </h2>
           <p className="mt-1 text-xs text-muted">
             Maksimal dua penandatangan dipakai per dokumen. Gambar tanda tangan & stempel berupa PNG
@@ -704,7 +704,7 @@ function BagianTataLetak({
     <div className="grid gap-4 lg:grid-cols-2">
       <section className="card space-y-4 p-5">
         <div>
-          <h2 className="text-base font-bold text-strong">Tata Letak Tanda Tangan (FR-KOP-04)</h2>
+          <h2 className="text-base font-bold text-strong">Tata Letak Tanda Tangan </h2>
           <p className="mt-1 text-xs text-muted">
             Kota & tanggal penetapan, posisi blok, dan opsi "Mengetahui".
           </p>
@@ -808,7 +808,7 @@ function PratinjauDokumen({ url, sedangMemuat }: { url: string | null; sedangMem
     <section className="card space-y-3 p-5">
       <div>
         <h2 className="flex items-center gap-2 text-base font-bold text-strong">
-          <Eye size={18} /> Pratinjau Kop & Tanda Tangan (FR-KOP-05)
+          <Eye size={18} /> Pratinjau Kop & Tanda Tangan 
         </h2>
         <p className="mt-1 text-xs text-muted">
           Pratinjau memakai nilai yang sedang Anda isi, jadi dapat dilihat sebelum disimpan.

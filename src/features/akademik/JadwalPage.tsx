@@ -107,7 +107,7 @@ export function JadwalPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Jadwal Pelajaran"
-        keterangan="Bentrok guru (BR-06), bentrok kelas (BR-07), dan slot non-pelajaran (BR-08) ditolak di server."
+        keterangan="Bentrok guru, bentrok kelas, dan slot non-pelajaran ditolak di server."
         aksi={
           bolehKelola && <Button varian="secondary" onClick={unduh}><Download size={17} /> Ekspor</Button>
         }
@@ -150,7 +150,7 @@ export function JadwalPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-1 text-[11px] text-muted">Ini peringatan, bukan penghalang (FR-JDW-07).</p>
+          <p className="mt-1 text-[11px] text-muted">Ini peringatan, bukan penghalang.</p>
         </div>
       )}
 

@@ -126,7 +126,7 @@ export function PengaturanLokasiPage() {
 
   const jadikanDefault = useMutation({
     mutationFn: (id: number) => aksi(`/pengaturan/lokasi/${id}/default`, {}, 'patch'),
-    onSuccess: () => { toast.sukses('Lokasi default diperbarui (BR-12).'); segarkan() },
+    onSuccess: () => { toast.sukses('Lokasi default diperbarui.'); segarkan() },
     onError: (e) => toast.gagal(pesanError(e)),
   })
 
@@ -205,7 +205,7 @@ export function PengaturanLokasiPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Lokasi Presensi"
-        keterangan="Radius sah ditegakkan server dengan rumus Haversine atau zona poligon. Pegawai tanpa penetapan khusus memakai lokasi default (BR-12)."
+        keterangan="Radius sah ditegakkan server dengan rumus Haversine atau zona poligon. Pegawai tanpa penetapan khusus memakai lokasi default."
         aksi={
           bolehKelola && (
             <>
@@ -503,7 +503,7 @@ export function PengaturanLokasiPage() {
 
       {/* ---------- Penetapan massal (FR-LOK-03) ---------- */}
       <Modal terbuka={tetapkan} judul="Tetapkan Lokasi ke Pegawai"
-        keterangan="Centang pegawai dan lokasi yang berlaku. Mengosongkan centang lokasi mengembalikan pegawai ke lokasi default (BR-12)."
+        keterangan="Centang pegawai dan lokasi yang berlaku. Mengosongkan centang lokasi mengembalikan pegawai ke lokasi default."
         onTutup={() => setTetapkan(false)}
         footer={
           <>

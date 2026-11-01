@@ -129,7 +129,7 @@ export const LAPORAN: KonfigurasiLaporan[] = [
     kode: 'FR-LAP-06',
     judul: 'Rekap Presensi Siswa',
     keterangan:
-      'Presensi siswa dari jurnal: H/S/I/A dan persentase per siswa, dapat difilter per mapel. Wali kelas dibatasi kelasnya (KP-5.5).',
+      'Presensi siswa dari jurnal: H/S/I/A dan persentase per siswa, dapat difilter per mapel. Wali kelas dibatasi kelasnya.',
     kelompok: 'Jurnal & Siswa',
     modeWaktu: 'periode',
     filter: ['kelas', 'mapel'],
@@ -157,7 +157,7 @@ export const LAPORAN: KonfigurasiLaporan[] = [
     kode: 'FR-LAP-08',
     judul: 'Rekap Kepatuhan Jurnal',
     keterangan:
-      'Sesi terjadwal, terisi, belum terisi, berhalangan, dan persentase kepatuhan per guru (BR-26).',
+      'Sesi terjadwal, terisi, belum terisi, berhalangan, dan persentase kepatuhan per guru.',
     kelompok: 'Jurnal & Siswa',
     modeWaktu: 'periode',
     filter: ['guru'],

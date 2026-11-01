@@ -75,7 +75,7 @@ export function PersetujuanPengajuanPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Persetujuan Pengajuan"
-        keterangan="Pengajuan yang menunggu keputusan Anda. Izin, sakit, dan cuti yang disetujui membebaskan presensi; dinas tidak (BR-25)."
+        keterangan="Pengajuan yang menunggu keputusan Anda. Izin, sakit, dan cuti yang disetujui membebaskan presensi; dinas tidak."
       />
 
       <div className="flex gap-1 rounded-control bg-surface p-1 shadow-card">
@@ -190,12 +190,12 @@ export function PersetujuanPengajuanPage() {
             {'presensi_luar_radius' in pilih && pilih.presensi_luar_radius && (
               <p className="rounded-control bg-info-soft px-3 py-2 text-xs text-strong">
                 Dinas ini meminta presensi dari luar radius. Bila disetujui, pengajuan luar radius untuk setiap
-                hari kerja pada rentang tersebut ikut disetujui otomatis (FR-IZN-02).
+                hari kerja pada rentang tersebut ikut disetujui otomatis.
               </p>
             )}
 
             <BidangTeks label="Catatan penyetuju" id="catatan-pengajuan" nilai={catatan}
-              petunjuk="Wajib diisi bila menolak (FR-IZN-04)."
+              petunjuk="Wajib diisi bila menolak."
               pesanError={catatan.trim() === '' ? 'Catatan wajib diisi sebelum menolak.' : undefined}
               onUbah={setCatatan} />
           </div>

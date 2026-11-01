@@ -272,7 +272,7 @@ export function KelolaPengumumanPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Kelola Pengumuman"
-        keterangan="Pengumuman tayang bila aktif dan berada dalam rentang tanggal/jam (BR-36)."
+        keterangan="Pengumuman tayang bila aktif dan berada dalam rentang tanggal/jam."
         aksi={
           <Button
             onClick={() => {

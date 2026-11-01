@@ -67,7 +67,7 @@ export function PegawaiPage() {
         setHasilAksi({
           judul: 'Password awal akun baru',
           nilai: hasil.password_awal,
-          petunjuk: 'Catat sekarang — hanya ditampilkan sekali dan wajib diganti saat login pertama (FR-SEC-04).',
+          petunjuk: 'Catat sekarang — hanya ditampilkan sekali dan wajib diganti saat login pertama.',
         })
       }
       setForm({ terbuka: false, nilai: KOSONG })

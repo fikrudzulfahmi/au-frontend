@@ -91,7 +91,7 @@ export function TahunPelajaranPage() {
     <div className="space-y-4">
       <PageHeader
         judul="Tahun Pelajaran"
-        keterangan="Hanya satu tahun pelajaran dan satu semester yang aktif (BR-01)."
+        keterangan="Hanya satu tahun pelajaran dan satu semester yang aktif."
         aksi={
           bolehKelola && (
             <Button onClick={() => { setGalat({}); setForm({ terbuka: true, nilai: KOSONG }) }}>
@@ -218,7 +218,7 @@ export function TahunPelajaranPage() {
 
       <Modal terbuka={aktifkan !== null} lebar="sm"
         judul="Aktifkan Tahun Pelajaran"
-        keterangan={aktifkan ? `${aktifkan.nama} — tahun pelajaran dan semester lain akan dinonaktifkan (BR-01).` : ''}
+        keterangan={aktifkan ? `${aktifkan.nama} — tahun pelajaran dan semester lain akan dinonaktifkan.`: ''}
         onTutup={() => setAktifkan(null)}
         footer={
           <>
@@ -237,7 +237,7 @@ export function TahunPelajaranPage() {
 
       <ConfirmDialog terbuka={selesai !== null} varian="primary" labelKonfirmasi="Tandai Selesai"
         judul="Tandai tahun pelajaran selesai?"
-        keterangan={selesai ? `Data transaksi ${selesai.nama} menjadi read-only dan foto presensi tahun ini memenuhi aturan retensi (BR-30).` : ''}
+        keterangan={selesai ? `Data transaksi ${selesai.nama} menjadi read-only dan foto presensi tahun ini memenuhi aturan retensi.`: ''}
         memuat={tandaiSelesai.isPending}
         onKonfirmasi={() => selesai && tandaiSelesai.mutate(selesai.id)}
         onTutup={() => setSelesai(null)} />

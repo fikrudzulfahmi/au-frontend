@@ -70,7 +70,7 @@ export function PengaturanSistemPage() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <BidangTeks label="Akurasi GPS maksimal (meter)" id="gps" tipe="number" wajib
             nilai={nilai.gps_max_akurasi_m} pesanError={galat.gps_max_akurasi_m}
-            petunjuk="Presensi ditolak bila akurasi lebih buruk dari nilai ini (FR-PRS-06)."
+            petunjuk="Presensi ditolak bila akurasi lebih buruk dari nilai ini."
             onUbah={(v) => setNilai((s) => ({ ...s, gps_max_akurasi_m: v }))} />
           <BidangTeks label="Sisi terpanjang foto setelah dikompres (piksel)" id="sisi" tipe="number" wajib
             nilai={nilai.foto_max_sisi_px} pesanError={galat.foto_max_sisi_px}

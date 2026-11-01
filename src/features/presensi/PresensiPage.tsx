@@ -335,7 +335,7 @@ export function PresensiPage() {
             </div>
 
             <p className="mt-2 text-xs text-muted">
-              Foto hanya dapat diambil langsung dari kamera, tidak dari galeri (BR-29).
+              Foto hanya dapat diambil langsung dari kamera, tidak dari galeri.
             </p>
           </div>
 
@@ -396,7 +396,7 @@ export function PresensiPage() {
                     <AlertTriangle size={15} /> Anda di luar radius semua lokasi
                   </p>
                   <p className="mt-1 text-xs text-strong">
-                    Presensi tetap dapat dikirim, lalu menunggu persetujuan admin (BR-17). Isi alasan di bawah.
+                    Presensi tetap dapat dikirim, lalu menunggu persetujuan admin. Isi alasan di bawah.
                   </p>
                 </div>
               )}
@@ -414,7 +414,7 @@ export function PresensiPage() {
               id="alasan-presensi"
               wajib
               nilai={alasan}
-              petunjuk="Contoh: mendampingi siswa lomba di luar kota (BR-17)."
+              petunjuk="Contoh: mendampingi siswa lomba di luar kota."
               onUbah={setAlasan}
             />
           )}
@@ -432,7 +432,7 @@ export function PresensiPage() {
             {foto !== null && posisi === null && <span className="text-sm text-muted">Baca lokasi terlebih dahulu.</span>}
             {mode === 'pulang' && (
               <span className="flex items-center gap-1.5 text-sm text-muted">
-                <Clock size={15} /> Pulang sebelum jam pulang akan ditandai pulang cepat (BR-16).
+                <Clock size={15} /> Pulang sebelum jam pulang akan ditandai pulang cepat.
               </span>
             )}
           </div>
