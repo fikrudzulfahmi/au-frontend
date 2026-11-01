@@ -183,9 +183,20 @@ jobs:
               if [ "$jumlah" -gt 5 ]; then rm -rf "$d"; fi
             done
 
-            # ---- 7. Izin berkas: terbaca publik, tidak dapat ditulis.
-            find "$LIVE_DIR" -type d -exec chmod 755 {} + 2>/dev/null || true
-            find "$LIVE_DIR" -type f -exec chmod 644 {} + 2>/dev/null || true
+            # ---- 7. Izin berkas: HANYA yang baru dipasang.
+            #      Sengaja tidak menyapu seluruh docroot — berkas milik server
+            #      (.htaccess, .well-known, konfigurasi PHP) tidak boleh ikut diubah.
+            if [ -d "$LIVE_DIR/assets" ]; then
+              chmod 755 "$LIVE_DIR/assets" 2>/dev/null || true
+              find "$LIVE_DIR/assets" -type f -exec chmod 644 {} + 2>/dev/null || true
+            fi
+            if [ -d "$LIVE_DIR/icons" ]; then
+              chmod 755 "$LIVE_DIR/icons" 2>/dev/null || true
+              find "$LIVE_DIR/icons" -type f -exec chmod 644 {} + 2>/dev/null || true
+            fi
+            for f in index.html sw.js registerSW.js manifest.webmanifest; do
+              if [ -f "$LIVE_DIR/$f" ]; then chmod 644 "$LIVE_DIR/$f" 2>/dev/null || true; fi
+            done
 
             echo "Deploy selesai: rilis $RELEASE_ID aktif."
 
