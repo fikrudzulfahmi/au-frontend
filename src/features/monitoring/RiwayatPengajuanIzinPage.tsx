@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { BidangTeks } from '@/components/ui/Bidang'
 import { master } from '@/lib/crud'
 import { formatTanggalDari } from '@/lib/format'
+import { LampiranPengajuan } from '@/features/monitoring/LampiranPengajuan'
 import type { PengajuanIzin } from '@/features/presensi/types'
 import { OPSI_JENIS_IZIN } from '@/features/presensi/types'
 
@@ -27,14 +28,14 @@ export function RiwayatPengajuanIzinPage() {
   const [pilih, setPilih] = useState<PengajuanIzin | null>(null)
 
   // Filter
-  const [pegawaiId, setPegawaiId] = useState('')
+  const [nama, setNama] = useState('')
   const [jenis, setJenis] = useState('')
   const [status, setStatus] = useState('')
   const [dari, setDari] = useState('')
   const [sampai, setSampai] = useState('')
 
   const params: Record<string, string | number> = { page: halaman, per_page: 25 }
-  if (pegawaiId) params.pegawai_id = pegawaiId
+  if (nama.trim()) params.nama = nama.trim()
   if (jenis) params.jenis = jenis
   if (status) params.status = status
   if (dari) params.dari = dari
@@ -54,8 +55,8 @@ export function RiwayatPengajuanIzinPage() {
 
       {/* Filter inline */}
       <div className="flex flex-wrap items-end gap-2">
-        <BidangTeks label="ID Pegawai" id="pegawai-id" nilai={pegawaiId} onUbah={(v) => { setPegawaiId(v); setHalaman(1) }}
-          className="w-32" petunjuk="" />
+        <BidangTeks label="Nama pegawai" id="nama-pegawai" nilai={nama} onUbah={(v) => { setNama(v); setHalaman(1) }}
+          className="w-56" petunjuk="" placeholder="Cari nama atau NIP" />
 
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-strong">Jenis</span>
@@ -85,9 +86,9 @@ export function RiwayatPengajuanIzinPage() {
         <BidangTeks label="Sampai tanggal" id="sampai" tipe="date" nilai={sampai} onUbah={(v) => { setSampai(v); setHalaman(1) }}
           className="w-44" />
 
-        {(pegawaiId || jenis || status || dari || sampai) && (
+        {(nama || jenis || status || dari || sampai) && (
           <Button varian="ghost" onClick={() => {
-            setPegawaiId(''); setJenis(''); setStatus(''); setDari(''); setSampai('')
+            setNama(''); setJenis(''); setStatus(''); setDari(''); setSampai('')
             setHalaman(1)
           }}>
             Reset
@@ -159,32 +160,12 @@ export function RiwayatPengajuanIzinPage() {
               </div>
               <div className="col-span-2"><dt className="text-xs font-semibold text-muted">Alasan</dt><dd className="text-strong">{pilih.alasan}</dd></div>
 
-              {pilih.lampiran_base64 && pilih.lampiran_mime ? (
-                <div className="col-span-2">
-                  <dt className="text-xs font-semibold text-muted">Lampiran</dt>
-                  <dd className="mt-1">
-                    {pilih.lampiran_mime.startsWith('image/') ? (
-                      <img src={`data:${pilih.lampiran_mime};base64,${pilih.lampiran_base64}`} alt="Lampiran"
-                        className="max-w-full rounded-control border border-line" />
-                    ) : (
-                      <a href={pilih.lampiran_url ?? '#'} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-control bg-info-soft px-3 py-2 text-sm font-semibold text-link hover:bg-info">
-                        <FileText size={16} /> Lihat Lampiran (PDF)
-                      </a>
-                    )}
-                  </dd>
-                </div>
-              ) : pilih.lampiran_url ? (
-                <div className="col-span-2">
-                  <dt className="text-xs font-semibold text-muted">Lampiran</dt>
-                  <dd className="mt-1">
-                    <a href={pilih.lampiran_url} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-control bg-info-soft px-3 py-2 text-sm font-semibold text-link hover:bg-info">
-                      <FileText size={16} /> Lihat Lampiran
-                    </a>
-                  </dd>
-                </div>
-              ) : null}
+              <div className="col-span-2">
+                <dt className="text-xs font-semibold text-muted">Lampiran</dt>
+                <dd className="mt-1">
+                  <LampiranPengajuan pengajuan={pilih} />
+                </dd>
+              </div>
 
               {pilih.presensi_luar_radius && (
                 <div className="col-span-2">

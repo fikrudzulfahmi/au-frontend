@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/Toast'
 import { pesanError } from '@/lib/api'
 import { aksi } from '@/lib/crud'
 import { formatTanggalDari } from '@/lib/format'
+import { TombolLampiran } from '@/features/monitoring/LampiranPengajuan'
 import { daftarPengajuanIzin, daftarPengajuanLuarRadius } from './api'
 import { OPSI_JENIS_IZIN } from './types'
 
@@ -101,11 +102,7 @@ export function PengajuanPage() {
               {
                 kunci: 'lampiran',
                 judul: 'Lampiran',
-                render: (p) => p.lampiran_url ? (
-                  <a href={p.lampiran_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-link hover:underline">
-                    Lihat
-                  </a>
-                ) : <span className="text-xs text-muted">—</span>,
+                render: (p) => <TombolLampiran pengajuan={p} />,
                 sembunyiMobile: true,
               },
               {

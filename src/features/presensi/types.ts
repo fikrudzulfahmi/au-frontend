@@ -69,8 +69,8 @@ export interface PengajuanIzin {
   alasan: string
   ada_lampiran: boolean
   lampiran_url: string | null
-  lampiran_base64?: string
-  lampiran_mime?: string
+  lampiran_mime?: string | null
+  berkas_ada?: boolean
   presensi_luar_radius: boolean
   status: 'menunggu' | 'disetujui' | 'ditolak' | 'dibatalkan'
   label_status: string

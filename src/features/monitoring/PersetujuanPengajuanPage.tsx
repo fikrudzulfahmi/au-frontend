@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/Toast'
 import { pesanError } from '@/lib/api'
 import { aksi, master } from '@/lib/crud'
 import { formatTanggalDari } from '@/lib/format'
+import { LampiranPengajuan } from '@/features/monitoring/LampiranPengajuan'
 import type { PengajuanIzin, PengajuanLuarRadius } from '@/features/presensi/types'
 
 /** FR-IZN-04 — memutuskan pengajuan izin/sakit/dinas/cuti dan pengajuan luar radius mandiri. */
@@ -178,32 +179,12 @@ export function PersetujuanPengajuanPage() {
                 <div className="col-span-2"><dt className="text-xs font-semibold text-muted">Tanggal</dt>
                   <dd className="font-bold text-strong">{formatTanggalDari(pilih.tanggal_mulai)} – {formatTanggalDari(pilih.tanggal_selesai)}</dd></div>
                 <div className="col-span-2"><dt className="text-xs font-semibold text-muted">Alasan</dt><dd className="text-strong">{pilih.alasan}</dd></div>
-                {pilih.lampiran_base64 && pilih.lampiran_mime ? (
-                  <div className="col-span-2">
-                    <dt className="text-xs font-semibold text-muted">Lampiran</dt>
-                    <dd className="mt-1">
-                      {pilih.lampiran_mime.startsWith('image/') ? (
-                        <img src={`data:${pilih.lampiran_mime};base64,${pilih.lampiran_base64}`} alt="Lampiran"
-                          className="max-w-full rounded-control border border-line" />
-                      ) : (
-                        <a href={pilih.lampiran_url ?? '#'} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-control bg-info-soft px-3 py-2 text-sm font-semibold text-link hover:bg-info">
-                          <FileText size={16} /> Lihat Lampiran (PDF)
-                        </a>
-                      )}
-                    </dd>
-                  </div>
-                ) : pilih.lampiran_url ? (
-                  <div className="col-span-2">
-                    <dt className="text-xs font-semibold text-muted">Lampiran</dt>
-                    <dd className="mt-1">
-                      <a href={pilih.lampiran_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-control bg-info-soft px-3 py-2 text-sm font-semibold text-link hover:bg-info">
-                        <FileText size={16} /> Lihat Lampiran
-                      </a>
-                    </dd>
-                  </div>
-                ) : null}
+                <div className="col-span-2">
+                  <dt className="text-xs font-semibold text-muted">Lampiran</dt>
+                  <dd className="mt-1">
+                    <LampiranPengajuan pengajuan={pilih} />
+                  </dd>
+                </div>
               </dl>
             ) : (
               <dl className="grid grid-cols-2 gap-3 text-sm">
