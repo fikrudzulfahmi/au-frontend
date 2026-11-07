@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { FileText } from 'lucide-react'
+import { FileSpreadsheet, FileText } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { DataTable } from '@/components/ui/DataTable'
@@ -11,6 +11,9 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { BidangTeks } from '@/components/ui/Bidang'
 import { master } from '@/lib/crud'
 import { formatTanggalDari } from '@/lib/format'
+import { useToast } from '@/components/ui/Toast'
+import { pesanError } from '@/lib/api'
+import { unduhBerkasApi } from '@/lib/unduhan'
 import { LampiranPengajuan } from '@/features/monitoring/LampiranPengajuan'
 import type { PengajuanIzin } from '@/features/presensi/types'
 import { OPSI_JENIS_IZIN } from '@/features/presensi/types'
@@ -24,8 +27,10 @@ const VARIAN_STATUS: Record<string, 'hadir' | 'izin' | 'menunggu' | 'alpa' | 'cu
 
 /** Riwayat semua pengajuan izin untuk admin — filter status, pegawai, tanggal. */
 export function RiwayatPengajuanIzinPage() {
+  const toast = useToast()
   const [halaman, setHalaman] = useState(1)
   const [pilih, setPilih] = useState<PengajuanIzin | null>(null)
+  const [sedangEkspor, setSedangEkspor] = useState<'excel' | 'pdf' | null>(null)
 
   // Filter
   const [nama, setNama] = useState('')
@@ -46,11 +51,52 @@ export function RiwayatPengajuanIzinPage() {
     queryFn: () => master.daftar<PengajuanIzin>('/pengajuan-izin', params),
   })
 
+  async function ekspor(format: 'excel' | 'pdf') {
+    setSedangEkspor(format)
+    try {
+      const kueriEkspor: Record<string, unknown> = {
+        format,
+      }
+      if (nama.trim()) kueriEkspor.nama = nama.trim()
+      if (jenis) kueriEkspor.jenis = jenis
+      if (status) kueriEkspor.status = status
+      if (dari) kueriEkspor.dari = dari
+      if (sampai) kueriEkspor.sampai = sampai
+
+      const cadangan = `riwayat-pengajuan-izin.${format === 'excel' ? 'xlsx' : 'pdf'}`
+      const namaBerkas = await unduhBerkasApi('/pengajuan-izin', kueriEkspor, cadangan)
+      toast.sukses(`Berkas ${namaBerkas} sedang diunduh.`)
+    } catch (error) {
+      toast.gagal(pesanError(error))
+    } finally {
+      setSedangEkspor(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader
         judul="Riwayat Pengajuan Izin"
         keterangan="Semua pengajuan izin, sakit, dinas, dan cuti — menunggu, disetujui, ditolak, dibatalkan."
+        aksi={
+          <>
+            <Button
+              varian="secondary"
+              memuat={sedangEkspor === 'excel'}
+              disabled={sedangEkspor !== null}
+              onClick={() => void ekspor('excel')}
+            >
+              <FileSpreadsheet size={17} /> Excel
+            </Button>
+            <Button
+              memuat={sedangEkspor === 'pdf'}
+              disabled={sedangEkspor !== null}
+              onClick={() => void ekspor('pdf')}
+            >
+              <FileText size={17} /> PDF
+            </Button>
+          </>
+        }
       />
 
       {/* Filter inline */}
