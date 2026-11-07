@@ -159,7 +159,22 @@ export function RiwayatPengajuanIzinPage() {
               </div>
               <div className="col-span-2"><dt className="text-xs font-semibold text-muted">Alasan</dt><dd className="text-strong">{pilih.alasan}</dd></div>
 
-              {pilih.lampiran_url && (
+              {pilih.lampiran_base64 && pilih.lampiran_mime ? (
+                <div className="col-span-2">
+                  <dt className="text-xs font-semibold text-muted">Lampiran</dt>
+                  <dd className="mt-1">
+                    {pilih.lampiran_mime.startsWith('image/') ? (
+                      <img src={`data:${pilih.lampiran_mime};base64,${pilih.lampiran_base64}`} alt="Lampiran"
+                        className="max-w-full rounded-control border border-line" />
+                    ) : (
+                      <a href={pilih.lampiran_url ?? '#'} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-control bg-info-soft px-3 py-2 text-sm font-semibold text-link hover:bg-info">
+                        <FileText size={16} /> Lihat Lampiran (PDF)
+                      </a>
+                    )}
+                  </dd>
+                </div>
+              ) : pilih.lampiran_url ? (
                 <div className="col-span-2">
                   <dt className="text-xs font-semibold text-muted">Lampiran</dt>
                   <dd className="mt-1">
@@ -169,7 +184,7 @@ export function RiwayatPengajuanIzinPage() {
                     </a>
                   </dd>
                 </div>
-              )}
+              ) : null}
 
               {pilih.presensi_luar_radius && (
                 <div className="col-span-2">
