@@ -11,6 +11,7 @@ export type StatusVarian =
   | 'cuti'
   | 'alpa'
   | 'menunggu'
+  | 'wfa'
   | 'netral'
   | 'sukses'
   | 'bahaya'
@@ -22,11 +23,12 @@ const gaya: Record<StatusVarian, string> = {
   sakit: 'bg-purple-soft text-purple',
   dinas: 'bg-teal-soft text-teal',
   cuti: 'bg-gray-soft text-gray',
-  alpa: 'bg-danger-soft text-danger',
-  menunggu: 'bg-pending-soft text-pending',
-  netral: 'bg-gray-soft text-gray',
-  sukses: 'bg-success-soft text-success',
-  bahaya: 'bg-danger-soft text-danger',
+  alpa: 'bg-red-soft text-red',
+  menunggu: 'bg-yellow-soft text-yellow',
+  wfa: 'bg-orange-soft text-orange',
+  netral: 'bg-muted-soft text-muted',
+  sukses: 'bg-green-soft text-green',
+  bahaya: 'bg-orange-soft text-orange',
 }
 
 interface StatusBadgeProps {
