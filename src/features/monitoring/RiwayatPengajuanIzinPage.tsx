@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { FileText, Filter } from 'lucide-react'
+import { FileText } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { DataTable } from '@/components/ui/DataTable'
@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { BidangPilihan, BidangTeks } from '@/components/ui/Bidang'
+import { BidangTeks } from '@/components/ui/Bidang'
 import { master } from '@/lib/crud'
 import { formatTanggalDari } from '@/lib/format'
 import type { PengajuanIzin } from '@/features/presensi/types'
@@ -21,17 +21,9 @@ const VARIAN_STATUS: Record<string, 'hadir' | 'izin' | 'menunggu' | 'alpa' | 'cu
   dibatalkan: 'cuti',
 }
 
-const OPSI_STATUS = [
-  { nilai: 'menunggu', label: 'Menunggu' },
-  { nilai: 'disetujui', label: 'Disetujui' },
-  { nilai: 'ditolak', label: 'Ditolak' },
-  { nilai: 'dibatalkan', label: 'Dibatalkan' },
-]
-
 /** Riwayat semua pengajuan izin untuk admin — filter status, pegawai, tanggal. */
 export function RiwayatPengajuanIzinPage() {
   const [halaman, setHalaman] = useState(1)
-  const [filterTerbuka, setFilterTerbuka] = useState(false)
   const [pilih, setPilih] = useState<PengajuanIzin | null>(null)
 
   // Filter
@@ -53,19 +45,55 @@ export function RiwayatPengajuanIzinPage() {
     queryFn: () => master.daftar<PengajuanIzin>('/pengajuan-izin', params),
   })
 
-  const aktifFilter = !!(pegawaiId || jenis || status || dari || sampai)
-
   return (
     <div className="space-y-4">
       <PageHeader
         judul="Riwayat Pengajuan Izin"
         keterangan="Semua pengajuan izin, sakit, dinas, dan cuti — menunggu, disetujui, ditolak, dibatalkan."
-        aksi={
-          <Button varian="secondary" onClick={() => setFilterTerbuka(true)}>
-            <Filter size={17} /> Filter {aktifFilter && '✓'}
-          </Button>
-        }
       />
+
+      {/* Filter inline */}
+      <div className="flex flex-wrap items-end gap-2">
+        <BidangTeks label="ID Pegawai" id="pegawai-id" nilai={pegawaiId} onUbah={(v) => { setPegawaiId(v); setHalaman(1) }}
+          className="w-32" petunjuk="" />
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-strong">Jenis</span>
+          <select value={jenis} onChange={(e) => { setJenis(e.target.value); setHalaman(1) }}
+            className="min-h-[44px] rounded-control border border-line bg-surface px-3 text-sm text-strong">
+            <option value="">Semua</option>
+            {OPSI_JENIS_IZIN.map((o) => (
+              <option key={o.nilai} value={o.nilai}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-strong">Status</span>
+          <select value={status} onChange={(e) => { setStatus(e.target.value); setHalaman(1) }}
+            className="min-h-[44px] rounded-control border border-line bg-surface px-3 text-sm text-strong">
+            <option value="">Semua</option>
+            <option value="menunggu">Menunggu</option>
+            <option value="disetujui">Disetujui</option>
+            <option value="ditolak">Ditolak</option>
+            <option value="dibatalkan">Dibatalkan</option>
+          </select>
+        </label>
+
+        <BidangTeks label="Dari tanggal" id="dari" tipe="date" nilai={dari} onUbah={(v) => { setDari(v); setHalaman(1) }}
+          className="w-44" />
+        <BidangTeks label="Sampai tanggal" id="sampai" tipe="date" nilai={sampai} onUbah={(v) => { setSampai(v); setHalaman(1) }}
+          className="w-44" />
+
+        {(pegawaiId || jenis || status || dari || sampai) && (
+          <Button varian="ghost" onClick={() => {
+            setPegawaiId(''); setJenis(''); setStatus(''); setDari(''); setSampai('')
+            setHalaman(1)
+          }}>
+            Reset
+          </Button>
+        )}
+      </div>
 
       <DataTable
         data={data.data?.data ?? []}
@@ -108,34 +136,6 @@ export function RiwayatPengajuanIzinPage() {
 
       <Pagination halaman={data.data?.meta.page ?? 1} perHalaman={data.data?.meta.per_page ?? 25}
         total={data.data?.meta.total ?? 0} onUbah={setHalaman} />
-
-      {/* Modal Filter */}
-      <Modal terbuka={filterTerbuka} lebar="sm" judul="Filter Pengajuan"
-        onTutup={() => setFilterTerbuka(false)}
-        footer={
-          <>
-            <Button varian="ghost" onClick={() => {
-              setPegawaiId(''); setJenis(''); setStatus(''); setDari(''); setSampai('')
-              setHalaman(1)
-            }}>
-              Reset
-            </Button>
-            <Button onClick={() => { setHalaman(1); setFilterTerbuka(false) }}>
-              Terapkan
-            </Button>
-          </>
-        }>
-        <div className="space-y-3">
-          <BidangTeks label="ID Pegawai" id="pegawai-id" nilai={pegawaiId} onUbah={setPegawaiId}
-            petunjuk="Kosongkan untuk semua pegawai." />
-          <BidangPilihan label="Jenis" id="jenis" opsi={OPSI_JENIS_IZIN} nilai={jenis} onUbah={setJenis}
-            kosongLabel="— Semua jenis —" />
-          <BidangPilihan label="Status" id="status" opsi={OPSI_STATUS} nilai={status} onUbah={setStatus}
-            kosongLabel="— Semua status —" />
-          <BidangTeks label="Dari tanggal" id="dari" tipe="date" nilai={dari} onUbah={setDari} />
-          <BidangTeks label="Sampai tanggal" id="sampai" tipe="date" nilai={sampai} onUbah={setSampai} />
-        </div>
-      </Modal>
 
       {/* Modal Detail */}
       <Modal terbuka={pilih !== null} lebar="sm" judul="Detail Pengajuan"
