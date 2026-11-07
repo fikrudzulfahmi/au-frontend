@@ -210,6 +210,8 @@ export function PresensiPage() {
             </h2>
             <p className="text-xs text-muted">
               Jam kerja {data?.jam_masuk?.slice(0, 5) ?? '—'}–{data?.jam_pulang?.slice(0, 5) ?? '—'}
+              {data?.wfa?.jenis === 'sebagian' && data.jam_masuk_standar
+                && ` (WFA, standar ${data.jam_masuk_standar.slice(0, 5)})`}
               {data?.buka_presensi && ` · presensi dibuka ${data.buka_presensi.slice(0, 5)}`}
             </p>
           </div>
@@ -220,6 +222,10 @@ export function PresensiPage() {
                 hari ini bukan hari kerja — menyesatkan. */}
             {data !== undefined && data.hari_libur && <StatusBadge varian="cuti">Libur: {data.hari_libur}</StatusBadge>}
             {data !== undefined && !data.is_hari_kerja && <StatusBadge varian="cuti">Bukan hari kerja</StatusBadge>}
+            {data?.wfa?.jenis === 'sebagian' && (
+              <StatusBadge varian="izin">WFA · masuk {data.wfa.jam_masuk?.slice(0, 5) ?? '—'}</StatusBadge>
+            )}
+            {data?.wfa?.jenis === 'penuh' && <StatusBadge varian="izin">WFA Penuh</StatusBadge>}
             {data?.presensi?.masuk.validasi === 'menunggu' && <StatusBadge varian="izin">Menunggu persetujuan</StatusBadge>}
             {data?.presensi?.masuk.status === 'terlambat' && (
               <StatusBadge varian="menunggu">Terlambat {data.presensi.masuk.menit_terlambat} menit</StatusBadge>

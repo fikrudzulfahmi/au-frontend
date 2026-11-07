@@ -152,6 +152,11 @@ const PengaturanJamKerjaPage = lazy(() =>
     default: m.PengaturanJamKerjaPage,
   })),
 )
+const PengaturanWfaPage = lazy(() =>
+  import('@/features/pengaturan/PengaturanWfaPage').then((m) => ({
+    default: m.PengaturanWfaPage,
+  })),
+)
 const PengaturanSistemPage = lazy(() =>
   import('@/features/pengaturan/PengaturanSistemPage').then((m) => ({ default: m.PengaturanSistemPage })),
 )
@@ -274,6 +279,7 @@ export function AppRouter() {
             <Route path="/pengaturan/info-sekolah" element={<InfoSekolahPage />} />
             <Route path="/pengaturan/lokasi" element={<PengaturanLokasiPage />} />
             <Route path="/pengaturan/jam-kerja" element={<PengaturanJamKerjaPage />} />
+            <Route path="/pengaturan/wfa" element={<PengaturanWfaPage />} />
             <Route path="/pengaturan/hari-libur" element={<HariLiburPage />} />
             <Route path="/pengaturan/sistem" element={<PengaturanSistemPage />} />
             {/* FR-KOP-02..05 — kop, penandatangan, tata letak, dan pratinjau. */}

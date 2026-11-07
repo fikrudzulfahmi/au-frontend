@@ -38,8 +38,18 @@ export interface StatusHariIni {
   is_hari_kerja: boolean
   hari_libur: string | null
   buka_presensi: string | null
+  /** Batas masuk yang berlaku hari ini (mengikuti WFA sebagian bila ada). */
   jam_masuk: string | null
+  /** Batas masuk standar dari Jam Kerja, pembanding ketika WFA sebagian aktif. */
+  jam_masuk_standar?: string | null
   jam_pulang: string | null
+  /** Jadwal WFA hari ini (null bila tidak dijadwalkan). */
+  wfa?: {
+    jenis: 'penuh' | 'sebagian'
+    label_jenis: string
+    jam_masuk: string | null
+    keterangan: string | null
+  } | null
   boleh_masuk: boolean
   alasan_tidak_boleh_masuk: string | null
   boleh_pulang: boolean
@@ -106,6 +116,7 @@ export type KategoriMonitoring =
   | 'menunggu'
   | 'luar_radius'
   | 'tidak_presensi_pulang'
+  | 'wfa';
 
 export interface BarisMonitoring {
   pegawai_id: number
@@ -154,6 +165,12 @@ export interface BarisMonitoring {
   ada_foto: boolean
   ada_foto_masuk?: boolean
   ada_foto_pulang?: boolean
+  /** Jadwal WFA hari itu (null bila tidak dijadwalkan). */
+  wfa_jenis?: 'penuh' | 'sebagian' | null
+  wfa_label?: string | null
+  wfa_jam_masuk?: string | null
+  wfa_keterangan?: string | null
+  jam_masuk_efektif?: string | null
 }
 
 export interface MonitoringHarian {
@@ -189,7 +206,7 @@ export interface AntreanPresensi {
 /** Sisi presensi yang bisa diputuskan pimpinan. */
 export type SisiPresensi = 'masuk' | 'pulang'
 
-export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'menunggu' | 'cuti' | 'alpa'> = {
+export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'menunggu' | 'cuti' | 'alpa' | 'wfa'> = {
   hadir: 'hadir',
   terlambat: 'menunggu',
   belum_presensi: 'alpa',
@@ -197,6 +214,7 @@ export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'men
   menunggu: 'izin',
   luar_radius: 'izin',
   tidak_presensi_pulang: 'menunggu',
+  wfa: 'wfa',
 }
 
 export const OPSI_JENIS_IZIN = [

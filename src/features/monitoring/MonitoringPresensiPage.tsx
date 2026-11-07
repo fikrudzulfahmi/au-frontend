@@ -146,12 +146,22 @@ export function MonitoringPresensiPage() {
           },
           {
             kunci: 'status', judul: 'Status',
-            render: (b) => {
-              if (b.status === 'berhalangan' && b.pengajuan_label) {
-                return <StatusBadge varian="cuti">{b.pengajuan_label}</StatusBadge>
-              }
-              return <StatusBadge varian={VARIAN_KATEGORI[b.status]}>{b.label_status}</StatusBadge>
-            },
+            render: (b) => (
+              <span className="flex flex-wrap items-center gap-1.5">
+                {b.status === 'berhalangan' && b.pengajuan_label
+                  ? <StatusBadge varian="cuti">{b.pengajuan_label}</StatusBadge>
+                  : <StatusBadge varian={VARIAN_KATEGORI[b.status]}>{b.label_status}</StatusBadge>}
+                {b.wfa_jenis != null && (
+                  <span
+                    title={b.wfa_keterangan ?? undefined}
+                    className="rounded-full bg-info-soft px-2 py-0.5 text-[11px] font-bold text-strong">
+                    {b.wfa_jenis === 'sebagian'
+                      ? `WFA ${(b.wfa_jam_masuk ?? '').slice(0, 5)}`.trim()
+                      : 'WFA Penuh'}
+                  </span>
+                )}
+              </span>
+            ),
           },
           {
             kunci: 'jam', judul: 'Masuk / Pulang',
