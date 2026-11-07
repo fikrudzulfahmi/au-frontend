@@ -99,6 +99,16 @@ export function PengajuanPage() {
               },
               { kunci: 'alasan', judul: 'Alasan', render: (p) => <span className="text-sm text-muted">{p.alasan}</span>, sembunyiMobile: true },
               {
+                kunci: 'lampiran',
+                judul: 'Lampiran',
+                render: (p) => p.lampiran_url ? (
+                  <a href={p.lampiran_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-link hover:underline">
+                    Lihat
+                  </a>
+                ) : <span className="text-xs text-muted">—</span>,
+                sembunyiMobile: true,
+              },
+              {
                 kunci: 'status',
                 judul: 'Status',
                 render: (p) => (

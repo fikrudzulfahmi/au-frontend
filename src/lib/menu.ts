@@ -101,6 +101,12 @@ export const MENU_SIDEBAR: NavGroup[] = [
         akses: masterBaca,
       },
       {
+        to: '/monitoring/riwayat-pengajuan-izin',
+        label: 'Riwayat Pengajuan Izin',
+        icon: ScrollText,
+        akses: pimpinan,
+      },
+      {
         to: '/persetujuan/presensi-luar-radius',
         label: 'Persetujuan Luar Radius',
         icon: MapPin,

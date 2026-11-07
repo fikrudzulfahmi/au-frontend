@@ -178,6 +178,17 @@ export function PersetujuanPengajuanPage() {
                 <div className="col-span-2"><dt className="text-xs font-semibold text-muted">Tanggal</dt>
                   <dd className="font-bold text-strong">{formatTanggalDari(pilih.tanggal_mulai)} – {formatTanggalDari(pilih.tanggal_selesai)}</dd></div>
                 <div className="col-span-2"><dt className="text-xs font-semibold text-muted">Alasan</dt><dd className="text-strong">{pilih.alasan}</dd></div>
+                {pilih.lampiran_url && (
+                  <div className="col-span-2">
+                    <dt className="text-xs font-semibold text-muted">Lampiran</dt>
+                    <dd className="mt-1">
+                      <a href={pilih.lampiran_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-control bg-info-soft px-3 py-2 text-sm font-semibold text-link hover:bg-info">
+                        <FileText size={16} /> Lihat Lampiran
+                      </a>
+                    </dd>
+                  </div>
+                )}
               </dl>
             ) : (
               <dl className="grid grid-cols-2 gap-3 text-sm">

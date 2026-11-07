@@ -68,6 +68,7 @@ export interface PengajuanIzin {
   jumlah_hari: number | null
   alasan: string
   ada_lampiran: boolean
+  lampiran_url: string | null
   presensi_luar_radius: boolean
   status: 'menunggu' | 'disetujui' | 'ditolak' | 'dibatalkan'
   label_status: string

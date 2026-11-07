@@ -128,6 +128,11 @@ const PersetujuanPengajuanPage = lazy(() =>
     default: m.PersetujuanPengajuanPage,
   })),
 )
+const RiwayatPengajuanIzinPage = lazy(() =>
+  import('@/features/monitoring/RiwayatPengajuanIzinPage').then((m) => ({
+    default: m.RiwayatPengajuanIzinPage,
+  })),
+)
 
 const HubLaporanPage = lazy(() =>
   import('@/features/laporan/HubLaporanPage').then((m) => ({ default: m.HubLaporanPage })),
@@ -255,6 +260,7 @@ export function AppRouter() {
             <Route path="/monitoring/presensi-harian" element={<MonitoringPresensiPage />} />
             <Route path="/persetujuan/presensi-luar-radius" element={<PersetujuanLuarRadiusPage />} />
             <Route path="/persetujuan/pengajuan" element={<PersetujuanPengajuanPage />} />
+            <Route path="/monitoring/riwayat-pengajuan-izin" element={<RiwayatPengajuanIzinPage />} />
 
             {/* Laporan */}
             {/* FR-LAP-01..09 — satu halaman generik per laporan; jalur rutenya
