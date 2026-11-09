@@ -167,7 +167,6 @@ export const MENU_SIDEBAR: NavGroup[] = [
       { to: '/pengaturan/lokasi', label: 'Lokasi Presensi', icon: MapPin, akses: hanyaAdmin },
       { to: '/pengaturan/jam-kerja', label: 'Jam Kerja', icon: Clock, akses: hanyaAdmin },
       { to: '/pengaturan/wfa', label: 'Jadwal WFA', icon: Laptop, akses: hanyaAdmin },
-      { to: '/pengaturan/kecuali-wfa', label: 'Kecualian WFA', icon: CalendarDays, akses: hanyaAdmin },
       { to: '/pengaturan/hari-libur', label: 'Hari Libur', icon: CalendarRange, akses: hanyaAdmin },
       { to: '/pengaturan/sistem', label: 'Pengaturan Sistem', icon: Settings, akses: hanyaAdmin },
       { to: '/pengaturan/kop-surat', label: 'Kop Surat', icon: ScrollText, akses: hanyaAdmin },

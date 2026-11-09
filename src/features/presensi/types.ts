@@ -228,9 +228,11 @@ export const OPSI_JENIS_IZIN = [
 export interface KecualiWFA {
   id: number
   pegawai_id: number
+  pegawai_nama?: string | null
+  pegawai_nip?: string | null
   tanggal: string         // format: YYYY-MM-DD
   jenis: 'masuk_kantor' | 'dinas' | 'izin' | 'cuti'
   alasan: string
-  dibuat_oleh_admin: boolean
-  dibuat_pada: string
+  dibuat_oleh_admin?: boolean
+  dibuat_pada?: string
 }
