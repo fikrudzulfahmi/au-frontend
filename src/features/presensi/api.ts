@@ -1,19 +1,68 @@
 import { get, post, urlFotoBerpelindung } from '@/lib/api'
 import { master } from '@/lib/crud'
-import type { PengajuanIzin, PengajuanLuarRadius, Presensi, StatusHariIni } from './types'
+import type {
+  PengajuanIzin,
+  PengajuanLuarRadius,
+  Presensi,
+  StatusHariIni
+} from './types'
 
-/** FR-PRS — status hari ini (menentukan tombol yang tampil). */
+/** FR-PRS — status hari ini (menentukan tombol yang tampil).
+ *  Default: ambil dari server tanpa kecualian.
+ */
 export function ambilStatusHariIni() {
   return get<{ data: StatusHariIni }>('/presensi/hari-ini')
 }
 
-/**
- * Mengirim presensi sebagai multipart: foto adalah berkas, bukan JSON.
+/** FR-PRS — cek kecualian WFA untuk pegawai tertentu pada hari ini.
+ *  Return nilai null kalau tidak ada kecualian.
+ */
+export function cekKecualiHariIni(pegawaiId: number) {
+  return get<KecualiWFA | null>(
+    `/presensi/kecuali?pegawai_id=${pegawaiId}`
+  )
+}
+
+/** FR-PRS — ambil semua kecualian untuk tanggal tertentu (untuk dashboard/admin) */
+export function ambilKecualiTanggal(tanggal: string) {
+  return get<KecualiWFA[]>(`/presensi/kecuali?tanggal=${tanggal}`)
+}
+
+/** FR-PRS — buat kecualian WFA baru (hanya admin) */
+export function buatKecuali(params: {
+  pegawai_id: number
+  tanggal: string
+  jenis: 'masuk_kantor' | 'dinas' | 'izin' | 'cuti'
+  alasan: string
+}) {
+  return post<KecualiWFA>('/presensi/kecuali', params)
+}
+
+/** FR-PRS — update kecualian (hanya admin) */
+export function updateKecuali(id: number, params: {
+  alasan?: string
+  status?: 'aktif' | 'nonaktif'
+}) {
+  return post<KecualiWFA>(`/presensi/kecuali/${id}`, params)
+}
+
+/** FR-PRS — hapus/nonaktifkan kecualian (hanya admin) */
+export function hapusKecuali(id: number) {
+  return post<void>(`/presensi/kecuali/${id}/hapus`, {})
+}
+
+/** Mengirim presensi sebagai multipart: foto adalah berkas, bukan JSON.
  * Content-Type sengaja tidak diisi agar peramban menetapkan boundary sendiri.
  */
 export function kirimPresensi(
   sisi: 'masuk' | 'pulang',
-  data: { foto: File; lat: number; lng: number; akurasi_m: number; alasan?: string },
+  data: {
+    foto: File
+    lat: number
+    lng: number
+    akurasi_m: number
+    alasan?: string
+  }
 ) {
   const form = new FormData()
   form.append('foto', data.foto)
@@ -25,6 +74,7 @@ export function kirimPresensi(
   return post<{ message: string; data: Presensi }>(`/presensi/${sisi}`, form)
 }
 
+/** FR-PRS — ambil riwayat presensi */
 export function riwayatPresensi(params: Record<string, unknown> = {}) {
   return master.daftar<Presensi>('/presensi/riwayat', params)
 }
@@ -36,10 +86,12 @@ export function ambilFotoPresensi(presensiId: number, sisi: 'masuk' | 'pulang'):
   return urlFotoBerpelindung(`/presensi/${presensiId}/foto/${sisi}`)
 }
 
+/** FR-PRS — daftar pengajuan izin */
 export function daftarPengajuanIzin(params: Record<string, unknown> = {}) {
   return master.daftar<PengajuanIzin>('/pengajuan-izin', params)
 }
 
+/** FR-PRS — ajukan izin/sakit/dinas/cuti */
 export function ajukanIzin(data: {
   jenis: string
   tanggal_mulai: string
@@ -59,11 +111,17 @@ export function ajukanIzin(data: {
   return post<{ message: string; data: PengajuanIzin }>('/pengajuan-izin', form)
 }
 
+/** FR-PRS — daftar pengajuan luar radius */
 export function daftarPengajuanLuarRadius(params: Record<string, unknown> = {}) {
   return master.daftar<PengajuanLuarRadius>('/pengajuan-luar-radius', params)
 }
 
-export function ajukanLuarRadius(data: { tanggal: string; alasan: string; lampiran?: File | null }) {
+/** FR-PRS — ajukan luar radius */
+export function ajukanLuarRadius(data: {
+  tanggal: string
+  alasan: string
+  lampiran?: File | null
+}) {
   const form = new FormData()
   form.append('tanggal', data.tanggal)
   form.append('alasan', data.alasan)

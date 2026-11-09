@@ -223,3 +223,14 @@ export const OPSI_JENIS_IZIN = [
   { nilai: 'dinas', label: 'Dinas' },
   { nilai: 'cuti', label: 'Cuti' },
 ]
+
+/** Data kecualian WFA per tanggal — digunakan oleh admin untuk mengoverride jadwal WFA. */
+export interface KecualiWFA {
+  id: number
+  pegawai_id: number
+  tanggal: string         // format: YYYY-MM-DD
+  jenis: 'masuk_kantor' | 'dinas' | 'izin' | 'cuti'
+  alasan: string
+  dibuat_oleh_admin: boolean
+  dibuat_pada: string
+}
