@@ -25,8 +25,12 @@ export function cekKecualiHariIni(pegawaiId: number) {
 }
 
 /** FR-PRS — ambil semua kecualian untuk tanggal tertentu (untuk dashboard/admin) */
-export function ambilKecualiTanggal(tanggal: string) {
-  return get<KecualiWFA[]>(`/presensi/kecuali?tanggal=${tanggal}`)
+export function ambilKecualiTanggal(tanggal?: string, pegawaiId?: number) {
+  const params = new URLSearchParams()
+  if (tanggal) params.append('tanggal', tanggal)
+  if (pegawaiId) params.append('pegawai_id', String(pegawaiId))
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return get<{ data: KecualiWFA[] }>(`/presensi/kecuali${qs}`)
 }
 
 /** FR-PRS — buat kecualian WFA baru (hanya admin) */
