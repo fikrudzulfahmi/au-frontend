@@ -46,7 +46,7 @@ export function PengaturanKecualiWFAPage() {
       get<{ data: BarisKecuali[] }>(
         `/presensi/kecuali?tanggal=${tanggalSekarang}`
       ),
-    refetchWindowFocus: false,
+    refetchOnWindowFocus: false,
   })
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export function PengaturanKecualiWFAPage() {
       get<{ data: { id: number; nip: string; nama: string }[] }>(
         '/presensi/pegawai?aktif=true'
       ),
-    refetchWindowFocus: false,
+    refetchOnWindowFocus: false,
   })
 
   // Form simpan
@@ -81,8 +81,8 @@ export function PengaturanKecualiWFAPage() {
   })
 
   const simpanKecuali = useMutation({
-    mutationFn: () =>
-      post<KecualiWFA>('/presensi/kecuali', formBuka),
+    mutationFn: (payload: { pegawai_id: number; tanggal: string; jenis: string; alasan: string }) =>
+      post<KecualiWFA>('/presensi/kecuali', payload),
     onSuccess: () => {
       toast.sukses('Kecualian WFA disimpan.')
       void qc.invalidateQueries({ queryKey: ['kecuali-hari-ini'] })
@@ -93,7 +93,7 @@ export function PengaturanKecualiWFAPage() {
         alasan: '',
       })
     },
-    onError: (e) => toast.gagal('Gagal menyimpan kecualian.'),
+    onError: () => toast.gagal('Gagal menyimpan kecualian.'),
   })
 
   // Hapus kecualian
@@ -104,7 +104,7 @@ export function PengaturanKecualiWFAPage() {
       toast.sukses('Kecualian WFA dihapus.')
       void qc.invalidateQueries({ queryKey: ['kecuali-hari-ini'] })
     },
-    onError: (e) => toast.gagal('Gagal menghapus kecualian.'),
+    onError: () => toast.gagal('Gagal menghapus kecualian.'),
   })
 
   return (
@@ -120,10 +120,10 @@ export function PengaturanKecualiWFAPage() {
           <input
             type="date"
             value={tanggalSekarang}
-            onChange={(e) =>
-              setTanggalSekarang(e.target.value) &&
+            onChange={(e) => {
+              setTanggalSekarang(e.target.value)
               setPegawaiId(null)
-            }
+            }}
             className="w-40"
           />
           <Button varian="secondary" onClick={() =>
@@ -160,7 +160,7 @@ export function PengaturanKecualiWFAPage() {
                 </div>
                 <div className="flex gap-1">
                   <Button
-                    varian="link"
+                    varian="ghost"
                     ukuran="sm"
                     onClick={() => hapusKecuali.mutate(item.id)}
                   >
@@ -169,10 +169,9 @@ export function PengaturanKecualiWFAPage() {
                 </div>
               </div>
             </div>
-          ))
-        }
-        )}
-      )
+          ))}
+        </div>
+      )}
 
       {bolehKelola && (
         <div className="card p-4">
@@ -238,7 +237,7 @@ export function PengaturanKecualiWFAPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button tipe="submit" varian="primary" disabled={!pegawaiId}>
+              <Button type="submit" varian="primary" disabled={!pegawaiId}>
                 Simpan Kecualian
               </Button>
               <Button varian="secondary" onClick={() =>

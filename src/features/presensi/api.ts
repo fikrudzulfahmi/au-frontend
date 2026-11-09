@@ -4,7 +4,8 @@ import type {
   PengajuanIzin,
   PengajuanLuarRadius,
   Presensi,
-  StatusHariIni
+  StatusHariIni,
+  KecualiWFA
 } from './types'
 
 /** FR-PRS — status hari ini (menentukan tombol yang tampil).
