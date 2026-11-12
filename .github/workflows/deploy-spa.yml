@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
@@ -115,6 +115,7 @@ jobs:
           ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" \
               -o StrictHostKeyChecking=no -o UserKnownHostsFile="$SEMENTARA" \
               -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 \
+              -o LogLevel=ERROR \
               "$USER_SSH@$HOST" 'true' >/dev/null 2>&1 || true
 
           if [ ! -s "$SEMENTARA" ]; then
@@ -148,7 +149,7 @@ jobs:
             ringkas "Acuan kunci: berkas repo \`$ACUAN_REPO\`"
             if ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" \
                    -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
-                   -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 \
+                   -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -o LogLevel=ERROR \
                    "$USER_SSH@$HOST" 'true' >/dev/null 2>&1; then
               ringkas "Kunci host COCOK dengan berkas repo."
             else
@@ -176,8 +177,13 @@ jobs:
 
           cp "$SEMENTARA" "$HOME/.ssh/known_hosts" && chmod 600 "$HOME/.ssh/known_hosts"
 
-          OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
+          OPS="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -o LogLevel=ERROR"
+          SCP_OPS="-O -i $HOME/.ssh/deploy_key -P $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -o LogLevel=ERROR"
           REMOTE="$USER_SSH@$HOST"
+
+          # Rapatkan keluaran multi-baris jadi satu baris supaya anotasi GitHub
+          # menampilkan pesan asli secara utuh, bukan hanya baris pertamanya.
+          rapat() { printf '%s' "$1" | tr '\n' ' ' | tr -s ' ' | cut -c1-900; }
 
           echo "--- uji sambungan ---"
           if keluar=$(ssh $OPS "$REMOTE" 'echo TERSAMBUNG; whoami; pwd' 2>&1); then
@@ -211,15 +217,17 @@ jobs:
           DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
         run: |
           set -uo pipefail
-          # CATATAN: sengaja TIDAK memakai `scp`. Sejak OpenSSH 9 scp beralih ke protokol
-          # SFTP dan sejak runner `ubuntu-latest` naik ke Ubuntu 26 (OpenSSH 10) unggahan
-          # gagal pada hosting yang tidak menyediakan subsistem sftp — gejalanya hanya
-          # peringatan post-quantum di stderr lalu exit 1. Semua transfer di bawah memakai
-          # `ssh` biasa (tar/cat ke stdin), jadi tidak bergantung pada scp/sftp.
-          OPS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -p $PORT"
+          # Unggahan memakai `scp -O` (protokol SCP lama, bukan SFTP) karena hosting
+          # bersama tidak menyediakan subsistem sftp; `-O` memaksa jalur lama yang
+          # kompatibel. `LogLevel=ERROR` membuang peringatan post-quantum yang
+          # menyamarkan pesan kesalahan sebenarnya.
+          OPS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -o LogLevel=ERROR -p $PORT"
+          SCP_OPS="-O -i $HOME/.ssh/deploy_key -P $PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -o LogLevel=ERROR"
           REMOTE="$USER_SSH@$HOST"
 
-          gagal() { echo "::error::$1"; exit 1; }
+          # Anotasi GitHub hanya menampilkan baris pertama; rapatkan jadi satu baris
+          # supaya pesan asli scp/ssh terlihat utuh di panel Errors.
+          gagal() { printf '::error::%s\n' "$(printf '%s' "$1" | tr '\n' ' ' | tr -s ' ' | cut -c1-900)"; exit 1; }
 
           tar czf /tmp/rilis.tgz -C dist . || gagal "gagal membuat paket rilis"
           echo "paket rilis: $(du -h /tmp/rilis.tgz | cut -f1)"
@@ -244,15 +252,19 @@ jobs:
           echo "induk rilis  (absolut): $INDUK"
           echo "docroot      (absolut): $LIVE_ABS"
 
-          # Upload lewat transfer base64 di kanal SSH normal. Jangan pakai stdin biner:
-          # pada hosting ini koneksi SSH interaktif stabil, tetapi unggahan biner streaming
-          # ditutup sesudah pertukaran kunci. Base64 menjadi teks portabel; `base64 -d` di
-          # server membuat kembali tar asli. `LC_ALL=C` menjaga ukuran/chunk konsisten.
-          if ! keluar=$(base64 -w 0 /tmp/rilis.tgz | fold -w 65536 | ssh $OPS "$REMOTE" "base64 -d > '$DASAR/rilis.tgz'" 2>&1); then
-            gagal "unggah paket gagal: $keluar"
+          # Unggah: `scp -O` = protokol SCP lama (bukan SFTP). Bila hosting masih
+          # menolaknya, cadangan memakai kanal SSH biasa dengan muatan base64.
+          if ! keluar=$(scp $SCP_OPS /tmp/rilis.tgz "$REMOTE:'$DASAR/rilis.tgz'" 2>&1); then
+            echo "::warning::scp -O gagal, mencoba jalur SSH/base64: $(printf '%s' "$keluar" | tr '\n' ' ' | cut -c1-400)"
+            if ! keluar=$(base64 -w 0 /tmp/rilis.tgz | ssh $OPS "$REMOTE" "base64 -d > '$DASAR/rilis.tgz'" 2>&1); then
+              gagal "unggah paket gagal: $keluar"
+            fi
           fi
-          if ! keluar=$(base64 -w 0 deploy/deploy-swap.sh | fold -w 65536 | ssh $OPS "$REMOTE" "base64 -d > '$DASAR/deploy-swap.sh'" 2>&1); then
-            gagal "unggah skrip swap gagal: $keluar"
+          if ! keluar=$(scp $SCP_OPS deploy/deploy-swap.sh "$REMOTE:'$DASAR/deploy-swap.sh'" 2>&1); then
+            echo "::warning::scp -O skrip gagal, mencoba jalur SSH/base64: $(printf '%s' "$keluar" | tr '\n' ' ' | cut -c1-400)"
+            if ! keluar=$(base64 -w 0 deploy/deploy-swap.sh | ssh $OPS "$REMOTE" "base64 -d > '$DASAR/deploy-swap.sh'" 2>&1); then
+              gagal "unggah skrip swap gagal: $keluar"
+            fi
           fi
 
           # Pastikan tidak ada unggahan terpotong (ssh bisa keluar 0 walau pipa putus).
