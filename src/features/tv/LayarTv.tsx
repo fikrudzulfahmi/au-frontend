@@ -388,27 +388,29 @@ function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
         </StatusBadge>
       </header>
 
-      <ul className="min-h-0 flex-1 divide-y divide-line">
-        {sesi.map((s) => (
-          <li
-            key={`${s.jam_ke_mulai}-${s.mapel}`}
-            className="px-4 py-2"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[18px] font-bold">{s.label_jam}</p>
-              <span
-                className={cn(
-                  'shrink-0 text-[14px] font-bold',
-                  s.status === 'sudah' ? 'text-success' : s.status === 'berhalangan' ? 'text-warning' : 'text-danger',
-                )}
-              >
-                {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
-              </span>
-            </div>
-            <p className="text-[16px] font-semibold leading-snug">{s.mapel} : <span className="font-medium text-muted">{s.guru}</span></p>
-          </li>
-        ))}
-      </ul>
+      <DaftarGulir jumlah={sesi.length}>
+        <ul className="divide-y divide-line">
+          {sesi.map((s) => (
+            <li
+              key={`${s.jam_ke_mulai}-${s.mapel}`}
+              className="px-4 py-1.5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[16px] font-bold">{s.label_jam}</p>
+                <span
+                  className={cn(
+                    'shrink-0 text-[13px] font-bold',
+                    s.status === 'sudah' ? 'text-success' : s.status === 'berhalangan' ? 'text-warning' : 'text-danger',
+                  )}
+                >
+                  {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
+                </span>
+              </div>
+              <p className="text-[14px] font-semibold leading-snug">{s.mapel} : <span className="font-normal text-muted">{s.guru}</span></p>
+            </li>
+          ))}
+        </ul>
+      </DaftarGulir>
     </article>
   )
 }
