@@ -152,13 +152,7 @@ export function PengaturanWfaPage() {
 
   const baris = useMemo(() => daftar.data?.data ?? [], [daftar.data])
   const hari = sepekan.data?.data ?? []
-  const listKecuali: KecualiWFA[] = useMemo(() => {
-    const raw = daftarKecuali.data
-    if (!raw) return []
-    if (Array.isArray(raw)) return raw
-    if (Array.isArray((raw as any).data)) return (raw as any).data
-    return []
-  }, [daftarKecuali.data])
+  const listKecuali: KecualiWFA[] = useMemo(() => daftarKecuali.data?.data ?? [], [daftarKecuali.data])
 
   return (
     <div className="space-y-4">
@@ -374,7 +368,7 @@ export function PengaturanWfaPage() {
                       <span className="mb-1 block text-xs font-semibold text-strong">Jenis Kecualian</span>
                       <select
                         value={kecualiJenis}
-                        onChange={(e) => setKecualiJenis(e.target.value as any)}
+                        onChange={(e) => setKecualiJenis(e.target.value as 'masuk_kantor' | 'dinas' | 'izin' | 'cuti')}
                         className="min-h-[40px] w-full rounded-control border border-line bg-surface px-3 text-sm text-strong">
                         <option value="masuk_kantor">Masuk Kantor (Wajib Datang)</option>
                         <option value="dinas">Dinas Luar</option>

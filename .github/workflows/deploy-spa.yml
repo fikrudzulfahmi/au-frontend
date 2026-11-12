@@ -211,13 +211,12 @@ jobs:
           DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
         run: |
           set -uo pipefail
-          # PENTING: port dieja berbeda untuk ssh dan scp.
-          #   ssh  -> `-p <port>`
-          #   scp  -> `-P <port>` (kapital; `-p` pada scp berarti "pertahankan waktu berkas",
-          #           sehingga port akan dibaca sebagai nama berkas sumber dan gagal).
-          OPS_UMUM="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25"
-          OPS="$OPS_UMUM -p $PORT"
-          SCP_OPS="$OPS_UMUM -P $PORT"
+          # CATATAN: sengaja TIDAK memakai `scp`. Sejak OpenSSH 9 scp beralih ke protokol
+          # SFTP dan sejak runner `ubuntu-latest` naik ke Ubuntu 26 (OpenSSH 10) unggahan
+          # gagal pada hosting yang tidak menyediakan subsistem sftp — gejalanya hanya
+          # peringatan post-quantum di stderr lalu exit 1. Semua transfer di bawah memakai
+          # `ssh` biasa (tar/cat ke stdin), jadi tidak bergantung pada scp/sftp.
+          OPS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=25 -p $PORT"
           REMOTE="$USER_SSH@$HOST"
 
           gagal() { echo "::error::$1"; exit 1; }
@@ -245,11 +244,22 @@ jobs:
           echo "induk rilis  (absolut): $INDUK"
           echo "docroot      (absolut): $LIVE_ABS"
 
-          # Unggah paket + skrip swap ke jalur absolut.
-          if ! keluar=$(scp $SCP_OPS /tmp/rilis.tgz deploy/deploy-swap.sh "$REMOTE:$DASAR/" 2>&1); then
-            gagal "scp gagal: $keluar"
+          # Unggah paket + skrip swap ke jalur absolut. Memakai `ssh ... cat > berkas`
+          # (bukan scp/sftp) supaya tetap jalan walau subsistem sftp tidak tersedia.
+          if ! keluar=$(ssh $OPS "$REMOTE" "cat > '$DASAR/rilis.tgz'" < /tmp/rilis.tgz 2>&1); then
+            gagal "unggah paket gagal: $keluar"
           fi
-          echo "berkas terunggah"
+          if ! keluar=$(ssh $OPS "$REMOTE" "cat > '$DASAR/deploy-swap.sh'" < deploy/deploy-swap.sh 2>&1); then
+            gagal "unggah skrip swap gagal: $keluar"
+          fi
+
+          # Pastikan tidak ada unggahan terpotong (ssh bisa keluar 0 walau pipa putus).
+          ukuran_lokal=$(stat -c %s /tmp/rilis.tgz)
+          ukuran_sana=$(ssh $OPS "$REMOTE" "stat -c %s '$DASAR/rilis.tgz'" 2>&1 | tail -1)
+          if [ "$ukuran_lokal" != "$ukuran_sana" ]; then
+            gagal "paket tidak utuh: lokal $ukuran_lokal bita, server $ukuran_sana bita"
+          fi
+          echo "berkas terunggah ($ukuran_lokal bita)"
 
           if ! keluar=$(ssh $OPS "$REMOTE" "cd '$DASAR' && tar xzf rilis.tgz && rm -f rilis.tgz && ls -1 | head -8" 2>&1); then
             gagal "ekstrak gagal: $keluar"
