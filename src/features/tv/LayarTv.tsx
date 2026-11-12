@@ -392,19 +392,18 @@ function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
         {sesi.map((s) => (
           <li
             key={`${s.jam_ke_mulai}-${s.mapel}`}
-            className={cn(
-              'px-4 py-2',
-              s.status === 'sudah' && 'bg-success-soft',
-            )}
+            className="px-4 py-2"
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-[18px] font-bold">{s.label_jam}</p>
-              <StatusBadge
-                varian={s.status === 'sudah' ? 'sukses' : s.status === 'berhalangan' ? 'izin' : 'bahaya'}
-                className="shrink-0 text-[14px]"
+              <span
+                className={cn(
+                  'shrink-0 text-[14px] font-bold',
+                  s.status === 'sudah' ? 'text-success' : s.status === 'berhalangan' ? 'text-warning' : 'text-danger',
+                )}
               >
                 {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
-              </StatusBadge>
+              </span>
             </div>
             <p className="text-[16px] font-semibold leading-snug">{s.mapel}</p>
             <p className="text-[14px] font-medium text-muted">{s.guru}</p>
