@@ -39,10 +39,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -244,12 +244,14 @@ jobs:
           echo "induk rilis  (absolut): $INDUK"
           echo "docroot      (absolut): $LIVE_ABS"
 
-          # Unggah paket + skrip swap ke jalur absolut. Memakai `ssh ... cat > berkas`
-          # (bukan scp/sftp) supaya tetap jalan walau subsistem sftp tidak tersedia.
-          if ! keluar=$(ssh $OPS "$REMOTE" "cat > '$DASAR/rilis.tgz'" < /tmp/rilis.tgz 2>&1); then
+          # Upload lewat transfer base64 di kanal SSH normal. Jangan pakai stdin biner:
+          # pada hosting ini koneksi SSH interaktif stabil, tetapi unggahan biner streaming
+          # ditutup sesudah pertukaran kunci. Base64 menjadi teks portabel; `base64 -d` di
+          # server membuat kembali tar asli. `LC_ALL=C` menjaga ukuran/chunk konsisten.
+          if ! keluar=$(base64 -w 0 /tmp/rilis.tgz | fold -w 65536 | ssh $OPS "$REMOTE" "base64 -d > '$DASAR/rilis.tgz'" 2>&1); then
             gagal "unggah paket gagal: $keluar"
           fi
-          if ! keluar=$(ssh $OPS "$REMOTE" "cat > '$DASAR/deploy-swap.sh'" < deploy/deploy-swap.sh 2>&1); then
+          if ! keluar=$(base64 -w 0 deploy/deploy-swap.sh | fold -w 65536 | ssh $OPS "$REMOTE" "base64 -d > '$DASAR/deploy-swap.sh'" 2>&1); then
             gagal "unggah skrip swap gagal: $keluar"
           fi
 
