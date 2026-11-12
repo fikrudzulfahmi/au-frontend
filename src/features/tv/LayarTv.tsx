@@ -388,27 +388,26 @@ function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
         </StatusBadge>
       </header>
 
-      <ul className="min-h-0 flex-1 divide-y divide-line px-4">
+      <ul className="min-h-0 flex-1 divide-y divide-line">
         {sesi.map((s) => (
           <li
             key={`${s.jam_ke_mulai}-${s.mapel}`}
             className={cn(
-              'flex items-center justify-between gap-3 py-2 -mx-4 px-4',
+              'px-4 py-2',
               s.status === 'sudah' && 'bg-success-soft',
             )}
           >
-            <div className="min-w-0">
-              <p className="truncate text-[18px] font-bold">
-                {s.label_jam} · {potongTeks(s.mapel, 24)}
-              </p>
-              <p className="truncate text-[15px] font-medium text-muted">{s.guru}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[18px] font-bold">{s.label_jam}</p>
+              <StatusBadge
+                varian={s.status === 'sudah' ? 'sukses' : s.status === 'berhalangan' ? 'izin' : 'bahaya'}
+                className="shrink-0 text-[14px]"
+              >
+                {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
+              </StatusBadge>
             </div>
-            <StatusBadge
-              varian={s.status === 'sudah' ? 'sukses' : s.status === 'berhalangan' ? 'izin' : 'bahaya'}
-              className="shrink-0 text-[14px]"
-            >
-              {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
-            </StatusBadge>
+            <p className="text-[16px] font-semibold leading-snug">{s.mapel}</p>
+            <p className="text-[14px] font-medium text-muted">{s.guru}</p>
           </li>
         ))}
       </ul>
