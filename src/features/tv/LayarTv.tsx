@@ -405,8 +405,7 @@ function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
                 {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}
               </span>
             </div>
-            <p className="text-[16px] font-semibold leading-snug">{s.mapel}</p>
-            <p className="text-[14px] font-medium text-muted">{s.guru}</p>
+            <p className="text-[16px] font-semibold leading-snug">{s.mapel} : <span className="font-medium text-muted">{s.guru}</span></p>
           </li>
         ))}
       </ul>
