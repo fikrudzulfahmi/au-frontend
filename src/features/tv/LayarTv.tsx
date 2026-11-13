@@ -400,7 +400,7 @@ function KartuKelasTv({ kartu }: { kartu: KartuTv }) {
                 <span
                   className={cn(
                     'shrink-0 text-[13px] font-bold',
-                    s.status === 'sudah' ? 'text-success' : s.status === 'berhalangan' ? 'text-warning' : 'text-danger',
+                    s.status === 'sudah' ? 'text-success' : s.status === 'berhalangan' ? 'text-warn-text' : 'text-danger',
                   )}
                 >
                   {s.status === 'sudah' ? 'Sudah' : s.status === 'berhalangan' ? 'Berhalangan' : 'Belum'}

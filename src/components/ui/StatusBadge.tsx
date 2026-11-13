@@ -15,18 +15,21 @@ export type StatusVarian =
   | 'sukses'
   | 'bahaya'
 
-const gaya: Record<StatusVarian, string> = {
+/** Peta varian -> kelas warna. Diekspor supaya uji dapat memastikan setiap
+ *  kelas di sini benar-benar punya token di `styles/tokens.css`; kelas dengan
+ *  token yang tidak ada menghasilkan badge tanpa warna sama sekali. */
+export const GAYA_VARIAN: Record<StatusVarian, string> = {
   hadir: 'bg-success-soft text-success',
   terlambat: 'bg-warn-bg text-warn-text',
   izin: 'bg-info-soft text-info',
   sakit: 'bg-purple-soft text-purple',
   dinas: 'bg-teal-soft text-teal',
   cuti: 'bg-gray-soft text-gray',
-  alpa: 'bg-red-soft text-red',
-  menunggu: 'bg-yellow-soft text-yellow',
-  netral: 'bg-muted-soft text-muted',
-  sukses: 'bg-green-soft text-green',
-  bahaya: 'bg-orange-soft text-orange',
+  alpa: 'bg-danger-soft text-danger',
+  menunggu: 'bg-pending-soft text-pending',
+  netral: 'bg-gray-soft text-gray',
+  sukses: 'bg-success-soft text-success',
+  bahaya: 'bg-danger-soft text-danger',
 }
 
 interface StatusBadgeProps {
@@ -40,7 +43,7 @@ export function StatusBadge({ varian = 'netral', children, className }: StatusBa
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold',
-        gaya[varian],
+        GAYA_VARIAN[varian],
         className,
       )}
     >

@@ -302,7 +302,7 @@ export function PengaturanLokasiPage() {
                   onClick={() => setModeZona('radius')}
                   className={`rounded-control px-2.5 py-1 text-xs font-semibold transition-colors ${
                     modeZona === 'radius'
-                      ? 'bg-card text-strong shadow-xs'
+                      ? 'bg-surface text-strong shadow-xs'
                       : 'text-muted hover:text-strong'
                   }`}
                 >
@@ -313,7 +313,7 @@ export function PengaturanLokasiPage() {
                   onClick={() => setModeZona('poligon')}
                   className={`rounded-control px-2.5 py-1 text-xs font-semibold transition-colors ${
                     modeZona === 'poligon'
-                      ? 'bg-card text-strong shadow-xs'
+                      ? 'bg-surface text-strong shadow-xs'
                       : 'text-muted hover:text-strong'
                   }`}
                 >

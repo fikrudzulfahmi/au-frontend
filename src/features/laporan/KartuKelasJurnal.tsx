@@ -87,9 +87,9 @@ function KartuKelas({
                   className={cn(
                     'shrink-0 text-xs font-bold',
                     s.status === 'sudah'
-                      ? 'text-green'
+                      ? 'text-success'
                       : s.status === 'belum'
-                        ? 'text-orange'
+                        ? 'text-danger'
                         : 'text-info',
                   )}
                 >
