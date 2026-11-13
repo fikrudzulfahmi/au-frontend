@@ -33,7 +33,7 @@ export function MonitoringPresensiPage() {
   const [pilih, setPilih] = useState<BarisMonitoring | null>(null)
   const [koreksiUntuk, setKoreksiUntuk] = useState<BarisMonitoring | null>(null)
   const [catatan, setCatatan] = useState('')
-  const [koreksi, setKoreksi] = useState({ pulang_waktu: '', pulang_status: 'normal', alasan: '' })
+  const [koreksi, setKoreksi] = useState(() => koreksiKosong())
 
   const monitoring = useQuery({
     queryKey: ['monitoring', 'harian', { tanggal, status, jenis }],
@@ -57,19 +57,29 @@ export function MonitoringPresensiPage() {
   })
 
   const simpanKoreksi = useMutation({
-    mutationFn: () => aksi(
-      `/monitoring/presensi-harian/${koreksiUntuk?.presensi_id}/koreksi`,
-      {
-        pulang_waktu: koreksi.pulang_waktu || null,
-        pulang_status: koreksi.pulang_status || null,
-        alasan: koreksi.alasan,
-      },
-      'patch',
-    ),
+    mutationFn: () => {
+      // Hanya sisi yang benar-benar diubah yang dikirim. `null` berarti "tidak
+      // dikoreksi" (bukan "hapus"), sehingga sisi yang tidak disentuh — beserta
+      // validasi menunggu/disetujui miliknya — tetap utuh.
+      const asal = koreksiUntuk
+      const masukBerubah = koreksi.masuk_waktu !== (asal?.masuk_jam ?? '')
+      const pulangBerubah = koreksi.pulang_waktu !== (asal?.pulang_jam ?? '')
+
+      return aksi(
+        `/monitoring/presensi-harian/${asal?.presensi_id}/koreksi`,
+        {
+          // Status hadir/terlambat & pulang cepat dihitung server dari jam kerja.
+          masuk_waktu: masukBerubah ? koreksi.masuk_waktu || null : null,
+          pulang_waktu: pulangBerubah ? koreksi.pulang_waktu || null : null,
+          alasan: koreksi.alasan,
+        },
+        'patch',
+      )
+    },
     onSuccess: () => {
       toast.sukses('Koreksi tersimpan dan tercatat di audit log.')
       setKoreksiUntuk(null)
-      setKoreksi({ pulang_waktu: '', pulang_status: 'normal', alasan: '' })
+      setKoreksi(koreksiKosong())
       segarkan()
     },
     onError: (e) => toast.gagal(pesanError(e)),
@@ -77,6 +87,13 @@ export function MonitoringPresensiPage() {
 
   const data = monitoring.data?.data
   const ringkasan = data?.ringkasan
+
+  // Simpan nonaktif selama tidak ada jam yang benar-benar berubah: kiriman tanpa
+  // perubahan hanya akan menandai baris "dikoreksi admin" tanpa memperbaiki apa pun.
+  const adaPerubahan = koreksiUntuk !== null
+    && koreksi.alasan.trim().length >= 5
+    && (koreksi.masuk_waktu !== (koreksiUntuk.masuk_jam ?? '')
+      || koreksi.pulang_waktu !== (koreksiUntuk.pulang_jam ?? ''))
 
   return (
     <div className="space-y-4">
@@ -184,7 +201,7 @@ export function MonitoringPresensiPage() {
                 </button>
                 {bolehPutuskan && b.presensi_id !== null && (
                   <button type="button" title="Koreksi manual"
-                    onClick={() => { setKoreksiUntuk(b); setKoreksi({ pulang_waktu: '', pulang_status: 'normal', alasan: '' }) }}
+                    onClick={() => { setKoreksiUntuk(b); setKoreksi(koreksiKosong(b)) }}
                     className="flex items-center text-muted hover:text-strong">
                     <Wrench size={14} />
                   </button>
@@ -213,23 +230,44 @@ export function MonitoringPresensiPage() {
         footer={
           <>
             <Button varian="ghost" onClick={() => setKoreksiUntuk(null)}>Batal</Button>
-            <Button memuat={simpanKoreksi.isPending} disabled={koreksi.alasan.trim().length < 5}
+            <Button memuat={simpanKoreksi.isPending} disabled={!adaPerubahan}
               onClick={() => simpanKoreksi.mutate()}>Simpan Koreksi</Button>
           </>
         }>
         <div className="space-y-4">
           <p className="rounded-control bg-app-soft px-3 py-2 text-xs text-muted">
             Koreksi wajib beralasan dan akan ditandai sebagai data yang dikoreksi admin, tercatat di audit log.
+            Isi hanya jam yang perlu diperbaiki — jam yang dikosongkan tidak diubah.
           </p>
-          <BidangTeks label="Jam pulang" id="koreksi-pulang" tipe="time" nilai={koreksi.pulang_waktu}
-            onUbah={(v) => setKoreksi((s) => ({ ...s, pulang_waktu: v }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <BidangTeks label="Jam masuk" id="koreksi-masuk" tipe="time" nilai={koreksi.masuk_waktu}
+              onUbah={(v) => setKoreksi((s) => ({ ...s, masuk_waktu: v }))} />
+            <BidangTeks label="Jam pulang" id="koreksi-pulang" tipe="time" nilai={koreksi.pulang_waktu}
+              onUbah={(v) => setKoreksi((s) => ({ ...s, pulang_waktu: v }))} />
+          </div>
+          <p className="text-xs text-muted">
+            Status hadir/terlambat dan pulang cepat dihitung ulang otomatis dari jam kerja (termasuk WFA).
+          </p>
           <BidangTeks label="Alasan koreksi" id="koreksi-alasan" wajib nilai={koreksi.alasan}
-            petunjuk="Contoh: lupa presensi pulang, sudah dikonfirmasi ke wali kelas."
+            petunjuk="Contoh: lupa presensi pulang, mesin presensi mati pagi ini."
             onUbah={(v) => setKoreksi((s) => ({ ...s, alasan: v }))} />
         </div>
       </Modal>
     </div>
   )
+}
+
+/**
+ * State awal form koreksi. Jam diisi dari baris yang dipilih supaya admin melihat
+ * nilai sekarang dan cukup menimpa sisi yang salah; sisi yang tidak disentuh
+ * tidak ikut dikirim ke API.
+ */
+function koreksiKosong(baris?: BarisMonitoring | null) {
+  return {
+    masuk_waktu: baris?.masuk_jam ?? '',
+    pulang_waktu: baris?.pulang_jam ?? '',
+    alasan: '',
+  }
 }
 
 /** DETAIL: foto + lokasi presensi DATANG dan PULANG, plus tombol keputusan luar radius. */
