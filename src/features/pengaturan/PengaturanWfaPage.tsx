@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, Laptop, Plus, Save, Search, Trash2 } from 'lucide-react'
+import { Save, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useToast } from '@/components/ui/Toast'
-import { ambilKecualiTanggal } from '@/features/presensi/api'
-import type { KecualiWFA } from '@/features/presensi/types'
-import { get, pesanError, post } from '@/lib/api'
-import { cn } from '@/lib/cn'
+import { get, pesanError } from '@/lib/api'
 import { aksi } from '@/lib/crud'
 import { ROLE, punyaPeran } from '@/lib/roles'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -55,20 +52,10 @@ export function PengaturanWfaPage() {
   const toast = useToast()
   const qc = useQueryClient()
 
-  const [tab, setTab] = useState<'jadwal' | 'kecualian'>('jadwal')
-
-  // State Pemilih Pegawai (Dipakai bersama di kedua tab)
   const [cari, setCari] = useState('')
   const [jenis, setJenis] = useState('')
   const [pilih, setPilih] = useState<PegawaiWfa | null>(null)
-
-  // State Jadwal Rutin Sepekan
   const [perHari, setPerHari] = useState<PerHari>({})
-
-  // State Form Tambah Kecualian
-  const [tanggalPilih, setTanggalPilih] = useState<string>(() => new Date().toISOString().slice(0, 10))
-  const [kecualiJenis, setKecualiJenis] = useState<'masuk_kantor' | 'dinas' | 'izin' | 'cuti'>('masuk_kantor')
-  const [kecualiAlasan, setKecualiAlasan] = useState('')
 
   const daftar = useQuery({
     queryKey: ['jadwal-wfa', 'daftar', { cari, jenis }],
@@ -79,12 +66,6 @@ export function PengaturanWfaPage() {
     queryKey: ['jadwal-wfa', 'pegawai', pilih?.pegawai_id],
     queryFn: () => get<{ data: HariWfa[] }>(`/jadwal-wfa/pegawai/${pilih!.pegawai_id}`),
     enabled: pilih !== null,
-  })
-
-  const daftarKecuali = useQuery({
-    queryKey: ['kecuali-wfa-pegawai', pilih?.pegawai_id],
-    queryFn: () => ambilKecualiTanggal(undefined, pilih!.pegawai_id),
-    enabled: tab === 'kecualian' && pilih !== null,
   })
 
   useEffect(() => {
@@ -130,38 +111,16 @@ export function PengaturanWfaPage() {
     onError: (e) => toast.gagal(pesanError(e)),
   })
 
-  const simpanKecuali = useMutation({
-    mutationFn: (payload: { pegawai_id: number; tanggal: string; jenis: string; alasan: string }) =>
-      post<KecualiWFA>('/presensi/kecuali', payload),
-    onSuccess: () => {
-      toast.sukses('Kecualian WFA disimpan.')
-      setKecualiAlasan('')
-      void qc.invalidateQueries({ queryKey: ['kecuali-wfa-pegawai', pilih?.pegawai_id] })
-    },
-    onError: (e) => toast.gagal(pesanError(e)),
-  })
-
-  const hapusKecuali = useMutation({
-    mutationFn: (id: number) => post<void>(`/presensi/kecuali/${id}/hapus`, {}),
-    onSuccess: () => {
-      toast.sukses('Kecualian WFA dihapus.')
-      void qc.invalidateQueries({ queryKey: ['kecuali-wfa-pegawai', pilih?.pegawai_id] })
-    },
-    onError: (e) => toast.gagal(pesanError(e)),
-  })
-
   const baris = useMemo(() => daftar.data?.data ?? [], [daftar.data])
   const hari = sepekan.data?.data ?? []
-  const listKecuali: KecualiWFA[] = useMemo(() => daftarKecuali.data?.data ?? [], [daftarKecuali.data])
 
   return (
     <div className="space-y-4">
       <PageHeader
         judul="Jadwal WFA"
-        keterangan="Work From Anywhere per pegawai per hari. WFA Penuh membebaskan presensi; WFA Sebagian menggeser batas jam masuk."
+        keterangan="Work From Anywhere per pegawai per hari. Semua pegawai WFA tetap wajib presensi; WFA Sebagian menggeser batas jam masuk."
         aksi={
           bolehKelola &&
-          tab === 'jadwal' &&
           pilih !== null && (
             <Button memuat={simpan.isPending} onClick={() => simpan.mutate()}>
               <Save size={17} /> Simpan
@@ -170,35 +129,8 @@ export function PengaturanWfaPage() {
         }
       />
 
-      <div className="flex gap-1 rounded-control bg-surface p-1 shadow-card" role="tablist">
-        <button
-          key="jadwal"
-          type="button"
-          role="tab"
-          aria-selected={tab === 'jadwal'}
-          onClick={() => setTab('jadwal')}
-          className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-[13px] px-4 py-2.5 text-sm font-bold transition-colors',
-            tab === 'jadwal' ? 'bg-primary text-white' : 'text-muted hover:bg-app-soft',
-          )}>
-          <Laptop size={16} /> Jadwal Sepekan
-        </button>
-        <button
-          key="kecualian"
-          type="button"
-          role="tab"
-          aria-selected={tab === 'kecualian'}
-          onClick={() => setTab('kecualian')}
-          className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-[13px] px-4 py-2.5 text-sm font-bold transition-colors',
-            tab === 'kecualian' ? 'bg-primary text-white' : 'text-muted hover:bg-app-soft',
-          )}>
-          <CalendarDays size={16} /> Kecualian per Tanggal
-        </button>
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        {/* ---------- Kolom Kiri: Pemilih Pegawai (Persis sama di kedua tab) ---------- */}
+        {/* ---------- Pemilih pegawai ---------- */}
         <div className="space-y-2">
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-strong">Cari pegawai</span>
@@ -248,216 +180,87 @@ export function PengaturanWfaPage() {
           </div>
         </div>
 
-        {/* ---------- Kolom Kanan ---------- */}
-        {tab === 'jadwal' ? (
-          /* Tab 1: Jadwal Sepekan */
-          pilih === null ? (
-            <div className="card flex items-center justify-center p-10 text-sm text-muted">
-              Pilih pegawai di sebelah kiri untuk mengatur jadwal WFA.
-            </div>
-          ) : (
-            <div className="card overflow-x-auto p-1">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="bg-app-soft text-left">
-                    <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Hari</th>
-                    <th className="px-3 py-3 text-xs font-bold uppercase text-muted">WFA</th>
-                    <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Jenis</th>
-                    <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Jam Masuk</th>
-                    <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hari.map((h) => {
-                    const nilai = perHari[h.hari]
-                    const aktif = nilai?.ada_wfa ?? false
-                    const sebagian = nilai?.jenis === 'sebagian'
-                    const ubah = (patch: Partial<IsianHari>) =>
-                      setPerHari((s) => ({ ...s, [h.hari]: { ...s[h.hari], ...patch } }))
-
-                    return (
-                      <tr key={h.hari} className="border-t border-line">
-                        <td className="px-3 py-2 font-bold text-strong">{h.nama_hari}</td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={aktif}
-                            disabled={!bolehKelola}
-                            aria-label={`WFA ${h.nama_hari}`}
-                            onChange={(e) => ubah({ ada_wfa: e.target.checked })}
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <select
-                            value={nilai?.jenis ?? 'sebagian'}
-                            disabled={!bolehKelola || !aktif}
-                            aria-label={`Jenis WFA ${h.nama_hari}`}
-                            onChange={(e) => ubah({ jenis: e.target.value as 'penuh' | 'sebagian' })}
-                            className="min-h-[40px] rounded-control border border-line bg-surface px-2 text-sm text-strong disabled:bg-app-soft disabled:text-muted">
-                            <option value="sebagian">WFA Sebagian</option>
-                            <option value="penuh">WFA Penuh</option>
-                          </select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="time"
-                            value={nilai?.jam_masuk ?? ''}
-                            disabled={!bolehKelola || !aktif || !sebagian}
-                            aria-label={`Jam masuk WFA ${h.nama_hari}`}
-                            onChange={(e) => ubah({ jam_masuk: e.target.value })}
-                            className="tnum min-h-[40px] rounded-control border border-line bg-surface px-2 text-sm text-strong disabled:bg-app-soft disabled:text-muted"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={nilai?.keterangan ?? ''}
-                            disabled={!bolehKelola || !aktif}
-                            maxLength={255}
-                            placeholder="Opsional"
-                            aria-label={`Keterangan WFA ${h.nama_hari}`}
-                            onChange={(e) => ubah({ keterangan: e.target.value })}
-                            className="min-h-[40px] w-full min-w-[140px] rounded-control border border-line bg-surface px-2 text-sm text-strong disabled:bg-app-soft disabled:text-muted"
-                          />
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )
+        {/* ---------- Jadwal sepekan ---------- */}
+        {pilih === null ? (
+          <div className="card flex items-center justify-center p-10 text-sm text-muted">
+            Pilih pegawai di sebelah kiri untuk mengatur jadwal WFA.
+          </div>
         ) : (
-          /* Tab 2: Kecualian per Tanggal */
-          pilih === null ? (
-            <div className="card flex items-center justify-center p-10 text-sm text-muted">
-              Pilih pegawai di sebelah kiri untuk mengatur kecualian WFA.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Form Tambah Kecualian untuk pegawai yang terpilih */}
-              {bolehKelola && (
-                <div className="card space-y-3 p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-strong">
-                      Tambah Kecualian untuk: <span className="text-primary">{pilih.nama}</span> ({pilih.nip})
-                    </h3>
-                  </div>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      simpanKecuali.mutate({
-                        pegawai_id: pilih.pegawai_id,
-                        tanggal: tanggalPilih,
-                        jenis: kecualiJenis,
-                        alasan: kecualiAlasan,
-                      })
-                    }}
-                    className="grid gap-3 sm:grid-cols-3">
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-semibold text-strong">Tanggal</span>
-                      <input
-                        type="date"
-                        required
-                        value={tanggalPilih}
-                        onChange={(e) => setTanggalPilih(e.target.value)}
-                        className="min-h-[40px] w-full rounded-control border border-line bg-surface px-3 text-sm text-strong"
-                      />
-                    </label>
+          <div className="card overflow-x-auto p-1">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-app-soft text-left">
+                  <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Hari</th>
+                  <th className="px-3 py-3 text-xs font-bold uppercase text-muted">WFA</th>
+                  <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Jenis</th>
+                  <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Jam Masuk</th>
+                  <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hari.map((h) => {
+                  const nilai = perHari[h.hari]
+                  const aktif = nilai?.ada_wfa ?? false
+                  const sebagian = nilai?.jenis === 'sebagian'
+                  const ubah = (patch: Partial<IsianHari>) =>
+                    setPerHari((s) => ({ ...s, [h.hari]: { ...s[h.hari], ...patch } }))
 
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-semibold text-strong">Jenis Kecualian</span>
-                      <select
-                        value={kecualiJenis}
-                        onChange={(e) => setKecualiJenis(e.target.value as 'masuk_kantor' | 'dinas' | 'izin' | 'cuti')}
-                        className="min-h-[40px] w-full rounded-control border border-line bg-surface px-3 text-sm text-strong">
-                        <option value="masuk_kantor">Masuk Kantor (Wajib Datang)</option>
-                        <option value="dinas">Dinas Luar</option>
-                        <option value="izin">Izin</option>
-                        <option value="cuti">Cuti</option>
-                      </select>
-                    </label>
-
-                    <label className="block sm:col-span-1">
-                      <span className="mb-1 block text-xs font-semibold text-strong">Alasan / Catatan</span>
-                      <input
-                        type="text"
-                        value={kecualiAlasan}
-                        onChange={(e) => setKecualiAlasan(e.target.value)}
-                        placeholder="Contoh: Rapat dinas"
-                        className="min-h-[40px] w-full rounded-control border border-line bg-surface px-3 text-sm text-strong"
-                      />
-                    </label>
-
-                    <div className="flex items-end sm:col-span-3">
-                      <Button type="submit" memuat={simpanKecuali.isPending}>
-                        <Plus size={16} /> Tambah Kecualian
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Tabel Riwayat / Daftar Kecualian Pegawai Terpilih */}
-              <div className="card overflow-x-auto p-1">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-app-soft text-left">
-                      <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Tanggal</th>
-                      <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Jenis</th>
-                      <th className="px-3 py-3 text-xs font-bold uppercase text-muted">Keterangan</th>
-                      {bolehKelola && (
-                        <th className="px-3 py-3 text-right text-xs font-bold uppercase text-muted">Aksi</th>
-                      )}
+                  return (
+                    <tr key={h.hari} className="border-t border-line">
+                      <td className="px-3 py-2 font-bold text-strong">{h.nama_hari}</td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={aktif}
+                          disabled={!bolehKelola}
+                          aria-label={`WFA ${h.nama_hari}`}
+                          onChange={(e) => ubah({ ada_wfa: e.target.checked })}
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={nilai?.jenis ?? 'sebagian'}
+                          disabled={!bolehKelola || !aktif}
+                          aria-label={`Jenis WFA ${h.nama_hari}`}
+                          onChange={(e) => ubah({ jenis: e.target.value as 'penuh' | 'sebagian' })}
+                          className="min-h-[40px] rounded-control border border-line bg-surface px-2 text-sm text-strong disabled:bg-app-soft disabled:text-muted">
+                          <option value="sebagian">WFA Sebagian</option>
+                          <option value="penuh">WFA Penuh</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="time"
+                          value={nilai?.jam_masuk ?? ''}
+                          disabled={!bolehKelola || !aktif || !sebagian}
+                          aria-label={`Jam masuk WFA ${h.nama_hari}`}
+                          onChange={(e) => ubah({ jam_masuk: e.target.value })}
+                          className="tnum min-h-[40px] rounded-control border border-line bg-surface px-2 text-sm text-strong disabled:bg-app-soft disabled:text-muted"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          value={nilai?.keterangan ?? ''}
+                          disabled={!bolehKelola || !aktif}
+                          maxLength={255}
+                          placeholder="Opsional"
+                          aria-label={`Keterangan WFA ${h.nama_hari}`}
+                          onChange={(e) => ubah({ keterangan: e.target.value })}
+                          className="min-h-[40px] w-full min-w-[140px] rounded-control border border-line bg-surface px-2 text-sm text-strong disabled:bg-app-soft disabled:text-muted"
+                        />
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {daftarKecuali.isLoading ? (
-                      <tr>
-                        <td colSpan={bolehKelola ? 4 : 3} className="py-6 text-center text-sm text-muted">
-                          Memuat data kecualian…
-                        </td>
-                      </tr>
-                    ) : listKecuali.length === 0 ? (
-                      <tr>
-                        <td colSpan={bolehKelola ? 4 : 3} className="py-6 text-center text-sm text-muted">
-                          Belum ada tanggal kecualian WFA untuk {pilih.nama}.
-                        </td>
-                      </tr>
-                    ) : (
-                      listKecuali.map((k) => (
-                        <tr key={k.id} className="border-t border-line">
-                          <td className="tnum px-3 py-2.5 font-bold text-strong">{k.tanggal}</td>
-                          <td className="px-3 py-2.5">
-                            <span className="inline-flex rounded-full bg-app-soft px-2 py-0.5 text-xs font-semibold uppercase text-strong">
-                              {k.jenis.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-muted">{k.alasan || '-'}</td>
-                          {bolehKelola && (
-                            <td className="px-3 py-2.5 text-right">
-                              <Button
-                                varian="danger"
-                                ukuran="sm"
-                                memuat={hapusKecuali.isPending}
-                                onClick={() => hapusKecuali.mutate(k.id)}>
-                                <Trash2 size={14} /> Hapus
-                              </Button>
-                            </td>
-                          )}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       <p className="px-1 text-xs text-muted">
-        WFA Penuh: presensi hari itu tidak diperlukan dan tidak dihitung alpa. WFA Sebagian: batas masuk
-        memakai jam di atas (terlambat dihitung dari jam tersebut), jam pulang tetap mengikuti Jam Kerja.
+        WFA Penuh maupun Sebagian: presensi tetap wajib dan dinilai seperti hari kerja biasa. WFA Sebagian:
+        batas masuk memakai jam di atas (terlambat dihitung dari jam tersebut), jam pulang tetap mengikuti Jam Kerja.
       </p>
     </div>
   )

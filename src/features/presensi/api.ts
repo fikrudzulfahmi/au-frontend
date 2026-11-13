@@ -5,7 +5,6 @@ import type {
   PengajuanLuarRadius,
   Presensi,
   StatusHariIni,
-  KecualiWFA
 } from './types'
 
 /** FR-PRS — status hari ini (menentukan tombol yang tampil).
@@ -13,47 +12,6 @@ import type {
  */
 export function ambilStatusHariIni() {
   return get<{ data: StatusHariIni }>('/presensi/hari-ini')
-}
-
-/** FR-PRS — cek kecualian WFA untuk pegawai tertentu pada hari ini.
- *  Return nilai null kalau tidak ada kecualian.
- */
-export function cekKecualiHariIni(pegawaiId: number) {
-  return get<KecualiWFA | null>(
-    `/presensi/kecuali?pegawai_id=${pegawaiId}`
-  )
-}
-
-/** FR-PRS — ambil semua kecualian untuk tanggal tertentu (untuk dashboard/admin) */
-export function ambilKecualiTanggal(tanggal?: string, pegawaiId?: number) {
-  const params = new URLSearchParams()
-  if (tanggal) params.append('tanggal', tanggal)
-  if (pegawaiId) params.append('pegawai_id', String(pegawaiId))
-  const qs = params.toString() ? `?${params.toString()}` : ''
-  return get<{ data: KecualiWFA[] }>(`/presensi/kecuali${qs}`)
-}
-
-/** FR-PRS — buat kecualian WFA baru (hanya admin) */
-export function buatKecuali(params: {
-  pegawai_id: number
-  tanggal: string
-  jenis: 'masuk_kantor' | 'dinas' | 'izin' | 'cuti'
-  alasan: string
-}) {
-  return post<KecualiWFA>('/presensi/kecuali', params)
-}
-
-/** FR-PRS — update kecualian (hanya admin) */
-export function updateKecuali(id: number, params: {
-  alasan?: string
-  status?: 'aktif' | 'nonaktif'
-}) {
-  return post<KecualiWFA>(`/presensi/kecuali/${id}`, params)
-}
-
-/** FR-PRS — hapus/nonaktifkan kecualian (hanya admin) */
-export function hapusKecuali(id: number) {
-  return post<void>(`/presensi/kecuali/${id}/hapus`, {})
 }
 
 /** Mengirim presensi sebagai multipart: foto adalah berkas, bukan JSON.

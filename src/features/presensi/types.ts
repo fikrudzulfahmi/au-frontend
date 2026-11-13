@@ -115,8 +115,7 @@ export type KategoriMonitoring =
   | 'berhalangan'
   | 'menunggu'
   | 'luar_radius'
-  | 'tidak_presensi_pulang'
-  | 'wfa';
+  | 'tidak_presensi_pulang';
 
 export interface BarisMonitoring {
   pegawai_id: number
@@ -206,7 +205,7 @@ export interface AntreanPresensi {
 /** Sisi presensi yang bisa diputuskan pimpinan. */
 export type SisiPresensi = 'masuk' | 'pulang'
 
-export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'menunggu' | 'cuti' | 'alpa' | 'wfa'> = {
+export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'menunggu' | 'cuti' | 'alpa'> = {
   hadir: 'hadir',
   terlambat: 'menunggu',
   belum_presensi: 'alpa',
@@ -214,7 +213,6 @@ export const VARIAN_KATEGORI: Record<KategoriMonitoring, 'hadir' | 'izin' | 'men
   menunggu: 'izin',
   luar_radius: 'izin',
   tidak_presensi_pulang: 'menunggu',
-  wfa: 'wfa',
 }
 
 export const OPSI_JENIS_IZIN = [
@@ -223,16 +221,3 @@ export const OPSI_JENIS_IZIN = [
   { nilai: 'dinas', label: 'Dinas' },
   { nilai: 'cuti', label: 'Cuti' },
 ]
-
-/** Data kecualian WFA per tanggal — digunakan oleh admin untuk mengoverride jadwal WFA. */
-export interface KecualiWFA {
-  id: number
-  pegawai_id: number
-  pegawai_nama?: string | null
-  pegawai_nip?: string | null
-  tanggal: string         // format: YYYY-MM-DD
-  jenis: 'masuk_kantor' | 'dinas' | 'izin' | 'cuti'
-  alasan: string
-  dibuat_oleh_admin?: boolean
-  dibuat_pada?: string
-}
