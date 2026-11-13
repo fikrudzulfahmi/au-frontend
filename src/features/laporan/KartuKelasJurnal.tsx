@@ -83,9 +83,18 @@ function KartuKelas({
                   ) : null}
                 </div>
 
-                <StatusBadge varian={status.varian} className="shrink-0">
+                <span
+                  className={cn(
+                    'shrink-0 text-xs font-bold',
+                    s.status === 'sudah'
+                      ? 'text-green'
+                      : s.status === 'belum'
+                        ? 'text-orange'
+                        : 'text-info',
+                  )}
+                >
                   {status.teks}
-                </StatusBadge>
+                </span>
               </li>
             )
           })}
